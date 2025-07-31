@@ -1,4 +1,26 @@
 import { winningNumbers } from "@/data/winning-numbers"
+import {
+  analyzeDayOfWeekPatterns,
+  analyzeSeasonalPatterns,
+  analyzeMonthlyPatterns,
+  analyzeFibonacciPatterns,
+  analyzePrimePatterns,
+  analyzePerfectSquarePatterns,
+  analyzeSymmetryPatterns,
+  analyzeArithmeticSequencePatterns,
+  analyzeClusterPatterns,
+  calculateNumberPreferences,
+  analyzeDistancePatterns,
+  analyzeVariancePatterns,
+  analyzeSimilarityPatterns,
+  analyzeCombinationFrequency,
+  analyzeTrendPatterns,
+  analyzeMultiplePatterns,
+  analyzeDigitEntropy,
+  analyzeLottoGridPatterns,
+  analyzeLunarPatterns,
+  analyzeHolidayEffects,
+} from "./advanced-pattern-analysis"
 
 // 번호 합계 계산
 export function calculateSum(numbers: number[]): number {
@@ -50,6 +72,8 @@ export function calculateGapStatistics(numbers: number[]): { mean: number; max: 
   for (let i = 1; i < sortedNumbers.length; i++) {
     gaps.push(sortedNumbers[i] - sortedNumbers[i - 1])
   }
+
+  if (gaps.length === 0) return { mean: 0, max: 0, min: 0 }
 
   const mean = gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length
   const max = Math.max(...gaps)
@@ -108,35 +132,118 @@ export function calculateNumberCorrelations(): number[][] {
   return correlations
 }
 
-// 모든 특성을 추출하여 단일 배열로 반환
-export function extractAllFeatures(drawNumbers: number[][]): number[] {
-  // 최근 5회 당첨 번호를 평탄화
+// 향상된 특성 추출 함수
+export function extractEnhancedFeatures(drawNumbers: number[][], winningNumbers: any[]): number[] {
+  // 기본 입력 데이터
   const flatNumbers = drawNumbers.flat()
 
-  // 각 회차별 특성 추출
-  const drawFeatures = drawNumbers.map((numbers) => {
+  // 전역 패턴 분석 (한 번만 계산)
+  const frequencies = calculateNumberFrequencies()
+  const lastAppearance = calculateLastAppearance()
+  const numberPreferences = calculateNumberPreferences()
+  const trendScores = analyzeTrendPatterns()
+  const dayOfWeekWeights = analyzeDayOfWeekPatterns()
+  const seasonalWeights = analyzeSeasonalPatterns()
+  const monthlyWeights = analyzeMonthlyPatterns()
+  const lunarWeights = analyzeLunarPatterns()
+  const holidayWeights = analyzeHolidayEffects()
+
+  // 각 회차별 향상된 특성 추출
+  const enhancedDrawFeatures = drawNumbers.map((numbers) => {
+    // 기본 통계적 특성
     const sum = calculateSum(numbers)
     const oddEvenRatio = calculateOddEvenRatio(numbers)
     const rangeDistribution = calculateRangeDistribution(numbers)
     const consecutiveCount = calculateConsecutiveNumbers(numbers)
     const gapStats = calculateGapStatistics(numbers)
 
+    // 수학적 패턴
+    const fibonacciRatio = analyzeFibonacciPatterns(numbers)
+    const primeRatio = analyzePrimePatterns(numbers)
+    const perfectSquareRatio = analyzePerfectSquarePatterns(numbers)
+    const symmetryScore = analyzeSymmetryPatterns(numbers)
+    const arithmeticScore = analyzeArithmeticSequencePatterns(numbers)
+    const multiple3Ratio = analyzeMultiplePatterns(numbers, 3)
+    const multiple7Ratio = analyzeMultiplePatterns(numbers, 7)
+    const digitEntropy = analyzeDigitEntropy(numbers)
+
+    // 공간적 패턴
+    const clusterDistribution = analyzeClusterPatterns(numbers)
+    const distancePattern = analyzeDistancePatterns(numbers)
+    const variancePattern = analyzeVariancePatterns(numbers)
+    const gridPatterns = analyzeLottoGridPatterns(numbers)
+
+    // 역사적 패턴
+    const similarityScore = analyzeSimilarityPatterns(numbers)
+    const combinationScore = analyzeCombinationFrequency(numbers)
+
+    // 번호별 가중치 특성 (각 번호에 대한 다양한 가중치)
+    const numbersFrequency = numbers.map((num) => frequencies[num - 1] / winningNumbers.length)
+    const numbersLastAppearance = numbers.map((num) => {
+      const appearance = lastAppearance[num - 1]
+      return appearance / winningNumbers.length
+    })
+    const numbersPreference = numbers.map((num) => numberPreferences[num - 1])
+    const numbersTrend = numbers.map((num) => trendScores[num - 1])
+    const numbersDayWeight = numbers.map((num) => dayOfWeekWeights[num - 1])
+    const numbersSeasonWeight = numbers.map((num) => seasonalWeights[num - 1])
+    const numbersMonthWeight = numbers.map((num) => monthlyWeights[num - 1])
+    const numbersLunarWeight = numbers.map((num) => lunarWeights[num - 1])
+    const numbersHolidayWeight = numbers.map((num) => holidayWeights[num - 1])
+
     return [
-      sum / 255, // 정규화 (최대 가능 합계는 45+44+43+42+41+40=255)
+      // 기본 통계 (9개)
+      sum / 255, // 정규화
       oddEvenRatio,
-      ...rangeDistribution.map((count) => count / 6), // 정규화
-      consecutiveCount / 6, // 정규화
-      gapStats.mean / 44, // 정규화 (최대 가능 간격은 44)
-      gapStats.max / 44, // 정규화
-      gapStats.min / 44, // 정규화
+      ...rangeDistribution.map((count) => count / 6),
+      consecutiveCount / 6,
+      gapStats.mean / 44,
+      gapStats.max / 44,
+      gapStats.min / 44,
+
+      // 수학적 패턴 (8개)
+      fibonacciRatio,
+      primeRatio,
+      perfectSquareRatio,
+      symmetryScore,
+      arithmeticScore,
+      multiple3Ratio,
+      multiple7Ratio,
+      digitEntropy,
+
+      // 공간적 패턴 (5 + 16개 = 21개)
+      ...clusterDistribution, // 5개
+      distancePattern,
+      variancePattern,
+      ...gridPatterns, // 16개 (7행 + 7열 + 2대각선)
+
+      // 역사적 패턴 (2개)
+      similarityScore,
+      combinationScore,
+
+      // 번호별 특성 (6개 × 9가지 = 54개)
+      ...numbersFrequency,
+      ...numbersLastAppearance,
+      ...numbersPreference,
+      ...numbersTrend,
+      ...numbersDayWeight,
+      ...numbersSeasonWeight,
+      ...numbersMonthWeight,
+      ...numbersLunarWeight,
+      ...numbersHolidayWeight,
     ]
   })
 
   // 전체 특성 배열 생성
   return [
-    ...flatNumbers, // 기본 입력 (5회 x 6개 번호 = 30개)
-    ...drawFeatures.flat(), // 추가 특성 (5회 x 9개 특성 = 45개)
+    ...flatNumbers, // 기본 입력 (30개)
+    ...enhancedDrawFeatures.flat(), // 향상된 특성 (회차당 94개 × 5회 = 470개)
   ]
+}
+
+// 모든 특성을 추출하여 단일 배열로 반환 (기존 호환성 유지)
+export function extractAllFeatures(drawNumbers: number[][], winningNumbers: any[]): number[] {
+  return extractEnhancedFeatures(drawNumbers, winningNumbers)
 }
 
 // 전체 데이터셋에 대한 특성 추출
@@ -155,8 +262,8 @@ export function extractFeaturesForDataset(
     const sequence = winningNumbers.slice(i, i + sequenceLength).map((draw) => draw.numbers)
     const target = winningNumbers[i + sequenceLength].numbers
 
-    // 특성 추출
-    const features = extractAllFeatures(sequence)
+    // 향상된 특성 추출 (현재 시점까지의 당첨 번호만 사용)
+    const features = extractEnhancedFeatures(sequence, winningNumbers.slice(0, i + sequenceLength))
 
     sequences.push(features)
 

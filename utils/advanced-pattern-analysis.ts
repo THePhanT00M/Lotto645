@@ -1,370 +1,193 @@
 import { winningNumbers } from "@/data/winning-numbers"
 
-// 1. 요일별 패턴 분석
-export function analyzeDayOfWeekPatterns(): number[] {
-  const dayPatterns = Array(7)
-    .fill(0)
-    .map(() => Array(45).fill(0))
+// 소수 판별 함수
+function isPrime(num: number): boolean {
+  if (num < 2) return false
+  if (num === 2) return true
+  if (num % 2 === 0) return false
 
-  winningNumbers.forEach((draw) => {
-    const date = new Date(draw.date)
-    const dayOfWeek = date.getDay() // 0=일요일, 6=토요일
-
-    draw.numbers.forEach((num) => {
-      dayPatterns[dayOfWeek][num - 1]++
-    })
-  })
-
-  // 현재 요일에 따른 번호별 가중치 반환
-  const today = new Date().getDay()
-  return dayPatterns[today].map((count) => count / winningNumbers.length)
-}
-
-// 2. 계절별 패턴 분석
-export function analyzeSeasonalPatterns(): number[] {
-  const seasonPatterns = Array(4)
-    .fill(0)
-    .map(() => Array(45).fill(0))
-
-  winningNumbers.forEach((draw) => {
-    const date = new Date(draw.date)
-    const month = date.getMonth()
-    const season = Math.floor(month / 3) // 0=봄, 1=여름, 2=가을, 3=겨울
-
-    draw.numbers.forEach((num) => {
-      seasonPatterns[season][num - 1]++
-    })
-  })
-
-  // 현재 계절에 따른 번호별 가중치 반환
-  const currentSeason = Math.floor(new Date().getMonth() / 3)
-  return seasonPatterns[currentSeason].map((count) => count / winningNumbers.length)
-}
-
-// 3. 월별 패턴 분석
-export function analyzeMonthlyPatterns(): number[] {
-  const monthPatterns = Array(12)
-    .fill(0)
-    .map(() => Array(45).fill(0))
-
-  winningNumbers.forEach((draw) => {
-    const date = new Date(draw.date)
-    const month = date.getMonth()
-
-    draw.numbers.forEach((num) => {
-      monthPatterns[month][num - 1]++
-    })
-  })
-
-  // 현재 월에 따른 번호별 가중치 반환
-  const currentMonth = new Date().getMonth()
-  return monthPatterns[currentMonth].map((count) => count / winningNumbers.length)
-}
-
-// 4. 피보나치 수열 패턴
-export function analyzeFibonacciPatterns(numbers: number[]): number {
-  const fibNumbers = [1, 1, 2, 3, 5, 8, 13, 21, 34] // 45 이하 피보나치 수
-  const fibCount = numbers.filter((num) => fibNumbers.includes(num)).length
-  return fibCount / numbers.length
-}
-
-// 5. 소수 패턴 분석
-export function analyzePrimePatterns(numbers: number[]): number {
-  const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43]
-  const primeCount = numbers.filter((num) => primes.includes(num)).length
-  return primeCount / numbers.length
-}
-
-// 6. 완전제곱수 패턴
-export function analyzePerfectSquarePatterns(numbers: number[]): number {
-  const perfectSquares = [1, 4, 9, 16, 25, 36] // 45 이하 완전제곱수
-  const squareCount = numbers.filter((num) => perfectSquares.includes(num)).length
-  return squareCount / numbers.length
-}
-
-// 7. 대칭 패턴 분석 (번호판 대칭)
-export function analyzeSymmetryPatterns(numbers: number[]): number {
-  // 로또 번호판을 7x7 격자로 배치 (1-45번, 46-49는 사용하지 않음)
-  // 1  2  3  4  5  6  7
-  // 8  9  10 11 12 13 14
-  // 15 16 17 18 19 20 21
-  // 22 23 24 25 26 27 28
-  // 29 30 31 32 33 34 35
-  // 36 37 38 39 40 41 42
-  // 43 44 45
-
-  // 수직 대칭 쌍들 (중앙 세로축 기준)
-  const verticalSymmetryPairs = [
-    // 첫 번째 줄
-    [1, 7],
-    [2, 6],
-    [3, 5],
-    // 두 번째 줄
-    [8, 14],
-    [9, 13],
-    [10, 12],
-    // 세 번째 줄
-    [15, 21],
-    [16, 20],
-    [17, 19],
-    // 네 번째 줄
-    [22, 28],
-    [23, 27],
-    [24, 26],
-    // 다섯 번째 줄
-    [29, 35],
-    [30, 34],
-    [31, 33],
-    // 여섯 번째 줄
-    [36, 42],
-    [37, 41],
-    [38, 40],
-    // 일곱 번째 줄 (45는 중앙이므로 대칭 쌍 없음)
-    [43, 45], // 44는 중앙
-  ]
-
-  // 수평 대칭 쌍들 (중앙 가로축 기준)
-  const horizontalSymmetryPairs = [
-    // 첫 번째 열
-    [1, 43],
-    [8, 36],
-    [15, 29],
-    // 두 번째 열
-    [2, 44],
-    [9, 37],
-    [16, 30],
-    // 세 번째 열
-    [3, 45],
-    [10, 38],
-    [17, 31],
-    // 네 번째 열 (중앙 열)
-    [4, 25],
-    [11, 32],
-    [18, 39], // 25는 중앙점
-    // 다섯 번째 열
-    [5, 33],
-    [12, 40],
-    [19, 26],
-    // 여섯 번째 열
-    [6, 34],
-    [13, 41],
-    [20, 27],
-    // 일곱 번째 열
-    [7, 35],
-    [14, 42],
-    [21, 28],
-  ]
-
-  // 대각선 대칭 쌍들 (좌상-우하 대각선 기준)
-  const diagonalSymmetryPairs1 = [
-    [2, 8],
-    [3, 9],
-    [4, 10],
-    [5, 11],
-    [6, 12],
-    [7, 13],
-    [9, 15],
-    [10, 16],
-    [11, 17],
-    [12, 18],
-    [13, 19],
-    [14, 20],
-    [16, 22],
-    [17, 23],
-    [18, 24],
-    [19, 25],
-    [20, 26],
-    [21, 27],
-    [23, 29],
-    [24, 30],
-    [25, 31],
-    [26, 32],
-    [27, 33],
-    [28, 34],
-    [30, 36],
-    [31, 37],
-    [32, 38],
-    [33, 39],
-    [34, 40],
-    [35, 41],
-    [37, 43],
-    [38, 44],
-    [39, 45],
-  ]
-
-  // 대각선 대칭 쌍들 (우상-좌하 대각선 기준)
-  const diagonalSymmetryPairs2 = [
-    [6, 8],
-    [5, 9],
-    [4, 10],
-    [3, 11],
-    [2, 12],
-    [1, 13],
-    [13, 15],
-    [12, 16],
-    [11, 17],
-    [10, 18],
-    [9, 19],
-    [8, 20],
-    [20, 22],
-    [19, 23],
-    [18, 24],
-    [17, 25],
-    [16, 26],
-    [15, 27],
-    [27, 29],
-    [26, 30],
-    [25, 31],
-    [24, 32],
-    [23, 33],
-    [22, 34],
-    [34, 36],
-    [33, 37],
-    [32, 38],
-    [31, 39],
-    [30, 40],
-    [29, 41],
-    [41, 43],
-    [40, 44],
-    [39, 45],
-  ]
-
-  // 점 대칭 쌍들 (중앙점 25 기준)
-  const pointSymmetryPairs = [
-    [1, 45],
-    [2, 44],
-    [3, 43],
-    [8, 42],
-    [9, 41],
-    [10, 40],
-    [15, 35],
-    [16, 34],
-    [17, 33],
-    [22, 28],
-    [23, 27],
-    [24, 26],
-    [4, 46],
-    [5, 47],
-    [6, 48],
-    [7, 49], // 실제로는 존재하지 않는 번호들
-    [11, 39],
-    [12, 38],
-    [13, 37],
-    [14, 36],
-    [18, 32],
-    [19, 31],
-    [20, 30],
-    [21, 29],
-  ].filter(([a, b]) => a <= 45 && b <= 45) // 45 이하 번호만 필터링
-
-  // 각 대칭 유형별 점수 계산
-  let verticalScore = 0
-  verticalSymmetryPairs.forEach(([a, b]) => {
-    if (numbers.includes(a) && numbers.includes(b)) {
-      verticalScore += 1
-    }
-  })
-
-  let horizontalScore = 0
-  horizontalSymmetryPairs.forEach(([a, b]) => {
-    if (numbers.includes(a) && numbers.includes(b)) {
-      horizontalScore += 1
-    }
-  })
-
-  let diagonal1Score = 0
-  diagonalSymmetryPairs1.forEach(([a, b]) => {
-    if (numbers.includes(a) && numbers.includes(b)) {
-      diagonal1Score += 1
-    }
-  })
-
-  let diagonal2Score = 0
-  diagonalSymmetryPairs2.forEach(([a, b]) => {
-    if (numbers.includes(a) && numbers.includes(b)) {
-      diagonal2Score += 1
-    }
-  })
-
-  let pointScore = 0
-  pointSymmetryPairs.forEach(([a, b]) => {
-    if (numbers.includes(a) && numbers.includes(b)) {
-      pointScore += 1
-    }
-  })
-
-  // 전체 대칭 점수 계산 (가중 평균)
-  const totalPairs =
-    verticalSymmetryPairs.length +
-    horizontalSymmetryPairs.length +
-    diagonalSymmetryPairs1.length +
-    diagonalSymmetryPairs2.length +
-    pointSymmetryPairs.length
-
-  const totalScore = verticalScore + horizontalScore + diagonal1Score + diagonal2Score + pointScore
-
-  return totalScore / totalPairs
-}
-
-// 8. 등차수열 패턴
-export function analyzeArithmeticSequencePatterns(numbers: number[]): number {
-  const sortedNumbers = [...numbers].sort((a, b) => a - b)
-  let maxSequenceLength = 1
-
-  for (let diff = 1; diff <= 22; diff++) {
-    // 최대 공차 22
-    let currentLength = 1
-    let lastNumber = sortedNumbers[0]
-
-    for (let i = 1; i < sortedNumbers.length; i++) {
-      if (sortedNumbers[i] === lastNumber + diff) {
-        currentLength++
-        lastNumber = sortedNumbers[i]
-      } else {
-        maxSequenceLength = Math.max(maxSequenceLength, currentLength)
-        currentLength = 1
-        lastNumber = sortedNumbers[i]
-      }
-    }
-    maxSequenceLength = Math.max(maxSequenceLength, currentLength)
+  for (let i = 3; i <= Math.sqrt(num); i += 2) {
+    if (num % i === 0) return false
   }
-
-  return maxSequenceLength / 6 // 정규화
+  return true
 }
 
-// 9. 번호 클러스터링 패턴
-export function analyzeClusterPatterns(numbers: number[]): number[] {
-  // 번호를 5개 구간으로 나누어 클러스터 분석
-  const clusters = Array(5).fill(0)
-  const clusterSize = 9 // 45/5 = 9
-
-  numbers.forEach((num) => {
-    const clusterIndex = Math.min(Math.floor((num - 1) / clusterSize), 4)
-    clusters[clusterIndex]++
-  })
-
-  return clusters.map((count) => count / 6) // 정규화
+// 피보나치 수 판별 (45 이하)
+const fibonacciNumbers = [1, 1, 2, 3, 5, 8, 13, 21, 34]
+function isFibonacci(num: number): boolean {
+  return fibonacciNumbers.includes(num)
 }
 
-// 10. 가중치 기반 번호 선호도
-export function calculateNumberPreferences(): number[] {
-  const preferences = Array(45).fill(0)
-  const recentWeight = 0.7 // 최근 데이터에 더 높은 가중치
+// 완전제곱수 판별
+function isPerfectSquare(num: number): boolean {
+  const sqrt = Math.sqrt(num)
+  return sqrt === Math.floor(sqrt)
+}
 
-  winningNumbers.forEach((draw, index) => {
-    const weight = Math.pow(recentWeight, winningNumbers.length - index - 1)
+// 요일별 패턴 분석
+export function analyzeDayOfWeekPatterns(): number[] {
+  const dayWeights = Array(45).fill(0)
+  const dayCounts = Array(7).fill(0) // 0=일요일, 1=월요일, ...
+
+  winningNumbers.forEach((draw) => {
+    const date = new Date(draw.date)
+    const dayOfWeek = date.getDay()
+    dayCounts[dayOfWeek]++
 
     draw.numbers.forEach((num) => {
-      preferences[num - 1] += weight
+      dayWeights[num - 1] += 1 / dayCounts[dayOfWeek] // 요일별 가중치
     })
   })
 
   // 정규화
-  const maxPreference = Math.max(...preferences)
-  return preferences.map((pref) => pref / maxPreference)
+  const maxWeight = Math.max(...dayWeights)
+  return dayWeights.map((w) => (maxWeight > 0 ? w / maxWeight : 0))
 }
 
-// 11. 번호 간 거리 패턴
+// 계절별 패턴 분석
+export function analyzeSeasonalPatterns(): number[] {
+  const seasonWeights = Array(45).fill(0)
+  const seasonCounts = Array(4).fill(0) // 0=봄, 1=여름, 2=가을, 3=겨울
+
+  winningNumbers.forEach((draw) => {
+    const date = new Date(draw.date)
+    const month = date.getMonth() + 1
+    let season = 0
+
+    if (month >= 3 && month <= 5)
+      season = 0 // 봄
+    else if (month >= 6 && month <= 8)
+      season = 1 // 여름
+    else if (month >= 9 && month <= 11)
+      season = 2 // 가을
+    else season = 3 // 겨울
+
+    seasonCounts[season]++
+
+    draw.numbers.forEach((num) => {
+      seasonWeights[num - 1] += 1 / seasonCounts[season]
+    })
+  })
+
+  // 정규화
+  const maxWeight = Math.max(...seasonWeights)
+  return seasonWeights.map((w) => (maxWeight > 0 ? w / maxWeight : 0))
+}
+
+// 월별 패턴 분석
+export function analyzeMonthlyPatterns(): number[] {
+  const monthWeights = Array(45).fill(0)
+  const monthCounts = Array(12).fill(0)
+
+  winningNumbers.forEach((draw) => {
+    const date = new Date(draw.date)
+    const month = date.getMonth()
+    monthCounts[month]++
+
+    draw.numbers.forEach((num) => {
+      monthWeights[num - 1] += 1 / monthCounts[month]
+    })
+  })
+
+  // 정규화
+  const maxWeight = Math.max(...monthWeights)
+  return monthWeights.map((w) => (maxWeight > 0 ? w / maxWeight : 0))
+}
+
+// 피보나치 패턴 분석
+export function analyzeFibonacciPatterns(numbers: number[]): number {
+  const fibCount = numbers.filter((num) => isFibonacci(num)).length
+  return fibCount / numbers.length
+}
+
+// 소수 패턴 분석
+export function analyzePrimePatterns(numbers: number[]): number {
+  const primeCount = numbers.filter((num) => isPrime(num)).length
+  return primeCount / numbers.length
+}
+
+// 완전제곱수 패턴 분석
+export function analyzePerfectSquarePatterns(numbers: number[]): number {
+  const squareCount = numbers.filter((num) => isPerfectSquare(num)).length
+  return squareCount / numbers.length
+}
+
+// 대칭 패턴 분석 (번호의 대칭성)
+export function analyzeSymmetryPatterns(numbers: number[]): number {
+  const sortedNumbers = [...numbers].sort((a, b) => a - b)
+  let symmetryScore = 0
+
+  for (let i = 0; i < sortedNumbers.length / 2; i++) {
+    const left = sortedNumbers[i]
+    const right = sortedNumbers[sortedNumbers.length - 1 - i]
+    const center = 23 // 1-45의 중앙값
+
+    const leftDistance = Math.abs(left - center)
+    const rightDistance = Math.abs(right - center)
+
+    if (Math.abs(leftDistance - rightDistance) <= 2) {
+      symmetryScore += 1
+    }
+  }
+
+  return symmetryScore / Math.floor(numbers.length / 2)
+}
+
+// 등차수열 패턴 분석
+export function analyzeArithmeticSequencePatterns(numbers: number[]): number {
+  const sortedNumbers = [...numbers].sort((a, b) => a - b)
+  let maxSequenceLength = 1
+  let currentLength = 1
+  let commonDiff = 0
+
+  for (let i = 1; i < sortedNumbers.length; i++) {
+    const diff = sortedNumbers[i] - sortedNumbers[i - 1]
+
+    if (currentLength === 1) {
+      commonDiff = diff
+      currentLength = 2
+    } else if (diff === commonDiff) {
+      currentLength++
+    } else {
+      maxSequenceLength = Math.max(maxSequenceLength, currentLength)
+      commonDiff = diff
+      currentLength = 2
+    }
+  }
+
+  maxSequenceLength = Math.max(maxSequenceLength, currentLength)
+  return maxSequenceLength / numbers.length
+}
+
+// 클러스터 패턴 분석 (번호를 5개 구간으로 나누어 분석)
+export function analyzeClusterPatterns(numbers: number[]): number[] {
+  const clusters = Array(5).fill(0) // 5개 클러스터
+
+  numbers.forEach((num) => {
+    const clusterIndex = Math.min(Math.floor((num - 1) / 9), 4)
+    clusters[clusterIndex]++
+  })
+
+  return clusters.map((count) => count / numbers.length)
+}
+
+// 번호 선호도 계산 (전체 당첨 빈도 기반)
+export function calculateNumberPreferences(): number[] {
+  const preferences = Array(45).fill(0)
+  const totalDraws = winningNumbers.length
+
+  winningNumbers.forEach((draw) => {
+    draw.numbers.forEach((num) => {
+      preferences[num - 1]++
+    })
+  })
+
+  // 정규화 (0-1 범위)
+  const maxPreference = Math.max(...preferences)
+  return preferences.map((pref) => (maxPreference > 0 ? pref / maxPreference : 0))
+}
+
+// 거리 패턴 분석 (번호 간 평균 거리)
 export function analyzeDistancePatterns(numbers: number[]): number {
   const sortedNumbers = [...numbers].sort((a, b) => a - b)
   let totalDistance = 0
@@ -373,23 +196,29 @@ export function analyzeDistancePatterns(numbers: number[]): number {
     totalDistance += sortedNumbers[i] - sortedNumbers[i - 1]
   }
 
-  return totalDistance / (44 * 5) // 정규화 (최대 거리는 44*5)
+  const avgDistance = totalDistance / (sortedNumbers.length - 1)
+  return avgDistance / 44 // 정규화 (최대 가능 거리는 44)
 }
 
-// 12. 번호 분산 패턴
+// 분산 패턴 분석
 export function analyzeVariancePatterns(numbers: number[]): number {
   const mean = numbers.reduce((sum, num) => sum + num, 0) / numbers.length
   const variance = numbers.reduce((sum, num) => sum + Math.pow(num - mean, 2), 0) / numbers.length
 
-  return Math.sqrt(variance) / 23 // 정규화 (최대 표준편차는 약 23)
+  // 정규화 (최대 가능 분산 추정)
+  const maxVariance = Math.pow(45 - 1, 2) / 4 // 대략적인 최대 분산
+  return Math.min(variance / maxVariance, 1)
 }
 
-// 13. 회차별 유사도 패턴
-export function analyzeSimilarityPatterns(currentNumbers: number[]): number {
+// 유사도 패턴 분석 (최근 당첨번호와의 유사성)
+export function analyzeSimilarityPatterns(numbers: number[]): number {
+  if (winningNumbers.length === 0) return 0
+
+  const recentDraws = winningNumbers.slice(-10) // 최근 10회
   let maxSimilarity = 0
 
-  winningNumbers.forEach((draw) => {
-    const intersection = currentNumbers.filter((num) => draw.numbers.includes(num))
+  recentDraws.forEach((draw) => {
+    const intersection = numbers.filter((num) => draw.numbers.includes(num))
     const similarity = intersection.length / 6
     maxSimilarity = Math.max(maxSimilarity, similarity)
   })
@@ -397,50 +226,159 @@ export function analyzeSimilarityPatterns(currentNumbers: number[]): number {
   return maxSimilarity
 }
 
-// 14. 번호 조합 빈도 패턴
+// 조합 빈도 분석
 export function analyzeCombinationFrequency(numbers: number[]): number {
-  let combinationScore = 0
+  let totalFrequency = 0
+  let pairCount = 0
 
-  // 2개 번호 조합 빈도 확인
   for (let i = 0; i < numbers.length; i++) {
     for (let j = i + 1; j < numbers.length; j++) {
-      const pair = [numbers[i], numbers[j]]
+      const num1 = numbers[i]
+      const num2 = numbers[j]
 
-      const frequency = winningNumbers.filter((draw) => pair.every((num) => draw.numbers.includes(num))).length
+      // 이 두 번호가 함께 나온 횟수 계산
+      let pairFrequency = 0
+      winningNumbers.forEach((draw) => {
+        if (draw.numbers.includes(num1) && draw.numbers.includes(num2)) {
+          pairFrequency++
+        }
+      })
 
-      combinationScore += frequency
+      totalFrequency += pairFrequency
+      pairCount++
     }
   }
 
-  return combinationScore / (winningNumbers.length * 15) // 정규화
+  if (pairCount === 0) return 0
+  const avgFrequency = totalFrequency / pairCount
+  return avgFrequency / winningNumbers.length // 정규화
 }
 
-// 15. 트렌드 기반 예측
+// 트렌드 패턴 분석 (최근 상승/하락 추세)
 export function analyzeTrendPatterns(): number[] {
-  const trendScores = Array(45).fill(0)
-  const windowSize = 10 // 최근 10회 기준
+  const trends = Array(45).fill(0)
+  const recentWindow = 20 // 최근 20회
+
+  if (winningNumbers.length < recentWindow) return trends
 
   for (let num = 1; num <= 45; num++) {
-    let recentCount = 0
-    let olderCount = 0
+    const recentDraws = winningNumbers.slice(-recentWindow)
+    const oldDraws = winningNumbers.slice(-recentWindow * 2, -recentWindow)
 
-    // 최근 10회
-    for (let i = 0; i < Math.min(windowSize, winningNumbers.length); i++) {
-      if (winningNumbers[winningNumbers.length - 1 - i].numbers.includes(num)) {
-        recentCount++
-      }
-    }
+    const recentCount = recentDraws.filter((draw) => draw.numbers.includes(num)).length
+    const oldCount = oldDraws.filter((draw) => draw.numbers.includes(num)).length
 
-    // 그 이전 10회
-    for (let i = windowSize; i < Math.min(windowSize * 2, winningNumbers.length); i++) {
-      if (winningNumbers[winningNumbers.length - 1 - i].numbers.includes(num)) {
-        olderCount++
-      }
-    }
-
-    // 트렌드 점수 (증가 추세면 양수, 감소 추세면 음수)
-    trendScores[num - 1] = (recentCount - olderCount) / windowSize
+    // 트렌드 계산 (양수: 상승, 음수: 하락)
+    const trend = (recentCount - oldCount) / recentWindow
+    trends[num - 1] = trend
   }
 
-  return trendScores
+  return trends
+}
+
+// 배수 패턴 분석
+export function analyzeMultiplePatterns(numbers: number[], divisor: number): number {
+  const multipleCount = numbers.filter((num) => num % divisor === 0).length
+  return multipleCount / numbers.length
+}
+
+// 끝자리 엔트로피 분석
+export function analyzeDigitEntropy(numbers: number[]): number {
+  const lastDigits = numbers.map((num) => num % 10)
+  const digitCounts = Array(10).fill(0)
+
+  lastDigits.forEach((digit) => {
+    digitCounts[digit]++
+  })
+
+  // 엔트로피 계산
+  let entropy = 0
+  digitCounts.forEach((count) => {
+    if (count > 0) {
+      const probability = count / numbers.length
+      entropy -= probability * Math.log2(probability)
+    }
+  })
+
+  // 정규화 (최대 엔트로피는 log2(10))
+  return entropy / Math.log2(10)
+}
+
+// 로또 용지 위치 패턴 분석 (7x7 그리드 가정)
+export function analyzeLottoGridPatterns(numbers: number[]): number[] {
+  const gridFeatures = []
+
+  // 행별 분포
+  const rowCounts = Array(7).fill(0)
+  numbers.forEach((num) => {
+    const row = Math.floor((num - 1) / 7)
+    if (row < 7) rowCounts[row]++
+  })
+  gridFeatures.push(...rowCounts.map((count) => count / numbers.length))
+
+  // 열별 분포
+  const colCounts = Array(7).fill(0)
+  numbers.forEach((num) => {
+    const col = (num - 1) % 7
+    colCounts[col]++
+  })
+  gridFeatures.push(...colCounts.map((count) => count / numbers.length))
+
+  // 대각선 패턴
+  let mainDiagonal = 0
+  let antiDiagonal = 0
+  numbers.forEach((num) => {
+    const row = Math.floor((num - 1) / 7)
+    const col = (num - 1) % 7
+    if (row === col) mainDiagonal++
+    if (row + col === 6) antiDiagonal++
+  })
+  gridFeatures.push(mainDiagonal / numbers.length)
+  gridFeatures.push(antiDiagonal / numbers.length)
+
+  return gridFeatures
+}
+
+// 음력 패턴 분석 (간단한 음력 주기 근사)
+export function analyzeLunarPatterns(): number[] {
+  const lunarWeights = Array(45).fill(0)
+  const lunarCycle = 29.5 // 음력 주기 (일)
+
+  winningNumbers.forEach((draw) => {
+    const date = new Date(draw.date)
+    const daysSinceEpoch = Math.floor(date.getTime() / (1000 * 60 * 60 * 24))
+    const lunarPhase = (daysSinceEpoch % lunarCycle) / lunarCycle
+
+    draw.numbers.forEach((num) => {
+      lunarWeights[num - 1] += Math.sin(2 * Math.PI * lunarPhase)
+    })
+  })
+
+  // 정규화
+  const maxWeight = Math.max(...lunarWeights.map(Math.abs))
+  return lunarWeights.map((w) => (maxWeight > 0 ? w / maxWeight : 0))
+}
+
+// 공휴일 효과 분석 (간단한 구현)
+export function analyzeHolidayEffects(): number[] {
+  const holidayWeights = Array(45).fill(0)
+
+  // 주요 공휴일 날짜들 (월-일 형식)
+  const holidays = ["01-01", "03-01", "05-05", "06-06", "08-15", "10-03", "10-09", "12-25"]
+
+  winningNumbers.forEach((draw) => {
+    const date = new Date(draw.date)
+    const monthDay = `${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+    const isHoliday = holidays.includes(monthDay)
+
+    if (isHoliday) {
+      draw.numbers.forEach((num) => {
+        holidayWeights[num - 1] += 1
+      })
+    }
+  })
+
+  // 정규화
+  const maxWeight = Math.max(...holidayWeights)
+  return holidayWeights.map((w) => (maxWeight > 0 ? w / maxWeight : 0))
 }
