@@ -7,17 +7,13 @@ import { getBallColor } from "@/utils/lotto-utils"
 import { saveLottoResult } from "@/utils/lotto-storage"
 import { useToast } from "@/hooks/use-toast"
 import { Check, Lock, X } from "lucide-react"
-import { motion } from "framer-motion"
 import LottoCongratulation from "@/components/lotto-congratulation"
+import LottoNumberDisplay from "@/components/lotto-number-display"
 
 interface NumberSelectorProps {
   onSelectComplete: (numbers: number[]) => void
   onReset: () => void
   drawnNumbers?: number[]
-}
-
-interface LottoCongratulationProps {
-  show: boolean
 }
 
 export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers }: NumberSelectorProps) {
@@ -334,7 +330,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
 
           {/* 버튼 영역 */}
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" onClick={resetAll} className="h-10 text-gray-600">
+            <Button variant="outline" onClick={resetAll} className="h-10 text-gray-600 bg-transparent">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="20"
@@ -440,70 +436,13 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
         </div>
       )}
 
-      {/* Selected Numbers Display - Separate Section */}
-      {selectedNumbers.length > 0 && (
-        <div className="">
-          <motion.div
-            ref={drawnNumbersSectionRef}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="p-4 bg-gray-50 border border-gray-100 rounded-lg shadow-sm"
-          >
-            <div className="flex justify-between items-center mb-3">
-              <div className="w-24"></div> {/* Spacer for balance */}
-              <h3 className="text-lg font-medium text-center">추첨 번호</h3>
-              {selectedNumbers.length === 6 ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-sm text-green-600 flex items-center w-24 justify-end"
-                >
-                  <Check className="w-4 h-4 mr-1" />
-                  기록 저장됨
-                </motion.div>
-              ) : (
-                <div className="w-24"></div> /* Spacer when no text */
-              )}
-            </div>
-            <div className="flex flex-nowrap justify-center gap-2">
-              {selectedNumbers
-                .sort((a, b) => a - b)
-                .map((number, index) => (
-                  <motion.div
-                    key={number}
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1, duration: 0.3 }}
-                    className="relative flex-shrink-0"
-                  >
-                    <div
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-black font-bold text-sm sm:text-base"
-                      style={{
-                        backgroundColor: getBallColor(number),
-                      }}
-                    >
-                      {number}
-                      {fixedNumbers.includes(number) && (
-                        <div className="absolute -top-1 -right-1 bg-green-500 rounded-full w-4 h-4 flex items-center justify-center">
-                          <Lock className="w-2.5 h-2.5 text-white" />
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              {/* Empty slots for remaining numbers */}
-              {Array.from({ length: 6 - selectedNumbers.length }).map((_, index) => (
-                <div
-                  key={`empty-${index}`}
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center flex-shrink-0"
-                />
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      )}
+      {/* Selected Numbers Display */}
+      <LottoNumberDisplay
+        ref={drawnNumbersSectionRef}
+        numbers={selectedNumbers}
+        fixedNumbers={fixedNumbers}
+        isSaved={isSaved}
+      />
     </div>
   )
 }

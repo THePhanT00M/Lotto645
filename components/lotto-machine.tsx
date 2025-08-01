@@ -5,11 +5,10 @@ import { motion } from "framer-motion"
 import LottoBall from "@/components/lotto-ball"
 import LottoCanvas from "@/components/lotto-canvas"
 import LottoControls from "@/components/lotto-controls"
-import LottoResults from "@/components/lotto-results"
 import LottoCongratulation from "@/components/lotto-congratulation"
+import LottoNumberDisplay from "@/components/lotto-number-display"
 import { getRandomNumber } from "@/utils/lotto-utils"
 import { saveLottoResult } from "@/utils/lotto-storage"
-import { Check } from "lucide-react"
 
 interface LottoMachineProps {
   onDrawComplete: (numbers: number[]) => void
@@ -172,8 +171,6 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
         </motion.div>
       </div>
 
-
-
       {/* Controls */}
       <LottoControls
         balls={balls}
@@ -194,35 +191,8 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
           </div>
         )}
 
-        {/* Selected Numbers Display with Save Status */}
-        {balls.length > 0 && (
-          <motion.div
-            ref={resultsRef}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="p-4 bg-gray-50 border border-gray-100 rounded-lg shadow-sm mb-6"
-          >
-            <div className="flex justify-between items-center mb-3">
-              <div className="w-24"></div> {/* Spacer for balance */}
-              <h3 className="text-lg font-medium text-center">추첨 번호</h3>
-              {isSaved && balls.length === 6 ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-sm text-green-600 flex items-center w-24 justify-end"
-                >
-                  <Check className="w-4 h-4 mr-1" />
-                  기록 저장됨
-                </motion.div>
-              ) : (
-                <div className="w-24"></div> /* Spacer when no text */
-              )}
-            </div>
-            <LottoResults balls={balls} />
-          </motion.div>
-        )}
+        {/* Selected Numbers Display */}
+        <LottoNumberDisplay ref={resultsRef} numbers={balls} isSaved={isSaved} />
       </div>
     </div>
   )
