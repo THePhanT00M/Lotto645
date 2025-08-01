@@ -172,8 +172,7 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
         </motion.div>
       </div>
 
-      {/* Congratulatory Message */}
-      {showCongrats && <LottoCongratulation show={showCongrats} />}
+
 
       {/* Controls */}
       <LottoControls
@@ -188,6 +187,13 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
 
       {/* Drawn Balls */}
       <div className="w-full">
+        {/* Congratulatory Message */}
+        {showCongrats && (
+          <div className="mb-6">
+            <LottoCongratulation show={showCongrats} className="w-full max-w-none" />
+          </div>
+        )}
+
         {/* Selected Numbers Display with Save Status */}
         {balls.length > 0 && (
           <motion.div
