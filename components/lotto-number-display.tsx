@@ -16,6 +16,9 @@ const LottoNumberDisplay = forwardRef<HTMLDivElement, LottoNumberDisplayProps>(
   ({ numbers, fixedNumbers = [], isSaved = false, className = "" }, ref) => {
     if (numbers.length === 0) return null
 
+    // 6개가 모두 뽑혔을 때만 정렬, 그렇지 않으면 원래 순서 유지
+    const displayNumbers = numbers.length === 6 ? [...numbers].sort((a, b) => a - b) : numbers
+
     return (
       <div className={className}>
         <motion.div
@@ -43,31 +46,29 @@ const LottoNumberDisplay = forwardRef<HTMLDivElement, LottoNumberDisplayProps>(
             )}
           </div>
           <div className="flex flex-nowrap justify-center gap-2">
-            {numbers
-              .sort((a, b) => a - b)
-              .map((number, index) => (
-                <motion.div
-                  key={number}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1, duration: 0.3 }}
-                  className="relative flex-shrink-0"
+            {displayNumbers.map((number, index) => (
+              <motion.div
+                key={number}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.1, duration: 0.3 }}
+                className="relative flex-shrink-0"
+              >
+                <div
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-black font-bold text-sm sm:text-base"
+                  style={{
+                    backgroundColor: getBallColor(number),
+                  }}
                 >
-                  <div
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-black font-bold text-sm sm:text-base"
-                    style={{
-                      backgroundColor: getBallColor(number),
-                    }}
-                  >
-                    {number}
-                    {fixedNumbers.includes(number) && (
-                      <div className="absolute -top-1 -right-1 bg-green-500 rounded-full w-4 h-4 flex items-center justify-center">
-                        <Lock className="w-2.5 h-2.5 text-white" />
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+                  {number}
+                  {fixedNumbers.includes(number) && (
+                    <div className="absolute -top-1 -right-1 bg-green-500 rounded-full w-4 h-4 flex items-center justify-center">
+                      <Lock className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
             {/* Empty slots for remaining numbers */}
             {Array.from({ length: 6 - numbers.length }).map((_, index) => (
               <div
