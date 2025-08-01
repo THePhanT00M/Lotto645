@@ -10,8 +10,6 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "로또 추첨기",
-  description: "로또 번호를 추첨하는 웹 애플리케이션",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
