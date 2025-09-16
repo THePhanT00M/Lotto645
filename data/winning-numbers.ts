@@ -14925,8 +14925,7 @@ export const winningNumbers: WinningLottoNumbers[] = [
     ],
     "bonusNo": 32
   },
-  {
-    "drawNo": 1149,
+  {"drawNo": 1149,
     "date": "2024-12-07",
     "numbers": [
       8,
