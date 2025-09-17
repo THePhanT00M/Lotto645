@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef } from "react"
 import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
-import NumberDistribution from "./number-distribution"
-import SimilarDraws from "./similar-draws"
 import type { MultipleNumberType, SimilarDrawType } from "./types"
 
 interface AdvancedAnalysisProps {
@@ -62,12 +60,6 @@ export default function AdvancedAnalysis({
 
       {/* 다중 번호 분석 섹션 */}
       <MultipleNumberAnalysis multipleNumbers={multipleNumbers} getBallColor={getBallColor} />
-
-      {/* 번호 분포 시각화 섹션 */}
-      <NumberDistribution numbers={numbers} getBallColor={getBallColor} />
-
-      {/* 유사한 과거 당첨 번호 섹션 */}
-      <SimilarDraws numbers={numbers} similarDraws={similarDraws} getBallColor={getBallColor} />
     </div>
   )
 }
