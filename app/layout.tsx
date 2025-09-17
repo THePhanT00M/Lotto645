@@ -3,8 +3,6 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
 import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
@@ -33,11 +31,9 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen flex flex-col bg-gray-50`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <Header />
-          <main className="flex-1">{children}</main>
+          {children}
           <Analytics />
           <SpeedInsights />
-          <Footer />
         </ThemeProvider>
       </body>
     </html>
