@@ -5,7 +5,6 @@ import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
 import NumberDistribution from "./number-distribution"
 import SimilarDraws from "./similar-draws"
-import GapAnalysis from "./gap-analysis"
 import type { MultipleNumberType, SimilarDrawType } from "./types"
 
 interface AdvancedAnalysisProps {
@@ -69,9 +68,6 @@ export default function AdvancedAnalysis({
 
       {/* 유사한 과거 당첨 번호 섹션 */}
       <SimilarDraws numbers={numbers} similarDraws={similarDraws} getBallColor={getBallColor} />
-
-      {/* 번호 간격 분석 섹션 */}
-      <GapAnalysis numbers={numbers} getBallColor={getBallColor} />
     </div>
   )
 }

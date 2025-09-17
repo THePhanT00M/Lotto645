@@ -300,7 +300,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
           </TabsContent>
         </Tabs>
 
-        <div className="w-full bg-gray-50 rounded-lg p-3 mt-4">
+        <div className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 mt-4">
           {/* 상태 표시 영역 */}
           <div className="grid grid-cols-3 gap-2 mb-3 text-center">
             <div className="bg-white rounded-md p-2 shadow-sm">

@@ -101,7 +101,7 @@ export default function AIRecommendation({
   }
 
   return (
-    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+    <div className="p-4 bg-gray-50 border border-gray-100 rounded-lg">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <Sparkles className="w-5 h-5 text-blue-600 mr-2" />

@@ -1,15 +1,23 @@
 "use client"
 
+import { forwardRef } from "react"
 import { motion } from "framer-motion"
 import { Check, Lock } from "lucide-react"
-import { getBallColor } from "@/utils/lotto-utils"
-import { forwardRef } from "react"
 
 interface LottoNumberDisplayProps {
   numbers: number[]
   fixedNumbers?: number[]
   isSaved?: boolean
   className?: string
+}
+
+const getBallColor = (number: number) => {
+  if (number >= 1 && number <= 10) return "#fbc400"
+  if (number >= 11 && number <= 20) return "#69c8f2"
+  if (number >= 21 && number <= 30) return "#ff7272"
+  if (number >= 31 && number <= 40) return "#aaa"
+  if (number >= 41 && number <= 45) return "#b0d840"
+  return "#000"
 }
 
 const LottoNumberDisplay = forwardRef<HTMLDivElement, LottoNumberDisplayProps>(
@@ -26,7 +34,7 @@ const LottoNumberDisplay = forwardRef<HTMLDivElement, LottoNumberDisplayProps>(
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="p-4 bg-gray-50 border border-gray-100 rounded-lg shadow-sm"
+          className="p-4 bg-gray-50 border border-gray-100 rounded-lg"
         >
           <div className="flex justify-between items-center mb-3">
             <div className="w-24"></div> {/* Spacer for balance */}

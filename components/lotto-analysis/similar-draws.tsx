@@ -10,7 +10,7 @@ interface SimilarDrawsProps extends CommonProps {
 
 export default function SimilarDraws({ numbers, similarDraws, getBallColor }: SimilarDrawsProps) {
   return (
-    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+    <div className="p-4 bg-gray-50 border border-gray-100 rounded-lg">
       <div className="flex items-center mb-3">
         <Search className="w-5 h-5 text-blue-600 mr-2" />
         <h3 className="font-medium text-gray-800">유사한 과거 당첨 번호</h3>

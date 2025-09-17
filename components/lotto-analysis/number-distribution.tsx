@@ -9,7 +9,7 @@ interface NumberDistributionProps extends CommonProps {
 
 export default function NumberDistribution({ numbers, getBallColor }: NumberDistributionProps) {
   return (
-    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+    <div className="p-4 bg-gray-50 border border-gray-100 rounded-lg">
       <div className="flex items-center mb-3">
         <PieChart className="w-5 h-5 text-blue-600 mr-2" />
         <h3 className="font-medium text-gray-800">번호 분포 시각화</h3>

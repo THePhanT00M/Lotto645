@@ -44,7 +44,7 @@ export default function LottoCongratulation({ show, className }: LottoCongratula
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      className={`w-full ${className || "max-w-md"} mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100 shadow-sm text-center`}
+      className={`w-full ${className || "max-w-md"} mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100 text-center`}
     >
       <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
         추첨 완료!
