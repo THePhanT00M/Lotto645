@@ -194,11 +194,6 @@ export default function WinningNumbersPage() {
 
       {/* Historical Winning Numbers Slider */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-medium text-gray-800">역대 당첨번호</h2>
-          <div className="text-sm text-gray-500">총 {reversedWinningNumbers.length}회 (최신순)</div>
-        </div>
-
         {currentDraw && (
           <div className="mb-6">
             <div className="flex justify-between items-center mb-4">
@@ -210,7 +205,7 @@ export default function WinningNumbersPage() {
                 className="px-2 py-1 h-8"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                이전
+                이전 회차
               </Button>
               <div className="text-center">
                 <div className="font-medium text-lg">{currentDraw.drawNo}회</div>
@@ -223,7 +218,7 @@ export default function WinningNumbersPage() {
                 disabled={currentDrawIndex <= 0}
                 className="px-2 py-1 h-8 bg-transparent"
               >
-                다음
+                다음 회차
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>

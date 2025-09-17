@@ -200,7 +200,6 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-100 p-3 sm:p-6">
       <div className="flex items-center mb-6">
-        <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
         <h2 className="text-xl font-bold text-gray-800">번호 분석 결과</h2>
       </div>
 
