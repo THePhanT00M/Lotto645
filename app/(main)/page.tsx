@@ -35,7 +35,7 @@ export default function Home() {
                 value="selector"
                 className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
               >
-                수동
+                수동 추첨기
               </TabsTrigger>
             </TabsList>
 

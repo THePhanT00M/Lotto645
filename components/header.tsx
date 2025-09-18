@@ -10,7 +10,6 @@ import ThemeToggle from "./header/theme-toggle"
 import NotificationBell from "./header/notification-bell"
 import ProfileDropdown from "./header/profile-dropdown"
 import MobileMenuToggle from "./header/mobile-menu-toggle"
-import MobileMenu from "./header/mobile-menu"
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -26,12 +25,12 @@ export default function Header() {
 
   return (
     <>
-      <header className="w-full bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+      <header className="w-full dark:bg-gray-900">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Logo />
 
-            <Navigation />
+            <Navigation showMobileMenu={showMobileMenu} isLoggedIn={isLoggedIn} onToggleMobileMenu={toggleMobileMenu} />
 
             <div className="flex items-center space-x-4">
               <SearchBar isLoggedIn={isLoggedIn} />
@@ -62,8 +61,6 @@ export default function Header() {
           </div>
         </div>
       </header>
-
-      <MobileMenu showMobileMenu={showMobileMenu} isLoggedIn={isLoggedIn} onToggle={toggleMobileMenu} />
     </>
   )
 }
