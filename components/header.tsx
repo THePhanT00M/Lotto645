@@ -25,7 +25,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="w-full dark:bg-gray-900">
+      <header className="w-full dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Logo />
