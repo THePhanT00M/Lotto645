@@ -107,8 +107,8 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }
                 key={index}
                 className={`flex flex-col p-3 rounded-lg border ${
                   item.count > 0
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/40"
-                    : "bg-white dark:bg-[#363636] border-gray-100 dark:border-gray-700/50"
+                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/50"
+                    : "bg-white dark:bg-[#363636] border-gray-100 dark:border-[#464646]"
                 }`}
               >
                 <div className="flex flex-wrap gap-1 mb-2 justify-center">

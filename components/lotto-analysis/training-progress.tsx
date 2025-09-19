@@ -23,13 +23,13 @@ interface TrainingProgressProps {
 }
 
 export function TrainingProgress({
-  isTraining,
-  progress,
-  metrics,
-  onStartTraining,
-  onResetTraining,
-  onShowDetails,
-}: TrainingProgressProps) {
+                                   isTraining,
+                                   progress,
+                                   metrics,
+                                   onStartTraining,
+                                   onResetTraining,
+                                   onShowDetails,
+                                 }: TrainingProgressProps) {
   const progressPercent = Math.round(progress * 100)
   const [showMetrics, setShowMetrics] = useState(false)
 
@@ -37,13 +37,13 @@ export function TrainingProgress({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <Brain className="w-4 h-4 mr-1 text-purple-600" />
-          <span className="text-sm font-medium text-gray-700">
+          <Brain className="w-4 h-4 mr-1 text-purple-600 dark:text-purple-400" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {isTraining ? "딥러닝 모델 학습 중..." : "딥러닝 모델 학습"}
           </span>
         </div>
         <div className="flex items-center">
-          <span className="text-sm text-gray-500 mr-2">{progressPercent}%</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">{progressPercent}%</span>
           {metrics && (
             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowMetrics(!showMetrics)}>
               <TrendingUp className="w-3 h-3 mr-1" />
@@ -59,29 +59,31 @@ export function TrainingProgress({
       />
 
       {showMetrics && metrics && (
-        <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 p-2 rounded-md">
+        <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded-md">
           <div className="flex justify-between">
-            <span className="text-gray-600">학습 손실:</span>
-            <span className="font-mono">{metrics.loss?.toFixed(4) || "N/A"}</span>
+            <span className="text-gray-600 dark:text-gray-400">학습 손실:</span>
+            <span className="font-mono dark:text-gray-300">{metrics.loss?.toFixed(4) || "N/A"}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">학습 정확도:</span>
-            <span className="font-mono">{metrics.accuracy ? (metrics.accuracy * 100).toFixed(2) + "%" : "N/A"}</span>
+            <span className="text-gray-600 dark:text-gray-400">학습 정확도:</span>
+            <span className="font-mono dark:text-gray-300">
+              {metrics.accuracy ? (metrics.accuracy * 100).toFixed(2) + "%" : "N/A"}
+            </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">검증 손실:</span>
-            <span className="font-mono">{metrics.valLoss?.toFixed(4) || "N/A"}</span>
+            <span className="text-gray-600 dark:text-gray-400">검증 손실:</span>
+            <span className="font-mono dark:text-gray-300">{metrics.valLoss?.toFixed(4) || "N/A"}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">검증 정확도:</span>
-            <span className="font-mono">
+            <span className="text-gray-600 dark:text-gray-400">검증 정확도:</span>
+            <span className="font-mono dark:text-gray-300">
               {metrics.valAccuracy ? (metrics.valAccuracy * 100).toFixed(2) + "%" : "N/A"}
             </span>
           </div>
           {metrics.learningRate && (
             <div className="flex justify-between col-span-2">
-              <span className="text-gray-600">학습률:</span>
-              <span className="font-mono">{metrics.learningRate.toExponential(4)}</span>
+              <span className="text-gray-600 dark:text-gray-400">학습률:</span>
+              <span className="font-mono dark:text-gray-300">{metrics.learningRate.toExponential(4)}</span>
             </div>
           )}
         </div>
@@ -93,7 +95,11 @@ export function TrainingProgress({
           variant={isTraining ? "outline" : "default"}
           disabled={isTraining}
           onClick={onStartTraining}
-          className={isTraining ? "text-gray-400" : "bg-purple-600 hover:bg-purple-700"}
+          className={
+            isTraining
+              ? "text-gray-400 dark:text-gray-500"
+              : "bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 dark:text-white"
+          }
         >
           {isTraining ? (
             <>
@@ -114,7 +120,7 @@ export function TrainingProgress({
               size="sm"
               variant="outline"
               onClick={onShowDetails}
-              className="text-purple-600 border-purple-200 hover:bg-purple-50"
+              className="text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/20 bg-transparent"
             >
               <TrendingUp className="w-4 h-4 mr-1" />
               학습 결과
@@ -126,7 +132,7 @@ export function TrainingProgress({
             variant="outline"
             disabled={isTraining || progress === 0}
             onClick={onResetTraining}
-            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+            className="text-red-500 dark:text-red-400 border-red-200 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-300 bg-transparent"
           >
             <RotateCcw className="w-4 h-4 mr-1" />
             초기화
@@ -134,7 +140,7 @@ export function TrainingProgress({
         </div>
       </div>
 
-      <div className="text-xs text-gray-500 mt-1">
+      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
         {isTraining
           ? "학습이 완료될 때까지 기다려주세요. 이 과정은 몇 분 정도 소요될 수 있습니다."
           : progress === 0

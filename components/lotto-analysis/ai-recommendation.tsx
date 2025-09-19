@@ -122,7 +122,11 @@ export default function AIRecommendation({
           onClick={generateRecommendedNumbers}
           disabled={isGenerating || (activeTab === "deeplearning" && !isModelTrained)}
           size="sm"
-          className={activeTab === "algorithm" ? "bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white" : "bg-purple-600 hover:bg-purple-700"}
+          className={
+            activeTab === "algorithm"
+              ? "bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white"
+              : "bg-purple-600 hover:bg-purple-700 dark:text-white"
+          }
         >
           <RefreshCw className={`w-4 h-4 mr-1 ${isGenerating ? "animate-spin" : ""}`} />
           다시 추천
@@ -164,9 +168,13 @@ export default function AIRecommendation({
               <div className="mb-5 text-xs p-2 bg-white dark:bg-[#464646] rounded-md text-gray-700 dark:text-gray-200">
                 <p className="font-medium mb-1">추천 등급 안내:</p>
                 <ul>
-                  {algorithmQuality === "최상급" && <li>• 최상급: 과거 당첨 패턴과 매우 높은 일치도를 보이는 최적의 조합입니다.</li>}
+                  {algorithmQuality === "최상급" && (
+                    <li>• 최상급: 과거 당첨 패턴과 매우 높은 일치도를 보이는 최적의 조합입니다.</li>
+                  )}
                   {algorithmQuality === "최상" && <li>• 최상: 당첨 확률이 높은 우수한 번호 조합입니다.</li>}
-                  {algorithmQuality === "상급" && <li>• 상급: 과거 당첨 패턴과 높은 일치도를 보이는 좋은 조합입니다.</li>}
+                  {algorithmQuality === "상급" && (
+                    <li>• 상급: 과거 당첨 패턴과 높은 일치도를 보이는 좋은 조합입니다.</li>
+                  )}
                   {algorithmQuality === "상" && <li>• 상: 당첨 패턴 분석에서 좋은 점수를 받은 조합입니다.</li>}
                   {algorithmQuality === "중상" && <li>• 중상: 평균 이상의 당첨 패턴 일치도를 보이는 조합입니다.</li>}
                   {algorithmQuality === "중" && <li>• 중: 평균적인 당첨 패턴 일치도를 보이는 조합입니다.</li>}
@@ -214,9 +222,9 @@ export default function AIRecommendation({
 
         <TabsContent value="deeplearning">
           {!isModelTrained && !isTraining ? (
-            <div className="bg-white dark:bg-black rounded-lg p-4 border border-purple-100 dark:border-gray-700 space-y-4">
+            <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 space-y-4 mt-4">
               <div className="mb-4">
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
                   딥러닝 기반 추천을 사용하려면 먼저 모델을 학습시키거나 기존 모델을 가져와야 합니다.
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -234,7 +242,7 @@ export default function AIRecommendation({
 
               {/* 모델 관리 섹션 추가 */}
               {showModelManagement && (
-                <div className="border-t pt-4">
+                <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">모델 관리</h4>
                   <ModelManagement
                     isModelTrained={isModelTrained}
@@ -246,7 +254,7 @@ export default function AIRecommendation({
               )}
             </div>
           ) : isTraining ? (
-            <div className="bg-white dark:bg-black rounded-lg p-4 border border-purple-100 dark:border-gray-700">
+            <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4">
               <TrainingProgress
                 isTraining={isTraining}
                 progress={trainingProgress}
@@ -255,9 +263,8 @@ export default function AIRecommendation({
               />
             </div>
           ) : (
-            <div className="bg-white dark:bg-black rounded-lg p-4 border border-purple-100 dark:border-gray-700">
-              {/* 기존 학습 완료된 상태의 내용 */}
-              <div className="flex flex-col mb-2">
+            <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4">
+              <div className="flex flex-col mb-3">
                 <div className="flex justify-between items-center w-full">
                   <p className="text-sm text-gray-600 dark:text-gray-300 max-w-[75%]">
                     딥러닝 모델이 학습한 패턴을 기반으로 생성된 추천 번호입니다.
@@ -268,11 +275,10 @@ export default function AIRecommendation({
                 </div>
               </div>
 
-              {/* 기존 내용들... */}
               {deepLearningQuality && (
-                <div className="mb-5 text-xs p-2 bg-white dark:bg-gray-800 rounded-md border border-gray-100 dark:border-gray-600">
-                  <p className="font-medium text-gray-700 dark:text-gray-200 mb-1">추천 등급 안내:</p>
-                  <ul className="space-y-1 text-gray-600 dark:text-gray-300">
+                <div className="mb-5 text-xs p-2 bg-white dark:bg-[#464646] rounded-md text-gray-700 dark:text-gray-200">
+                  <p className="font-medium mb-1">추천 등급 안내:</p>
+                  <ul>
                     {deepLearningQuality === "최상급" && (
                       <li>• 최상급: 딥러닝 모델이 높은 확신을 가지고 예측한 최적의 번호 조합입니다.</li>
                     )}
@@ -313,14 +319,14 @@ export default function AIRecommendation({
                     onClick={() => onApplyToAnalysis && onApplyToAnalysis(deepLearningNumbers)}
                     variant="outline"
                     size="sm"
-                    className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                    className="text-gray-600 dark:text-gray-100 bg-gray-50 dark:bg-transparent border-gray-200 dark:border-[rgb(68,68,68)] hover:bg-gray-100 dark:hover:bg-[rgb(100,100,100)] hover:text-gray-600"
                   >
                     <Sparkles className="w-4 h-4 mr-1" />이 번호로 분석하기
                   </Button>
                 </div>
               )}
 
-              <div className="mt-4 mb-3 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md border border-purple-100 dark:border-purple-800">
+              <div className="mt-4 mb-3 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md border border-purple-100 dark:border-purple-800/50">
                 <p className="text-xs font-medium text-purple-800 dark:text-purple-200 mb-1">딥러닝 결과 설명:</p>
                 <ul className="text-xs space-y-1 text-purple-700 dark:text-purple-300">
                   <li>
@@ -342,7 +348,7 @@ export default function AIRecommendation({
                     size="sm"
                     variant="outline"
                     onClick={resetTraining}
-                    className="text-purple-600 border-purple-200 hover:bg-purple-50 bg-transparent"
+                    className="text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 bg-transparent"
                   >
                     <Brain className="w-4 h-4 mr-1" />
                     모델 재학습
@@ -358,7 +364,7 @@ export default function AIRecommendation({
 
               {/* 모델 관리 섹션을 조건부로 표시 */}
               {showModelManagement && (
-                <div className="border-t mt-4 pt-4">
+                <div className="border-t border-gray-200 dark:border-gray-600 mt-4 pt-4">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">모델 관리</h4>
                   <ModelManagement
                     isModelTrained={isModelTrained}
