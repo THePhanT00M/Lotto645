@@ -46,7 +46,7 @@ export function SaveRecommendationButton({ numbers, isSaved, onSave }: SaveRecom
   }
 
   return (
-    <Button onClick={handleSave} size="sm" className="bg-green-500 hover:bg-green-600">
+    <Button onClick={handleSave} size="sm" className="bg-green-500 hover:bg-green-600 dark:text-white">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="16"

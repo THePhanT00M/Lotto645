@@ -198,19 +198,19 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-100 p-3 sm:p-6">
-      <div className="flex items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-800">번호 분석 결과</h2>
+    <div className="rounded-xl p-4 sm:p-6 bg-gray-100 dark:bg-[rgb(26,26,26)] ">
+      <div className="mb-5">
+        <p className="text-xl font-semibold text-black dark:text-white flex items-center gap-2 mb-0">번호 분석 결과</p>
       </div>
 
       {isAnalyzingDifferentNumbers() && (
         <div className="mb-4">
           <button
             onClick={resetToOriginalNumbers}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-gray-600 dark:text-gray-100 bg-gray-200 dark:bg-[rgb(36,36,36)] border-gray-200 dark:border-[rgb(68,68,68)] hover:bg-gray-300 dark:hover:bg-[#363636] hover:text-gray-600"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
             </svg>
             원래 추첨 번호로 돌아가기
           </button>
@@ -226,7 +226,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         onNumbersChange={setAnalysisNumbers}
       />
 
-      <div className="bg-gray-50 rounded-xl p-4 mt-6 text-sm text-gray-500">
+      <div className="bg-white dark:bg-[rgb(38,38,38)] rounded-lg p-4 mt-6 text-sm text-gray-700 dark:text-gray-200">
         <p>
           * 이 분석은 과거 {winningNumbers.length}회의 실제 로또 당첨번호를 기반으로 합니다. 통계 데이터는 참고용으로만
           사용하시기 바랍니다.
