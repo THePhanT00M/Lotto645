@@ -24,16 +24,16 @@ export default function Home() {
         {/* Main Lotto Machine */}
         <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-xl p-4 sm:p-6">
           <Tabs defaultValue="machine" className="w-full" onValueChange={(value) => setActiveTab(value)}>
-            <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-200 dark:bg-[rgb(26,26,26)] p-1 rounded-lg">
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-200 dark:bg-[#262626] p-1 rounded-sm">
               <TabsTrigger
                 value="machine"
-                className="rounded-md data-[state=active]:bg-white data-[state=active]:dark:bg-black data-[state=active]:shadow-sm"
+                className="rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black"
               >
                 로또 추첨기
               </TabsTrigger>
               <TabsTrigger
                 value="selector"
-                className="rounded-md data-[state=active]:bg-white data-[state=active]:dark:bg-black data-[state=active]:shadow-sm"
+                className="rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black"
               >
                 수동 추첨기
               </TabsTrigger>
@@ -57,9 +57,7 @@ export default function Home() {
         {/* Tips Section */}
         <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-xl p-4 sm:p-6">
           <div className="mb-5">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-              로또 정보
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">로또 정보</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

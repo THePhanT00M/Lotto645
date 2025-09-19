@@ -182,7 +182,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
     } else if (selectedNumbers.includes(number)) {
       return "bg-blue-500 text-white shadow-md"
     }
-    return "bg-gray-100 hover:bg-gray-200"
+    return "bg-white hover:bg-gray-200"
   }
 
   // Auto-save when 6 numbers are selected
