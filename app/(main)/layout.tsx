@@ -10,7 +10,7 @@ export default function MainLayout({
   return (
     <>
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 bg-white dark:bg-black">{children}</main>
       <Footer />
     </>
   )

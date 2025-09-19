@@ -286,7 +286,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
             </TabsTrigger>
           </TabsList>
           <TabsContent value="select" className="mt-2">
-            <p className="text-sm text-gray-600 mb-2">원하는 번호를 선택하세요. 최대 6개까지 선택할 수 있습니다.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">원하는 번호를 선택하세요. 최대 6개까지 선택할 수 있습니다.</p>
           </TabsContent>
           <TabsContent value="fix" className="mt-2">
             <p className="text-sm text-gray-600 mb-2">

@@ -54,7 +54,7 @@ export default function Navigation({ showMobileMenu, isLoggedIn, onToggleMobileM
     if (!showMobileMenu) return null
 
     return (
-      <div className="lg:hidden fixed inset-0 z-50 bg-white dark:bg-gray-900">
+      <div className="lg:hidden fixed inset-0 z-50 bg-white dark:bg-black">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between mb-6">
             <Logo />
