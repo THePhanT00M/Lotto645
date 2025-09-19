@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-    <body className={`${inter.className} min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900`}>
+    <body className={`${inter.className} min-h-screen flex flex-col bg-white dark:bg-dark`}>
     <Suspense fallback={<div>Loading...</div>}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         {children}
