@@ -34,7 +34,7 @@ const LottoNumberDisplay = forwardRef<HTMLDivElement, LottoNumberDisplayProps>(
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="p-4 bg-gray-100 dark:bg-[rgb(36,36,36)] rounded-xl"
+          className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-xl"
         >
           <div className="flex justify-between items-center mb-3">
             <div className="w-24"></div> {/* Spacer for balance */}

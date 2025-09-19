@@ -182,7 +182,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
     } else if (selectedNumbers.includes(number)) {
       return "bg-blue-500 text-white shadow-md"
     }
-    return "bg-white hover:bg-gray-200"
+    return "bg-white dark:bg-[rgb(38,38,38)] hover:bg-gray-200 dark:hover:bg-[rgb(100,100,100)]"
   }
 
   // Auto-save when 6 numbers are selected
@@ -301,38 +301,38 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
             </p>
           </TabsContent>
           <TabsContent value="fix" className="mt-2">
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
               고정할 번호를 선택하세요. 고정된 번호는 항상 선택 결과에 포함됩니다.
             </p>
           </TabsContent>
           <TabsContent value="exclude" className="mt-2">
-            <p className="text-sm text-gray-600 mb-2">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
               제외할 번호를 선택하세요. 제외된 번호는 선택 결과에 포함되지 않습니다.
             </p>
           </TabsContent>
         </Tabs>
 
-        <div className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 mt-4">
+        <div className="w-full bg-gray-200 dark:bg-[#262626] rounded-lg p-2 mt-4">
           {/* 상태 표시 영역 */}
           <div className="grid grid-cols-3 gap-2 mb-3 text-center">
-            <div className="bg-white rounded-md p-2 shadow-sm">
-              <div className="text-sm text-gray-600 flex items-center justify-center gap-1">
+            <div className="bg-white dark:bg-black rounded-md p-2 shadow-sm">
+              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
                 <Check className="w-3 h-3 text-blue-500" />
                 <span>선택</span>
               </div>
-              <div className="font-medium text-lg">
+              <div className="font-medium text-lg dark:text-white">
                 {selectedNumbers.filter((n) => !fixedNumbers.includes(n)).length}/{6 - fixedNumbers.length}
               </div>
             </div>
-            <div className="bg-white rounded-md p-2 shadow-sm">
-              <div className="text-sm text-gray-600 flex items-center justify-center gap-1">
+            <div className="bg-white dark:bg-black rounded-md p-2 shadow-sm">
+              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
                 <Lock className="w-3 h-3 text-green-500" />
                 <span>고정</span>
               </div>
               <div className="font-medium text-lg text-green-600">{fixedNumbers.length}</div>
             </div>
-            <div className="bg-white rounded-md p-2 shadow-sm">
-              <div className="text-sm text-gray-600 flex items-center justify-center gap-1">
+            <div className="bg-white dark:bg-black rounded-md p-2 shadow-sm">
+              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
                 <X className="w-3 h-3 text-red-500" />
                 <span>제외</span>
               </div>
@@ -342,7 +342,11 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
 
           {/* 버튼 영역 */}
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" onClick={resetAll} className="h-10 text-gray-600 bg-transparent">
+            <Button
+              variant="outline"
+              onClick={resetAll}
+              className="h-10 text-gray-600 dark:text-gray-100 bg-gray-50 dark:bg-transparent border-gray-200 dark:border-[rgb(68,68,68)] hover:bg-gray-100 dark:hover:bg-[rgb(100,100,100)] hover:text-gray-600"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="20"
@@ -365,7 +369,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
             <Button
               onClick={() => generateRandomNumbers(6 - fixedNumbers.length)}
               disabled={fixedNumbers.length >= 6}
-              className="h-10 bg-blue-500 hover:bg-blue-600"
+              className="h-10 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
