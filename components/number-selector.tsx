@@ -176,11 +176,11 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
   // Get the appropriate class for a number based on its state
   const getNumberClass = (number: number) => {
     if (fixedNumbers.includes(number)) {
-      return "bg-green-100 shadow-md"
+      return "bg-green-200 dark:bg-green-900/50"
     } else if (excludedNumbers.includes(number)) {
-      return "bg-gray-100"
+      return "bg-red-200 dark:bg-red-900/50"
     } else if (selectedNumbers.includes(number)) {
-      return "bg-blue-500 text-white dark:text-black shadow-md"
+      return "text-white dark:text-black"
     }
     return "bg-white dark:bg-[rgb(38,38,38)] hover:bg-gray-200 dark:hover:bg-[rgb(100,100,100)]"
   }

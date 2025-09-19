@@ -115,7 +115,7 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }
                   {item.numbers.map((num, idx) => (
                     <div
                       key={idx}
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold dark:text-black"
                       style={{ backgroundColor: getBallColor(num) }}
                     >
                       {num}

@@ -111,7 +111,7 @@ export default function AIRecommendation({
               onClick={() => setShowModelManagement(!showModelManagement)}
               variant="ghost"
               size="sm"
-              className="ml-2 p-1 h-8 w-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className="ml-2 p-1 h-8 w-8 text-gray-500 hover:bg-gray-300 dark:hover:bg-[#363636] hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               title="모델 관리"
             >
               <Settings className="w-4 h-4" />
