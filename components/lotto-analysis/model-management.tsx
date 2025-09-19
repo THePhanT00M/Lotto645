@@ -96,7 +96,7 @@ export function ModelManagement({ isModelTrained, onModelImported }: ModelManage
           onClick={handleExport}
           disabled={!isModelTrained || isExporting}
           variant="outline"
-          className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+          className="flex-1 text-blue-600 dark:text-blue-400 border-blue-500 dark:border-blue-600 bg-transparent hover:bg-blue-500 dark:hover:bg-blue-600 hover:text-white dark:hover:text-white"
         >
           <Download className={`w-4 h-4 mr-2 ${isExporting ? "animate-pulse" : ""}`} />
           {isExporting ? "내보내는 중..." : "모델 내보내기"}
@@ -107,7 +107,7 @@ export function ModelManagement({ isModelTrained, onModelImported }: ModelManage
           onClick={handleFileSelect}
           disabled={isImporting}
           variant="outline"
-          className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
+          className="flex-1 text-teal-600 dark:text-teal-400 border-teal-500 dark:border-teal-600 bg-transparent hover:bg-teal-500 dark:hover:bg-teal-600 hover:text-white dark:hover:text-white"
         >
           <Upload className={`w-4 h-4 mr-2 ${isImporting ? "animate-pulse" : ""}`} />
           {isImporting ? "가져오는 중..." : "모델 가져오기"}
@@ -122,8 +122,8 @@ export function ModelManagement({ isModelTrained, onModelImported }: ModelManage
         <div
           className={`p-3 rounded-lg border flex items-start gap-2 cursor-pointer ${
             importMessage.type === "success"
-              ? "bg-green-50 border-green-200 text-green-800"
-              : "bg-red-50 border-red-200 text-red-800"
+              ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300"
+              : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300"
           }`}
           onClick={clearMessage}
         >
@@ -140,10 +140,10 @@ export function ModelManagement({ isModelTrained, onModelImported }: ModelManage
       )}
 
       {/* 사용법 안내 */}
-      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+      <div className="bg-gray-50 dark:bg-[#464646] rounded-lg p-3 border border-gray-200 dark:border-gray-700">
         <div className="flex items-start gap-2">
-          <FileText className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-gray-600 space-y-1">
+          <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-gray-600 dark:text-gray-300 space-y-1">
             <p className="font-medium">모델 관리 안내:</p>
             <ul className="space-y-1 ml-2">
               <li>

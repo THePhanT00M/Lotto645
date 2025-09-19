@@ -326,7 +326,7 @@ export default function AIRecommendation({
                 </div>
               )}
 
-              <div className="mt-4 mb-3 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md border border-purple-100 dark:border-purple-800/50">
+              <div className="mt-4 mb-3 p-2 bg-purple-50 dark:bg-purple-900/30 rounded-md border border-purple-200 dark:border-purple-700/50">
                 <p className="text-xs font-medium text-purple-800 dark:text-purple-200 mb-1">딥러닝 결과 설명:</p>
                 <ul className="text-xs space-y-1 text-purple-700 dark:text-purple-300">
                   <li>
@@ -348,7 +348,7 @@ export default function AIRecommendation({
                     size="sm"
                     variant="outline"
                     onClick={resetTraining}
-                    className="text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 bg-transparent"
+                    className="text-purple-600 dark:text-purple-400 border-purple-500 dark:border-purple-600 bg-transparent hover:bg-purple-500 hover:text-white dark:hover:bg-purple-600 dark:hover:text-white"
                   >
                     <Brain className="w-4 h-4 mr-1" />
                     모델 재학습
@@ -364,7 +364,7 @@ export default function AIRecommendation({
 
               {/* 모델 관리 섹션을 조건부로 표시 */}
               {showModelManagement && (
-                <div className="border-t border-gray-200 dark:border-gray-600 mt-4 pt-4">
+                <div className="border-t border-gray-200 dark:border-[#565656] mt-4 pt-4">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">모델 관리</h4>
                   <ModelManagement
                     isModelTrained={isModelTrained}
