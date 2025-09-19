@@ -271,22 +271,34 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
     <div className="w-full">
       <div className="mb-6">
         <Tabs defaultValue="select" onValueChange={(value) => setMode(value as any)}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="select" className="flex items-center gap-1">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-200 dark:bg-[#262626] p-1 rounded-sm">
+            <TabsTrigger
+              value="select"
+              className="flex items-center gap-1 rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white"
+            >
               <Check className="w-4 h-4" />
               <span>번호 선택</span>
             </TabsTrigger>
-            <TabsTrigger value="fix" className="flex items-center gap-1">
+            <TabsTrigger
+              value="fix"
+              className="flex items-center gap-1 rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white"
+            >
               <Lock className="w-4 h-4" />
               <span>번호 고정</span>
             </TabsTrigger>
-            <TabsTrigger value="exclude" className="flex items-center gap-1">
+            <TabsTrigger
+              value="exclude"
+              className="flex items-center gap-1 rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white"
+            >
               <X className="w-4 h-4" />
               <span>번호 제외</span>
             </TabsTrigger>
           </TabsList>
+
           <TabsContent value="select" className="mt-2">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">원하는 번호를 선택하세요. 최대 6개까지 선택할 수 있습니다.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              원하는 번호를 선택하세요. 최대 6개까지 선택할 수 있습니다.
+            </p>
           </TabsContent>
           <TabsContent value="fix" className="mt-2">
             <p className="text-sm text-gray-600 mb-2">

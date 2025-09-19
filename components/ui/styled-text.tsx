@@ -10,8 +10,8 @@ interface StyledTextProps {
 export function StyledText({ children, className, variant = "body" }: StyledTextProps) {
   const baseStyles = {
     body: "text-sm text-gray-700 dark:text-gray-200 mb-2",
-    caption: "text-md font-medium text-gray-400 dark:text-gray-400 mb-2",
-    heading: "text-xl font-semibold text-gray-800 dark:text-white",
+    caption: "text-md font-semibold text-gray-700 dark:text-gray-400 mb-2",
+    heading: "text-xl font-semibold text-black dark:text-white",
   }
 
   return <p className={cn(baseStyles[variant], className)}>{children}</p>
