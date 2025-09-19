@@ -4,6 +4,7 @@ import LottoMachine from "@/components/lotto-machine"
 import NumberSelector from "@/components/number-selector"
 import LottoAnalysis from "@/components/lotto-analysis"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { StyledText, StyledCard, StyledContainer } from "@/components/ui/styled-text"
 
 export default function Home() {
   const [drawnNumbers, setDrawnNumbers] = useState<number[]>([])
@@ -22,7 +23,7 @@ export default function Home() {
     <div className="container mx-auto px-4 py-6 max-w-4xl">
       <div className="space-y-8">
         {/* Main Lotto Machine */}
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-xl p-4 sm:p-6">
+        <StyledContainer>
           <Tabs defaultValue="machine" className="w-full" onValueChange={(value) => setActiveTab(value)}>
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-200 dark:bg-[#262626] p-1 rounded-sm">
               <TabsTrigger
@@ -47,7 +48,7 @@ export default function Home() {
               <NumberSelector onSelectComplete={handleDrawComplete} onReset={handleReset} drawnNumbers={drawnNumbers} />
             </TabsContent>
           </Tabs>
-        </div>
+        </StyledContainer>
 
         {/* Analysis Section - Only show when numbers are drawn */}
         {drawnNumbers.length === 6 && (
@@ -55,35 +56,35 @@ export default function Home() {
         )}
 
         {/* Tips Section */}
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-xl p-4 sm:p-6">
+        <StyledContainer>
           <div className="mb-5">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">로또 정보</h2>
+            <StyledText variant="heading" className="flex items-center gap-2 mb-0">
+              로또 정보
+            </StyledText>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="bg-white dark:bg-[rgb(38,38,38)] rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-400 dark:text-gray-400 mb-2">기본 정보</h3>
-              <p className="text-gray-700 dark:text-gray-200 mb-2">
-                로또 6/45는 1부터 45까지의 숫자 중 6개를 선택하는 복권입니다.
-              </p>
-              <p className="text-gray-700 dark:text-gray-200 mb-2">당첨번호는 매주 토요일 저녁에 추첨됩니다.</p>
-              <p className="text-gray-700 dark:text-gray-200 mb-2">
+            <StyledCard>
+              <StyledText variant="caption">기본 정보</StyledText>
+              <StyledText>로또 6/45는 1부터 45까지의 숫자 중 6개를 선택하는 복권입니다.</StyledText>
+              <StyledText>당첨번호는 매주 토요일 저녁에 추첨됩니다.</StyledText>
+              <StyledText>
                 복권 구매는 <span className="text-red-600 dark:text-red-400">만 19세 이상만</span> 가능합니다.
-              </p>
-              <p className="text-gray-700 dark:text-gray-200">1등 당첨 확률은 약 8,145,060분의 1입니다.</p>
-            </div>
+              </StyledText>
+              <StyledText className="mb-0">1등 당첨 확률은 약 8,145,060분의 1입니다.</StyledText>
+            </StyledCard>
 
-            <div className="bg-white dark:bg-[rgb(38,38,38)] rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-400 dark:text-gray-400 mb-2">이용 안내</h3>
-              <p className="text-gray-700 dark:text-gray-200 mb-2">
+            <StyledCard>
+              <StyledText variant="caption">이용 안내</StyledText>
+              <StyledText>
                 <span className="font-medium">로또 추첨기</span> 탭에서는 완전히 랜덤한 번호를 추첨할 수 있습니다.
-              </p>
-              <p className="text-gray-700 dark:text-gray-200">
+              </StyledText>
+              <StyledText className="mb-0">
                 <span className="font-medium">수동</span> 탭에서는 번호를 직접 선택하거나 자동 생성할 수 있습니다.
-              </p>
-            </div>
+              </StyledText>
+            </StyledCard>
           </div>
-        </div>
+        </StyledContainer>
       </div>
     </div>
   )
