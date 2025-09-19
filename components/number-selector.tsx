@@ -180,7 +180,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
     } else if (excludedNumbers.includes(number)) {
       return "bg-gray-100"
     } else if (selectedNumbers.includes(number)) {
-      return "bg-blue-500 text-white shadow-md"
+      return "bg-blue-500 text-white dark:text-black shadow-md"
     }
     return "bg-white dark:bg-[rgb(38,38,38)] hover:bg-gray-200 dark:hover:bg-[rgb(100,100,100)]"
   }

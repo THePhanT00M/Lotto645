@@ -129,7 +129,7 @@ export default function AIRecommendation({
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-2 bg-gray-100 dark:bg-[#363636]">
           <TabsTrigger
             value="algorithm"
