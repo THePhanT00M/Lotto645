@@ -16,7 +16,7 @@ export default function NotFound() {
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild className="bg-blue-600 hover:bg-blue-700">
-            <Link href="/">홈으로 돌아가기</Link>
+            <Link href="/" className="text-white">홈으로 돌아가기</Link>
           </Button>
         </div>
       </div>
