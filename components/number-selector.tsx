@@ -315,7 +315,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
         <div className="w-full bg-gray-200 dark:bg-[#262626] rounded-lg p-2 mt-4">
           {/* 상태 표시 영역 */}
           <div className="grid grid-cols-3 gap-2 mb-3 text-center">
-            <div className="bg-white dark:bg-black rounded-md p-2 shadow-sm">
+            <div className="bg-white dark:bg-black rounded-md p-2">
               <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
                 <Check className="w-3 h-3 text-blue-500" />
                 <span>선택</span>
@@ -324,14 +324,14 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
                 {selectedNumbers.filter((n) => !fixedNumbers.includes(n)).length}/{6 - fixedNumbers.length}
               </div>
             </div>
-            <div className="bg-white dark:bg-black rounded-md p-2 shadow-sm">
+            <div className="bg-white dark:bg-black rounded-md p-2">
               <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
                 <Lock className="w-3 h-3 text-green-500" />
                 <span>고정</span>
               </div>
               <div className="font-medium text-lg text-green-600">{fixedNumbers.length}</div>
             </div>
-            <div className="bg-white dark:bg-black rounded-md p-2 shadow-sm">
+            <div className="bg-white dark:bg-black rounded-md p-2">
               <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
                 <X className="w-3 h-3 text-red-500" />
                 <span>제외</span>
