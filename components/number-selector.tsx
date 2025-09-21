@@ -392,7 +392,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
       </div>
 
       {/* Number Grid */}
-      <div className="mb-6">
+      <div className="">
         {/* 전체 번호 그리드 (1-45) */}
         <div className="grid grid-cols-5 sm:grid-cols-9 gap-2 sm:gap-3 place-items-center">
           {Array.from({ length: 45 }, (_, i) => i + 1).map((number) => {
@@ -458,6 +458,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
         numbers={selectedNumbers}
         fixedNumbers={fixedNumbers}
         isSaved={isSaved}
+        className="mt-6"
       />
     </div>
   )

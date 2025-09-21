@@ -12,7 +12,7 @@ export default function NotFound() {
         <div className="text-gray-600 dark:text-gray-300 text-base mb-0">
           클릭하신 링크가 잘못되었거나 페이지가 삭제되었습니다.
           <Link href="/" className="text-blue-500 pl-1">
-            Lotto645으로 돌아가기.
+            Lotto645으로 돌아가기
           </Link>
         </div>
       </div>

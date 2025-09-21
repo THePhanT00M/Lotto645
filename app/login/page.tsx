@@ -31,8 +31,8 @@ export default function LoginPage() {
           </div>
 
           <div className="flex justify-between items-center text-white/70 text-sm">
-            <span>Copyright © 2025 Frello Enterprises LTD.</span>
-            <span className="cursor-pointer hover:text-white/90">Privacy Policy</span>
+            <span> © 2025 로또 추첨기. All rights reserved.</span>
+            <span className="cursor-pointer hover:text-white/90">개인정보처리방침</span>
           </div>
         </div>
       </div>
