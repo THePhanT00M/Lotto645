@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
+import Logo from "@/components/header/logo"
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -17,12 +18,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex font-sans">
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ backgroundColor: "#3F3FF3" }}>
         <div className="relative z-10 flex flex-col justify-between w-full px-12 py-12">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3">
-              <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: "#3F3FF3" }}></div>
-            </div>
-            <h1 className="text-xl font-semibold text-white">Lotto645</h1>
-          </div>
+          <Logo variant="inverse" />
 
           <div className="flex-1 flex flex-col justify-center">
             <h2 className="text-4xl text-white mb-6 leading-tight">팀과 운영을 손쉽게 관리하세요.</h2>
@@ -40,20 +36,12 @@ export default function RegisterPage() {
 
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md space-y-8">
-          <div className="lg:hidden text-center mb-8">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-3"
-              style={{ backgroundColor: "#3F3FF3" }}
-            >
-              <div className="w-4 h-4 bg-white rounded-sm"></div>
-            </div>
-            <h1 className="text-xl font-semibold text-foreground">Frello</h1>
-          </div>
+          <Logo variant="auth" className="lg:hidden" />
 
           <div className="space-y-6">
             <div className="space-y-2 text-center">
               <h2 className="text-3xl text-foreground">계정 만들기</h2>
-              <p className="text-muted-foreground">Frello를 시작하려면 새 계정을 만드세요.</p>
+              <p className="text-muted-foreground">Lotto645를 시작하려면 새 계정을 만드세요.</p>
             </div>
 
             <div className="space-y-4">
