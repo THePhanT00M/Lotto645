@@ -7216,4 +7216,5 @@ export const winningNumbers: WinningLottoNumbers[] = [
   { "drawNo": 1191, "date": "2025-09-27", "numbers": [ 1, 4, 11, 12, 20, 41 ], "bonusNo": 2 },
   { "drawNo": 1192, "date": "2025-10-04", "numbers": [ 10, 16, 23, 36, 39, 40 ], "bonusNo": 11 },
   { "drawNo": 1193, "date": "2025-10-11", "numbers": [ 6, 9, 16, 19, 24, 28 ], "bonusNo": 17 },
+  { "drawNo": 1194, "date": "2025-10-18", "numbers": [ 3, 13, 15, 24, 33, 37 ], "bonusNo": 2 },
 ]
