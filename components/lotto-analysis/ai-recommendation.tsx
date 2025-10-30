@@ -23,6 +23,8 @@ interface LottoAnalytics {
   numberFrequencies: FrequencyMap
   pairFrequencies: StringFrequencyMap
   tripletFrequencies: StringFrequencyMap
+  // [이전 요청] 4-조합(쿼드러플) 마지막 등장 회차 맵 추가
+  quadrupletLastSeen: StringFrequencyMap
   recentFrequencies: FrequencyMap
   gapMap: FrequencyMap
   weightedNumberList: number[]
@@ -31,6 +33,12 @@ interface LottoAnalytics {
   sectionDistribution: StringFrequencyMap
   consecutiveDistribution: StringFrequencyMap
 }
+
+// [이전 요청] 1등 당첨번호 Set (중복 체크용)
+const winningNumbersSet = new Set(
+  winningNumbers.map((draw) => [...draw.numbers].sort((a, b) => a - b).join("-")),
+)
+// ------------------------------------------------
 
 /**
  * data/winning-numbers.ts 데이터를 기반으로 통계 정보를 계산하고 캐시하는 훅
@@ -41,6 +49,8 @@ const useLottoAnalytics = (): LottoAnalytics => {
     const numberFrequencies: FrequencyMap = new Map()
     const pairFrequencies: StringFrequencyMap = new Map()
     const tripletFrequencies: StringFrequencyMap = new Map()
+    // [이전 요청] 4-조합(쿼드러플) 맵 초기화
+    const quadrupletLastSeen: StringFrequencyMap = new Map()
     const recentFrequencies: FrequencyMap = new Map()
     const gapMap: FrequencyMap = new Map()
     const weightedNumberList: number[] = []
@@ -65,54 +75,36 @@ const useLottoAnalytics = (): LottoAnalytics => {
 
       // --- 1. 개별 번호 통계 ---
       for (const num of allDrawNumbers) {
-        // 전체 빈도
         const freq = (numberFrequencies.get(num) || 0) + 1
         numberFrequencies.set(num, freq)
-        weightedNumberList.push(num) // 가중치 샘플링용 리스트
-
-        // 미출현 기간 (Gap)
+        weightedNumberList.push(num)
         lastSeen.set(num, draw.drawNo)
-
-        // 최근 빈도 (Recent)
         if (index >= recentDrawsStart) {
           recentFrequencies.set(num, (recentFrequencies.get(num) || 0) + 1)
         }
       }
 
       // --- 2. 조합 통계 (당첨번호 6개 기준) ---
-
-      // 총합 (Sum)
       const sum = drawNumbers.reduce((a, b) => a + b, 0)
       sumStats.values.push(sum)
-
-      // 홀짝 (Odd/Even)
       const oddCount = drawNumbers.filter((n) => n % 2 === 1).length
       const evenCount = 6 - oddCount
       const oddEvenKey = `${oddCount}:${evenCount}`
       oddEvenDistribution.set(oddEvenKey, (oddEvenDistribution.get(oddEvenKey) || 0) + 1)
-
-      // 구간별 (Section)
       const s1 = drawNumbers.filter((n) => n <= 15).length
       const s2 = drawNumbers.filter((n) => n > 15 && n <= 30).length
       const s3 = drawNumbers.filter((n) => n > 30).length
-      const sectionKey = [s1, s2, s3].sort((a, b) => b - a).join(":") // e.g., "3:2:1"
+      const sectionKey = [s1, s2, s3].sort((a, b) => b - a).join(":")
       sectionDistribution.set(sectionKey, (sectionDistribution.get(sectionKey) || 0) + 1)
-
-      // 연속번호 (Consecutive)
       let consecutiveCount = 0
       for (let i = 0; i < drawNumbers.length - 1; i++) {
         if (drawNumbers[i + 1] - drawNumbers[i] === 1) {
           consecutiveCount++
-          // 1, 2, 3 이면 2쌍(1-2, 2-3)으로 카운트
-          // 1, 2, 4, 5 이면 2쌍(1-2, 4-5)으로 카운트
-          // 1, 2, 3, 4 이면 3쌍(1-2, 2-3, 3-4)으로 카운트
-          // 1, 2, 3, 5, 6 이면 3쌍(1-2, 2-3, 5-6)으로 카운트
         }
       }
       const consecutiveKey = `${consecutiveCount}쌍`
       consecutiveDistribution.set(consecutiveKey, (consecutiveDistribution.get(consecutiveKey) || 0) + 1)
 
-      // 동반 출현(궁합수 - 2-조합)
       for (let i = 0; i < drawNumbers.length; i++) {
         for (let j = i + 1; j < drawNumbers.length; j++) {
           const key = `${drawNumbers[i]}-${drawNumbers[j]}`
@@ -120,7 +112,6 @@ const useLottoAnalytics = (): LottoAnalytics => {
         }
       }
 
-      // 3-조합 (트리오)
       for (let i = 0; i < drawNumbers.length - 2; i++) {
         for (let j = i + 1; j < drawNumbers.length - 1; j++) {
           for (let k = j + 1; k < drawNumbers.length; k++) {
@@ -129,10 +120,21 @@ const useLottoAnalytics = (): LottoAnalytics => {
           }
         }
       }
+
+      // [이전 요청] 4-조합(쿼드러플) - 마지막 등장 회차 기록
+      for (let i = 0; i < drawNumbers.length - 3; i++) {
+        for (let j = i + 1; j < drawNumbers.length - 2; j++) {
+          for (let k = j + 1; k < drawNumbers.length - 1; k++) {
+            for (let l = k + 1; l < drawNumbers.length; l++) {
+              const key = `${drawNumbers[i]}-${drawNumbers[j]}-${drawNumbers[k]}-${drawNumbers[l]}`
+              quadrupletLastSeen.set(key, draw.drawNo)
+            }
+          }
+        }
+      }
     })
 
     // --- 3. 최종 통계 계산 ---
-    // 미출현 기간
     const latestDrawNo = winningNumbers[totalDraws - 1].drawNo
     for (let i = 1; i <= 45; i++) {
       if (!numberFrequencies.has(i)) {
@@ -141,8 +143,6 @@ const useLottoAnalytics = (): LottoAnalytics => {
       }
       gapMap.set(i, latestDrawNo - (lastSeen.get(i) || 0))
     }
-
-    // 총합 평균 및 표준편차
     const sumTotal = sumStats.values.reduce((a, b) => a + b, 0)
     sumStats.mean = sumTotal / totalDraws
     const variance = sumStats.values.reduce((a, b) => a + Math.pow(b - sumStats.mean, 2), 0) / totalDraws
@@ -153,6 +153,7 @@ const useLottoAnalytics = (): LottoAnalytics => {
       numberFrequencies,
       pairFrequencies,
       tripletFrequencies,
+      quadrupletLastSeen, // [이전 요청] 반환 객체에 추가
       recentFrequencies,
       gapMap,
       weightedNumberList,
@@ -192,23 +193,25 @@ const generateCombination = (weightedList: number[]): number[] => {
  * @param grade - "최상" ~ "하" 등급
  */
 const getGradeScore = (grade: Grade): number => {
+  // [이전 요청] 등급별 점수 조정 (200점 만점 기준)
   switch (grade) {
     case "최상":
-      return 50
+      return 80
     case "상":
-      return 30
+      return 50
     case "중상":
-      return 15
+      return 30
     case "중":
-      return 5
+      return 10
     case "보통":
       return 0
     case "중하":
-      return -10
-    case "하":
       return -20
+    case "하":
+      return -40
   }
 }
+// ------------------------------------
 
 /**
  * 조합의 동반 출현(궁합수) 점수 계산
@@ -263,6 +266,50 @@ const getGapScore = (numbers: number[], gapMap: FrequencyMap): number => {
   return numbers.reduce((acc, num) => acc + (gapMap.get(num) || 0), 0)
 }
 
+// [이전 요청] 4-조합 패널티 점수 계산 함수
+/**
+ * 4-조합(Quadruplet) 패널티 점수 계산
+ * @param numbers - 6개 번호 조합 (정렬된 상태)
+ * @param quadrupletLastSeen - 4-조합 마지막 등장 회차 맵
+ * @param latestDrawNo - 가장 최근 회차 번호
+ * @param recentThreshold - '최근'으로 간주할 회차 수 (예: 156 = 3년)
+ */
+const getQuadrupletScore = (
+  numbers: number[],
+  quadrupletLastSeen: StringFrequencyMap,
+  latestDrawNo: number,
+  recentThreshold: number,
+): number => {
+  let maxPenalty = 0 // 0이 가장 좋은 점수 (패널티 없음)
+
+  // 6개 중 4개를 뽑는 15가지 모든 조합을 순회
+  for (let i = 0; i < numbers.length - 3; i++) {
+    for (let j = i + 1; j < numbers.length - 2; j++) {
+      for (let k = j + 1; k < numbers.length - 1; k++) {
+        for (let l = k + 1; l < numbers.length; l++) {
+          const key = `${numbers[i]}-${numbers[j]}-${numbers[k]}-${numbers[l]}`
+          const lastSeenDraw = quadrupletLastSeen.get(key)
+
+          if (lastSeenDraw) {
+            const gap = latestDrawNo - lastSeenDraw
+            if (gap < recentThreshold) {
+              // [이전 요청] 패널티 점수 상향 (200점 만점 기준)
+              // '최근' (3년 이내)에 등장한 4-조합이 포함됨 -> 매우 높은 패널티
+              return -150 // (기존 -100) 즉시 반환
+            } else {
+              // '오래 전'에 등장한 4-조합이 포함됨 -> 중간 패널티
+              maxPenalty = Math.min(maxPenalty, -40) // (기존 -30)
+              // ----------------------------------------------------
+            }
+          }
+        }
+      }
+    }
+  }
+  return maxPenalty // 0 또는 -40 반환
+}
+// ----------------------------------------------------
+
 // --- 등급 계산 및 설명 함수 ---
 
 /**
@@ -271,18 +318,26 @@ const getGapScore = (numbers: number[], gapMap: FrequencyMap): number => {
  * @param stats - useLottoAnalytics에서 계산된 통계 데이터
  */
 const calculateGrade = (numbers: number[], stats: LottoAnalytics): Grade => {
-  const { sumStats, oddEvenDistribution, sectionDistribution, consecutiveDistribution } = stats
+  const {
+    sumStats,
+    oddEvenDistribution,
+    sectionDistribution,
+    consecutiveDistribution,
+    quadrupletLastSeen, // [이전 요청] 4-조합 맵 가져오기
+  } = stats
+
   const sum = numbers.reduce((acc, num) => acc + num, 0)
 
+  // [이전 요청] 점수 기준 200점 만점으로 상향 조정
   // 1. 총합 (Sum) 점수
-  let score = 50
+  let score = 70 // (기존 50)
   const sumDiff = Math.abs(sum - sumStats.mean)
   if (sumDiff <= sumStats.stdDev) {
-    score += 25 // 1표준편차 이내 (약 68%)
+    score += 35 // (기존 25) 1표준편차 이내
   } else if (sumDiff <= sumStats.stdDev * 2) {
-    score += 10 // 2표준편차 이내 (약 95%)
+    score += 15 // (기존 10) 2표준편차 이내
   } else {
-    score -= 15 // 2표준편차 밖
+    score -= 20 // (기존 -15) 2표준편차 밖
   }
 
   // 2. 연속번호 (Consecutive) 점수
@@ -295,19 +350,19 @@ const calculateGrade = (numbers: number[], stats: LottoAnalytics): Grade => {
   }
   const consecutiveKey = `${consecutiveCount}쌍`
   const consecutiveRank = getRank(consecutiveDistribution, consecutiveKey)
-  if (consecutiveRank === 1) score += 15 // 가장 흔한 패턴
-  else if (consecutiveRank === 2) score += 5 // 두번째로 흔한 패턴
-  else score -= 10 // 드문 패턴
+  if (consecutiveRank === 1) score += 20 // (기존 15)
+  else if (consecutiveRank === 2) score += 10 // (기존 5)
+  else score -= 15 // (기존 -10)
 
   // 3. 홀짝 (Odd/Even) 점수
   const oddCount = numbers.filter((n) => n % 2 === 1).length
   const evenCount = 6 - oddCount
   const oddEvenKey = `${oddCount}:${evenCount}`
   const oddEvenRank = getRank(oddEvenDistribution, oddEvenKey)
-  if (oddEvenRank === 1) score += 20 // 가장 흔한 비율 (아마 3:3)
-  else if (oddEvenRank <= 3) score += 10 // 2, 3번째 흔한 비율 (아마 4:2, 2:4)
-  else if (oddEvenRank === 4) score -= 5 // 4번째 (아마 5:1, 1:5)
-  else score -= 15 // 가장 드문 비율 (6:0, 0:6)
+  if (oddEvenRank === 1) score += 30 // (기존 20)
+  else if (oddEvenRank <= 3) score += 15 // (기존 10)
+  else if (oddEvenRank === 4) score -= 10 // (기존 -5)
+  else score -= 20 // (기존 -15)
 
   // 4. 구간 밸런스 (Section) 점수
   const s1 = numbers.filter((n) => n <= 15).length
@@ -316,19 +371,27 @@ const calculateGrade = (numbers: number[], stats: LottoAnalytics): Grade => {
   const sectionKey = [s1, s2, s3].sort((a, b) => b - a).join(":")
   const sectionRank = getRank(sectionDistribution, sectionKey)
 
-  if (sectionRank === 1) score += 30 // 가장 흔한 분포
-  else if (sectionRank <= 3) score += 15 // 2~3번째 흔한 분포
-  else if (sectionRank <= 6) score += 0 // 그 외
-  else score -= 15 // 매우 드문 분포
+  if (sectionRank === 1) score += 45 // (기존 30)
+  else if (sectionRank <= 3) score += 20 // (기존 15)
+  else if (sectionRank <= 6) score += 0 // (기존 0)
+  else score -= 20 // (기존 -15)
 
-  // 최종 등급 반환
-  if (score >= 80) return "최상"
-  if (score >= 65) return "상"
-  if (score >= 50) return "중상"
-  if (score >= 35) return "중"
-  if (score >= 20) return "보통"
-  if (score >= 0) return "중하"
+  // [이전 요청] 5. 4-조합(쿼드러플) 패널티 적용
+  const RECENT_THRESHOLD = 156 // 3년 (약 156주)
+  const latestDrawNo = winningNumbers[winningNumbers.length - 1].drawNo
+  const quadrupletPenalty = getQuadrupletScore(sortedNumbers, quadrupletLastSeen, latestDrawNo, RECENT_THRESHOLD)
+
+  score += quadrupletPenalty // 패널티 점수(음수)를 점수에 더함
+
+  // [이전 요청] 최종 등급 반환 (200점 만점 기준)
+  if (score >= 180) return "최상" // (기존 90) - 90% 이상
+  if (score >= 150) return "상" // (기존 75) - 75% 이상
+  if (score >= 120) return "중상" // (기존 60) - 60% 이상
+  if (score >= 90) return "중" // (기존 45) - 45% 이상
+  if (score >= 60) return "보통" // (기존 30) - 30% 이상
+  if (score >= 20) return "중하" // (기존 10) - 10% 이상
   return "하"
+  // ---------------------------------------------
 }
 
 // 분포 Map에서 특정 key의 순위(빈도 기준)를 반환하는 헬퍼
@@ -339,6 +402,7 @@ const getRank = (distribution: StringFrequencyMap, key: string): number => {
 }
 
 const getGradeColor = (grade: Grade): string => {
+  // ... (등급별 색상 반환 로직 - 변경 없음) ...
   switch (grade) {
     case "최상":
       return "border border-purple-100 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950"
@@ -362,22 +426,24 @@ const getGradeColor = (grade: Grade): string => {
  * @param grade - "최상" ~ "하" 등급
  */
 const getGradeDescription = (grade: Grade): string => {
+  // --- [요청사항 2] 등급 설명 단순화 ---
   switch (grade) {
     case "최상":
-      return "완벽한 균형입니다. 번호 총합, 홀짝 비율, 구간별 분포가 모두 과거 당첨 통계의 평균값(표준편차 1 이내)에 가장 가깝게 일치합니다."
+      return "통계적으로 가장 완벽한 '황금 비율' 조합입니다. 번호의 합, 홀짝, 높낮이 밸런스가 과거 1등 번호들의 평균과 거의 일치합니다."
     case "상":
-      return "훌륭한 조합입니다. 번호 총합과 분포가 매우 안정적이며, 과거 데이터에서 가장 자주 등장한 통계적 패턴입니다."
+      return "매우 훌륭한 조합입니다. 과거 당첨 번호들에서 가장 자주 보였던 안정적인 패턴을 따르고 있습니다."
     case "중상":
-      return "균형이 잘 잡힌 좋은 조합입니다. 대부분의 통계 기준이 과거 당첨 번호의 평균적인 범위(표준편차 2 이내)를 양호하게 만족합니다."
+      return "균형이 잘 잡힌 좋은 조합입니다. 대부분의 통계 기준이 '당첨 번호'하면 떠오르는 평균적인 범위를 만족합니다."
     case "중":
-      return "평균적인 조합입니다. 한두 가지 요소(예: 홀짝 비율이나 구간별 분포)가 통계적 중심에서 약간 벗어났지만, 여전히 유의미한 패턴입니다."
+      return "평균적인 조합입니다. 한두 가지 요소(예: 홀짝 비율)가 평균에서 살짝 벗어났지만, 여전히 가능성이 있는 패턴입니다."
     case "보통":
-      return "무난한 조합입니다. 다만, 번호가 통계적으로 덜 나온 구간에 쏠려있거나 총합이 평균 범위를 다소 벗어났을 수 있습니다."
+      return "무난한 조합입니다. 다만, 번호가 특정 구간에 조금 쏠려있거나, 번호의 총합이 평균보다 높거나 낮을 수 있습니다."
     case "중하":
-      return "통계적 균형이 다소 부족합니다. 홀짝 비율이나 구간별 분포가 과거 평균에서 벗어나는 경향(예: 3순위 이하 패턴)을 보입니다."
+      return "통계적 균형이 다소 아쉬운 조합입니다. 홀짝이나 번호대별 분포가 과거 당첨 패턴과 조금 다른 경향을 보입니다."
     case "하":
-      return "매우 특이한 조합입니다. 연속 번호, 번호 총합 등이 과거 당첨 통계의 일반적인 범주(표준편차 2 밖)에서 크게 벗어난 패턴입니다."
+      return "매우 독특한 조합입니다. 번호의 합이나 분포가 과거 당첨 통계에서 매우 드물게 나타났던 패턴입니다."
   }
+  // ------------------------------------
 }
 
 // --- 3단계: 컴포넌트 구현 ---
@@ -394,27 +460,38 @@ export default function AIRecommendation({
   const [showUserAnalysis, setShowUserAnalysis] = useState(false)
   const [originalUserNumbers, setOriginalUserNumbers] = useState<number[]>([])
 
+  // --- [요청사항 2] AI에 의한 분석 업데이트인지 추적하는 상태 ---
+  const [isAiAnalyzed, setIsAiAnalyzed] = useState(false)
+  // ---------------------------------------------------
+
   // 1단계: 패턴 데이터 캐싱
   const analyticsData = useLottoAnalytics()
 
   useEffect(() => {
-    // 부모 컴포넌트(lotto-analysis)에서 numbers가 변경되었을 때 (즉, 수동/자동 추첨기에서 새 번호가 왔을 때)
-    // originalUserNumbers를 업데이트합니다.
     if (userSelectedNumbers && userSelectedNumbers.length === 6) {
-      // AI 추천 번호로 분석하기'를 눌러 분석 대상이 바뀐 경우는 제외
-      if (userSelectedNumbers.join(",") !== recommendedNumbers.join(",")) {
+      // --- [요청사항 2] 원본 번호 보존 로직 수정 ---
+      // AI에 의해 분석이 트리거된 것이 아니라면 (isAiAnalyzed === false)
+      // 이 번호는 사용자가 직접 생성/선택한 '원본 번호'로 간주합니다.
+      if (!isAiAnalyzed) {
+        // 이 번호를 '원본 추첨 번호'로 저장합니다.
         setOriginalUserNumbers([...userSelectedNumbers])
         const sortedUserNumbers = [...userSelectedNumbers].sort((a, b) => a - b)
-        setUserGrade(calculateGrade(sortedUserNumbers, analyticsData)) // analyticsData 전달
+        setUserGrade(calculateGrade(sortedUserNumbers, analyticsData))
         setShowUserAnalysis(true)
+      } else {
+        // AI에 의해 분석이 트리거된 경우 ('AI 추천 번호'가 분석 대상이 됨)
+        // '원본 추첨 번호'는 덮어쓰지 않고, 플래그만 리셋합니다.
+        setIsAiAnalyzed(false)
       }
+      // -------------------------------------------
     } else {
-      // 번호가 6개가 아니면 (예: 리셋) 사용자 분석 숨김
-      setShowUserAnalysis(false)
+      // 번호가 6개가 아니면 (예: 리셋) 모든 상태를 초기화합니다.
       setOriginalUserNumbers([])
       setUserGrade(null)
+      setShowUserAnalysis(false)
+      setIsAiAnalyzed(false) // [요청사항 2] 플래그 초기화
     }
-  }, [userSelectedNumbers, recommendedNumbers, analyticsData]) // analyticsData 의존성 추가
+  }, [userSelectedNumbers, analyticsData]) // [요청사항 2] recommendedNumbers 의존성 제거
 
   /**
    * AI 추천 번호 생성 (고급 알고리즘)
@@ -425,14 +502,14 @@ export default function AIRecommendation({
     setRecommendedNumbers([])
     setAiGrade(null)
 
-    // 사용자 번호가 있다면 등급 계산 (즉각적 반응)
+    // AI 추천을 눌러도 '추첨 번호 분석' 창은 그대로 유지되도록 함
+    // (useEffect가 originalUserNumbers를 덮어쓰지 않기 때문)
     if (originalUserNumbers.length === 6) {
       const sortedUserNumbers = [...originalUserNumbers].sort((a, b) => a - b)
-      setUserGrade(calculateGrade(sortedUserNumbers, analyticsData)) // analyticsData 전달
+      setUserGrade(calculateGrade(sortedUserNumbers, analyticsData))
       setShowUserAnalysis(true)
     }
 
-    // UI가 "패턴 연산 중..."으로 즉시 업데이트되도록 강제합니다.
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     const finalCombination = await new Promise<number[]>((resolve) => {
@@ -440,9 +517,15 @@ export default function AIRecommendation({
         weightedNumberList,
         pairFrequencies,
         tripletFrequencies,
+        quadrupletLastSeen, // [이전 요청] 4-조합 맵 가져오기
         recentFrequencies,
         gapMap,
       } = analyticsData
+
+      // [이전 요청] 4-조합 분석을 위한 변수 추가
+      const RECENT_THRESHOLD = 156 // 3년
+      const latestDrawNo = winningNumbers[winningNumbers.length - 1].drawNo
+      // ---------------------------------------------
 
       const ITERATIONS = 50000 // 50,000개의 후보 조합 생성 및 테스트
       const TOP_K = 50
@@ -453,28 +536,44 @@ export default function AIRecommendation({
         // 1. 후보 조합 생성 (가중치 기반)
         const currentNumbers = generateCombination(weightedNumberList)
 
+        // [이전 요청] 1등 당첨번호 중복 제거
+        const combinationKey = currentNumbers.join("-")
+        if (winningNumbersSet.has(combinationKey)) {
+          continue
+        }
+
         // 2. 후보 조합 평가
-        const grade = calculateGrade(currentNumbers, analyticsData) // analyticsData 전달
+        const grade = calculateGrade(currentNumbers, analyticsData)
         const gradeScore = getGradeScore(grade) // A: 기본 균형 점수
         const pairScore = getPairScore(currentNumbers, pairFrequencies) // B: 궁합수(2-조합) 점수
         const tripletScore = getTripletScore(currentNumbers, tripletFrequencies) // C: 트리오(3-조합) 점수
-        const recentScore = getRecentFrequencyScore(currentNumbers, recentFrequencies) // D: 최신 빈도(Hot) 점수
-        const gapScore = getGapScore(currentNumbers, gapMap) // E: 미출현(Cold) 점수
 
-        // AI 종합 점수 계산 (가중치 조정: 패턴 55% + 균형 30% + Hot/Cold 15%)
-        // 점수 정규화(Normalization)가 필요하지만, 여기서는 각 점수의 영향력(scale)을 대략적으로 조절합니다.
+        // [이전 요청] D: 4-조합(쿼드러플) 패널티 점수
+        const quadrupletScore = getQuadrupletScore(
+          currentNumbers,
+          quadrupletLastSeen,
+          latestDrawNo,
+          RECENT_THRESHOLD,
+        )
+        // ---------------------------------------------
+
+        const recentScore = getRecentFrequencyScore(currentNumbers, recentFrequencies) // E: 최신 빈도(Hot) 점수
+        const gapScore = getGapScore(currentNumbers, gapMap) // F: 미출현(Cold) 점수
+
+        // [이전 요청] AI 종합 점수 계산 (가중치 변경: 균형 20%, 4-조합 10%, 궁합 55%, Hot/Cold 15%)
         const totalScore =
-          gradeScore * 0.3 + // 기본 균형 (30%)
+          gradeScore * 0.2 + // 기본 균형 (20%)
+          quadrupletScore * 0.1 + // 4-조합 패널티 (10%)
           (pairScore / 150) * 50 * 0.35 + // 2-조합(궁합수) 점수 (35%)
           (tripletScore / 20) * 50 * 0.2 + // 3-조합(트리오) 점수 (20%)
           (recentScore / 30) * 50 * 0.05 + // 최신 빈도(Hot) 점수 (5%)
           (gapScore / 600) * 50 * 0.1 // 미출현(Cold) 점수 (10%)
+        // ---------------------------------------------------------------------------------
 
         // 3. Top-K 리스트 관리
         if (topCandidates.length < TOP_K) {
           topCandidates.push({ combination: currentNumbers, score: totalScore })
         } else {
-          // topCandidates에서 가장 낮은 점수 찾기
           let minScore = topCandidates[0].score
           let minIndex = 0
           for (let j = 1; j < topCandidates.length; j++) {
@@ -483,8 +582,6 @@ export default function AIRecommendation({
               minIndex = j
             }
           }
-
-          // 현재 조합이 Top-K 리스트의 최소 점수보다 높으면 교체
           if (totalScore > minScore) {
             topCandidates[minIndex] = { combination: currentNumbers, score: totalScore }
           }
@@ -497,21 +594,29 @@ export default function AIRecommendation({
         const randomIndex = Math.floor(Math.random() * topCandidates.length)
         combination = topCandidates[randomIndex].combination
       } else {
-        // 혹시 모를 예외 처리 (ITERATIONS가 0이 아닌 이상 발생하기 어려움)
         combination = generateCombination(weightedNumberList)
       }
 
       resolve(combination)
     })
 
-    // 연산 완료 후 상태 업데이트
-    const finalGrade = calculateGrade(finalCombination, analyticsData) // analyticsData 전달
+    // AI 추천 번호 상태 업데이트
+    const finalGrade = calculateGrade(finalCombination, analyticsData)
     setRecommendedNumbers(finalCombination)
     setAiGrade(finalGrade)
 
     if (onRecommendationGenerated) {
       onRecommendationGenerated(finalCombination)
     }
+
+    // --- [요청사항 1 & 2] 자동 분석 실행 ---
+    // [요청사항 2] onAnalyzeNumbers를 호출하기 직전에, 이 업데이트가 AI에 의한 것임을 표시
+    setIsAiAnalyzed(true)
+    // [요청사항 1] 부모 컴포넌트(lotto-analysis)의 분석 대상 번호를 AI 추천 번호로 자동 업데이트
+    if (onAnalyzeNumbers) {
+      onAnalyzeNumbers(finalCombination)
+    }
+    // ---------------------------------------
 
     setIsGenerating(false)
   }
@@ -523,14 +628,20 @@ export default function AIRecommendation({
     }
   }
 
+  // 이 함수는 "추첨 번호 분석" 카드에 있는 버튼을 위한 것
   const handleAnalyzeUserNumbers = () => {
     if (originalUserNumbers.length === 6 && onAnalyzeNumbers) {
+      // "원본 번호"로 분석 대상을 변경 (AI 분석 상태가 아님)
+      setIsAiAnalyzed(false)
       onAnalyzeNumbers(originalUserNumbers)
     }
   }
 
+  // 이 함수는 "AI 추천 번호" 카드에 있는 버튼을 위한 것
   const handleAnalyzeAINumbers = () => {
     if (recommendedNumbers.length === 6 && onAnalyzeNumbers) {
+      // "AI 추천 번호"로 분석 대상을 변경 (AI 분석 상태임)
+      setIsAiAnalyzed(true)
       onAnalyzeNumbers(recommendedNumbers)
     }
   }
