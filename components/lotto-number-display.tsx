@@ -2,13 +2,14 @@
 
 import { forwardRef } from "react"
 import { motion } from "framer-motion"
-import { Check, Lock } from "lucide-react"
+import { Check, Lock, Sparkles } from "lucide-react"
 
 interface LottoNumberDisplayProps {
   numbers: number[]
   fixedNumbers?: number[]
   isSaved?: boolean
   className?: string
+  isAiRecommended?: boolean // AI 추천 번호 표시를 위한 prop 추가
 }
 
 const getBallColor = (number: number) => {
@@ -21,7 +22,7 @@ const getBallColor = (number: number) => {
 }
 
 const LottoNumberDisplay = forwardRef<HTMLDivElement, LottoNumberDisplayProps>(
-  ({ numbers, fixedNumbers = [], isSaved = false, className = "" }, ref) => {
+  ({ numbers, fixedNumbers = [], isSaved = false, className = "", isAiRecommended = false }, ref) => {
     if (numbers.length === 0) return null
 
     // 6개가 모두 뽑혔을 때만 정렬, 그렇지 않으면 원래 순서 유지
@@ -34,11 +35,14 @@ const LottoNumberDisplay = forwardRef<HTMLDivElement, LottoNumberDisplayProps>(
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-xl"
+          className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg"
         >
           <div className="flex justify-between items-center mb-3">
             <div className="w-24"></div> {/* Spacer for balance */}
-            <h3 className="text-lg font-medium text-center">추첨 번호</h3>
+            <h3 className="text-lg font-medium text-center flex items-center gap-2">
+              {isAiRecommended && <Sparkles className="w-5 h-5 text-blue-600" />}
+              {isAiRecommended ? "AI 추천 번호" : "추첨 번호"}
+            </h3>
             {isSaved && numbers.length === 6 ? (
               <motion.div
                 initial={{ opacity: 0 }}
