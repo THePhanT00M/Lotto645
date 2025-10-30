@@ -23,10 +23,9 @@ export default function AdvancedAnalysis({
                                            onNumbersChange,
                                          }: AdvancedAnalysisProps) {
   const [recommendedNumbers, setRecommendedNumbers] = useState<number[]>([])
-  const [forceRefresh, setForceRefresh] = useState(0) // 강제 새로고침을 위한 상태 추가
+  const [forceRefresh, setForceRefresh] = useState(0)
   const isFirstRender = useRef(true)
 
-  // 컴포넌트가 마운트될 때만 forceRefresh 값을 증가시킴
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false
@@ -38,18 +37,14 @@ export default function AdvancedAnalysis({
     setRecommendedNumbers(newNumbers)
   }
 
-  // 추천 번호를 분석에 적용하는 핸들러
-  const handleApplyToAnalysis = (numbers: number[]) => {
-    if (onNumbersChange) {
-      onNumbersChange(numbers)
-    }
-  }
-
   return (
     <div className="space-y-6">
-      <AIRecommendation />
+      <AIRecommendation
+        userSelectedNumbers={numbers}
+        onRecommendationGenerated={handleRecommendationGenerated}
+        onAnalyzeNumbers={onNumbersChange}
+      />
 
-      {/* 다중 번호 분석 섹션 */}
       <MultipleNumberAnalysis multipleNumbers={multipleNumbers} getBallColor={getBallColor} />
     </div>
   )

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { winningNumbers } from "@/data/winning-numbers"
-import { Sparkles } from "lucide-react"
 import AdvancedAnalysis from "./lotto-analysis/advanced-analysis"
 
 interface LottoAnalysisProps {
@@ -139,7 +138,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
       for (let b = a + 1; b < sortedNumbers.length; b++) {
         const pair = [sortedNumbers[a], sortedNumbers[b]]
 
-        // 이 2쌍둥이 조합이 과거 당첨 번호에 몇 번 등장했는지 인
+        // 이 2쌍둥이 조합이 과거 당첨 번호에 몇 번 등장했는지 확인
         const appearances: { drawNo: number; date: string }[] = []
 
         for (const draw of winningNumbers) {
@@ -184,38 +183,11 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
     return "#000"
   }
 
-  // 원래 번호와 현재 분석 번호가 다른지 확인하는 함수
-  const isAnalyzingDifferentNumbers = () => {
-    if (numbers.length !== analysisNumbers.length) return true
-    const sortedOriginal = [...numbers].sort((a, b) => a - b)
-    const sortedCurrent = [...analysisNumbers].sort((a, b) => a - b)
-    return !sortedOriginal.every((num, index) => num === sortedCurrent[index])
-  }
-
-  // 원래 번호로 돌아가는 함수
-  const resetToOriginalNumbers = () => {
-    setAnalysisNumbers(numbers)
-  }
-
   return (
     <div className="rounded-xl p-4 sm:p-6 bg-gray-100 dark:bg-[rgb(26,26,26)] ">
       <div className="mb-5">
         <p className="text-xl font-semibold text-black dark:text-white flex items-center gap-2 mb-0">번호 분석 결과</p>
       </div>
-
-      {isAnalyzingDifferentNumbers() && (
-        <div className="mb-4">
-          <button
-            onClick={resetToOriginalNumbers}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-gray-600 dark:text-gray-100 bg-gray-200 dark:bg-[rgb(36,36,36)] border-gray-200 dark:border-[rgb(68,68,68)] hover:bg-gray-300 dark:hover:bg-[#363636] hover:text-gray-600"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-            </svg>
-            원래 추첨 번호로 돌아가기
-          </button>
-        </div>
-      )}
 
       <AdvancedAnalysis
         numbers={analysisNumbers}
