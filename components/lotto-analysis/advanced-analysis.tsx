@@ -340,6 +340,7 @@ const getGradeDescription = (grade: Grade): string => {
 // --- 로직 이동 완료 ---
 
 interface AdvancedAnalysisProps {
+  userDrawnNumbers: number[]
   numbers: number[]
   multipleNumbers: MultipleNumberType[]
   similarDraws: SimilarDrawType[]
@@ -349,6 +350,7 @@ interface AdvancedAnalysisProps {
 }
 
 export default function AdvancedAnalysis({
+                                           userDrawnNumbers,
                                            numbers,
                                            multipleNumbers,
                                            similarDraws,
@@ -363,8 +365,8 @@ export default function AdvancedAnalysis({
   // --- 로직 이동: 시작 ---
   const analyticsData = useLottoAnalytics()
   const [userGrade, setUserGrade] = useState<Grade | null>(null)
-  const [showUserAnalysis, setShowUserAnalysis] = useState(false)
-  const [originalUserNumbers, setOriginalUserNumbers] = useState<number[]>([])
+  const [showUserAnalysis, setShowUserAnalysis] = useState(true)
+  const [originalUserNumbers, setOriginalUserNumbers] = useState<number[]>(userDrawnNumbers)
   const [isAiAnalyzed, setIsAiAnalyzed] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false) // AI 생성 로딩 상태
 
@@ -376,22 +378,21 @@ export default function AdvancedAnalysis({
   }, [])
 
   useEffect(() => {
-    if (numbers && numbers.length === 6) {
-      if (!isAiAnalyzed) {
-        setOriginalUserNumbers([...numbers])
-        const sortedUserNumbers = [...numbers].sort((a, b) => a - b)
-        setUserGrade(calculateGrade(sortedUserNumbers, analyticsData))
-        setShowUserAnalysis(true)
-      } else {
-        setIsAiAnalyzed(false)
-      }
+    // This effect now triggers ONLY when the USER'S drawn numbers change
+    // or when analytics data loads. It is no longer affected by
+    // what is being analyzed (the 'numbers' prop).
+    if (userDrawnNumbers && userDrawnNumbers.length === 6) {
+      setOriginalUserNumbers([...userDrawnNumbers])
+      const sortedUserNumbers = [...userDrawnNumbers].sort((a, b) => a - b)
+      setUserGrade(calculateGrade(sortedUserNumbers, analyticsData))
+      setShowUserAnalysis(true)
+      setIsAiAnalyzed(false) // Reset AI analysis flag when user numbers change
     } else {
       setOriginalUserNumbers([])
       setUserGrade(null)
       setShowUserAnalysis(false)
-      setIsAiAnalyzed(false)
     }
-  }, [numbers, analyticsData, isAiAnalyzed])
+  }, [userDrawnNumbers, analyticsData, calculateGrade])
 
   // AI 추천 생성 로직 (이제 AIRecommendation 컴포넌트에 prop으로 전달됨)
   const generateAIRecommendation = async () => {
@@ -406,8 +407,8 @@ export default function AdvancedAnalysis({
 
   const handleAnalyzeUserNumbers = () => {
     if (originalUserNumbers.length === 6) {
-      setIsAiAnalyzed(false)
-      onNumbersChange(originalUserNumbers)
+      setIsAiAnalyzed(false) // We are now analyzing the user's numbers
+      onNumbersChange(originalUserNumbers) // Set the analysis target to the user's numbers
     }
   }
 
@@ -415,6 +416,7 @@ export default function AdvancedAnalysis({
     setRecommendedNumbers(newNumbers)
     setIsAiAnalyzed(true)
     setIsGenerating(false) // 로딩 상태 종료
+    onNumbersChange(newNumbers) // Update the analysis view to show the new AI numbers
   }
   // --- 로직 이동: 종료 ---
 
@@ -442,7 +444,9 @@ export default function AdvancedAnalysis({
                     추첨기에서 선택한 번호의 분석 결과입니다.
                   </p>
                   <div
-                    className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(userGrade)}`}
+                    className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(
+                      userGrade,
+                    )}`}
                   >
                     {userGrade}
                   </div>

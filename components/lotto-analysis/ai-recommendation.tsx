@@ -170,10 +170,6 @@ export default function AIRecommendation({
       onRecommendationGenerated(finalCombination)
     }
 
-    if (onAnalyzeNumbers) {
-      onAnalyzeNumbers(finalCombination)
-    }
-
     // setIsGenerating(false) // 로딩 상태 관리를 부모로 이동
   }
 
@@ -187,7 +183,6 @@ export default function AIRecommendation({
     // isGenerating이 true가 될 때만 이 함수를 실행합니다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGenerating])
-
 
   const handleSaveToHistory = () => {
     if (recommendedNumbers.length > 0) {
@@ -228,7 +223,9 @@ export default function AIRecommendation({
               </p>
               {aiGrade && (
                 <div
-                  className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(aiGrade)}`}
+                  className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(
+                    aiGrade,
+                  )}`}
                 >
                   {aiGrade}
                 </div>
@@ -257,7 +254,8 @@ export default function AIRecommendation({
             variant="outline"
             className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
           >
-            <BarChart3 className="w-4 h-4 mr-1" />당첨 패턴 보기
+            <BarChart3 className="w-4 h-4 mr-1" />
+            당첨 패턴 보기
           </Button>
           {isSaved ? (
             <div className="text-sm text-green-600 flex items-center justify-center md:w-24 md:justify-end">

@@ -191,6 +191,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
 
       <AdvancedAnalysis
         numbers={analysisNumbers}
+        userDrawnNumbers={numbers}
         multipleNumbers={multipleNumbers}
         similarDraws={similarDraws}
         winningNumbersCount={winningNumbers.length}
