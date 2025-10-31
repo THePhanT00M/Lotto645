@@ -30,6 +30,7 @@ interface LottoAnalytics {
   oddEvenDistribution: StringFrequencyMap // 9. 홀:짝 비율 분포
   sectionDistribution: StringFrequencyMap // 10. 구간별(1-15, 16-30, 31-45) 개수 분포
   consecutiveDistribution: StringFrequencyMap // 11. 연속번호(n쌍) 분포
+  latestDrawNumbers: number[] // 12. (NEW) 직전 회차 번호 (이월수 분석용)
 }
 
 // 1등 당첨 번호 조합을 Set으로 만들어 중복 체크에 사용 (빠른 조회를 위해)
@@ -163,6 +164,10 @@ const useLottoAnalytics = (): LottoAnalytics => {
     const variance = sumStats.values.reduce((a, b) => a + Math.pow(b - sumStats.mean, 2), 0) / totalDraws
     sumStats.stdDev = Math.sqrt(variance)
 
+    // --- 3-4. (NEW) 직전 회차 번호 (이월수 분석용) ---
+    const latestDraw = winningNumbers[totalDraws - 1]
+    const latestDrawNumbers = [...latestDraw.numbers, latestDraw.bonusNo]
+
     console.log("Lotto Analytics: Caching complete.")
     // --- D. 모든 통계 데이터 반환 ---
     return {
@@ -177,6 +182,7 @@ const useLottoAnalytics = (): LottoAnalytics => {
       oddEvenDistribution,
       sectionDistribution,
       consecutiveDistribution,
+      latestDrawNumbers, // (NEW)
     }
   }, [])
 }
