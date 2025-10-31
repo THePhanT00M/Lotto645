@@ -82,14 +82,19 @@ export default function AIRecommendation({
    * AI 추천 번호 생성 (고급 알고리즘)
    */
   const generateAIRecommendation = async () => {
+    // --- 1단계: 상태 초기화 ---
     // setIsGenerating(true) // 로딩 상태 관리를 부모로 이동
     setIsSaved(false)
     setRecommendedNumbers([])
     setAiGrade(null)
 
+    // --- 2단계: UI가 멈추지 않도록 비동기 처리 ---
+    // 현재 함수를 비동기로 실행하여 로딩 스피너 등 UI가 멈추지 않고 렌더링될 시간을 줍니다.
     await new Promise((resolve) => setTimeout(resolve, 0))
 
+    // --- 3단계: 조합 생성 및 평가 (핵심 로직) ---
     const finalCombination = await new Promise<number[]>((resolve) => {
+      // 3-1. 분석 데이터 및 상수 설정
       const {
         weightedNumberList,
         pairFrequencies,
@@ -99,44 +104,59 @@ export default function AIRecommendation({
         gapMap,
       } = analyticsData
 
-      const RECENT_THRESHOLD = 156 // 3년
+      const RECENT_THRESHOLD = 156 // 4쌍둥이 페널티 기준 (3년)
       const latestDrawNo = winningNumbers[winningNumbers.length - 1].drawNo
 
-      const ITERATIONS = 50000
-      const TOP_K = 50
+      const ITERATIONS = 100000 // 10만 번의 조합을 테스트
+      const TOP_K = 50 // 가장 점수가 높은 상위 50개의 조합을 저장
       const topCandidates: { combination: number[]; score: number }[] = []
 
+      // 3-2. 설정한 횟수(ITERATIONS)만큼 조합 생성 및 평가 반복
       for (let i = 0; i < ITERATIONS; i++) {
+        // 3-2-1. 통계적 가중치에 따라 6개 번호 조합 생성
         const currentNumbers = generateCombination(weightedNumberList)
         const combinationKey = currentNumbers.join("-")
+
+        // 3-2-2. 과거 1등 당첨 번호와 동일한 조합인지 확인 (동일하면 폐기)
         if (winningNumbersSet.has(combinationKey)) {
           continue
         }
 
+        // 3-2-3. 생성된 조합의 각종 통계 점수 계산
+        // A. 조합 등급 (밸런스) 점수
         const grade = calculateGrade(currentNumbers, analyticsData)
         const gradeScore = getGradeScore(grade)
+        // B. 2개 번호(궁합) 점수
         const pairScore = getPairScore(currentNumbers, pairFrequencies)
+        // C. 3개 번호(궁합) 점수
         const tripletScore = getTripletScore(currentNumbers, tripletFrequencies)
+        // D. 4개 번호(궁합) 페널티 (최근 3년 내 나온 4쌍둥이 조합이면 큰 페널티)
         const quadrupletScore = getQuadrupletScore(
           currentNumbers,
           quadrupletLastSeen,
           latestDrawNo,
           RECENT_THRESHOLD,
         )
+        // E. 최근 출현 빈도 점수 (최근 2년)
         const recentScore = getRecentFrequencyScore(currentNumbers, recentFrequencies)
+        // F. 미출현 기간(Gap) 점수
         const gapScore = getGapScore(currentNumbers, gapMap)
 
+        // 3-2-4. 최종 점수 계산 (각 점수에 가중치를 부여하여 합산)
         const totalScore =
-          gradeScore * 0.2 +
-          quadrupletScore * 0.1 +
-          (pairScore / 150) * 50 * 0.35 +
-          (tripletScore / 20) * 50 * 0.2 +
-          (recentScore / 30) * 50 * 0.05 +
-          (gapScore / 600) * 50 * 0.1
+          gradeScore * 0.2 + // 밸런스(등급) 20%
+          quadrupletScore * 0.1 + // 4쌍둥이 페널티 10%
+          (pairScore / 150) * 50 * 0.35 + // 2쌍둥이 점수 35%
+          (tripletScore / 20) * 50 * 0.2 + // 3쌍둥이 점수 20%
+          (recentScore / 30) * 50 * 0.05 + // 최근 빈도 점수 5%
+          (gapScore / 600) * 50 * 0.1 // 미출현 기간 점수 10%
 
+        // 3-2-5. 상위 TOP_K 후보군 관리
         if (topCandidates.length < TOP_K) {
+          // 아직 50개가 안 찼으면 그냥 추가
           topCandidates.push({ combination: currentNumbers, score: totalScore })
         } else {
+          // 50개가 찼으면, 현재 후보군 중 가장 낮은 점수와 비교
           let minScore = topCandidates[0].score
           let minIndex = 0
           for (let j = 1; j < topCandidates.length; j++) {
@@ -145,27 +165,37 @@ export default function AIRecommendation({
               minIndex = j
             }
           }
+          // 현재 생성된 조합이 후보군 중 가장 낮은 점수보다 높으면 교체
           if (totalScore > minScore) {
             topCandidates[minIndex] = { combination: currentNumbers, score: totalScore }
           }
         }
-      }
+      } // End of ITERATIONS loop
 
+      // 3-3. 최종 조합 선택
       let combination: number[]
       if (topCandidates.length > 0) {
+        // 10만 번의 테스트 중 가장 우수했던 상위 50개 조합 중 하나를 무작위로 선택
         const randomIndex = Math.floor(Math.random() * topCandidates.length)
         combination = topCandidates[randomIndex].combination
       } else {
-        combination = generateCombination(weightedNumberList)
+        // (예외 처리) 만약 후보군이 비어있다면(예: ITERATIONS가 0), 그냥 하나 생성
+        combination = generateCombination(analyticsData.weightedNumberList)
       }
 
+      // 3-4. 최종 조합 반환
       resolve(combination)
     })
 
+    // --- 4단계: 결과 처리 ---
+    // 4-1. 최종 선택된 조합의 등급 계산
     const finalGrade = calculateGrade(finalCombination, analyticsData)
+
+    // 4-2. React 상태 업데이트 (UI 변경)
     setRecommendedNumbers(finalCombination)
     setAiGrade(finalGrade)
 
+    // 4-3. 부모 컴포넌트(advanced-analysis)에 생성된 번호 전달
     if (onRecommendationGenerated) {
       onRecommendationGenerated(finalCombination)
     }
