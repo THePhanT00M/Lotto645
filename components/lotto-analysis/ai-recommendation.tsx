@@ -647,124 +647,129 @@ export default function AIRecommendation({
   }
 
   return (
-    <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center">
-          <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
-          <h3 className="font-medium text-gray-800 dark:text-gray-200">추첨 번호</h3>
-        </div>
-      </div>
-
-      {showUserAnalysis && originalUserNumbers.length === 6 && userGrade && (
-        <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mb-4">
-          <div className="flex flex-col mb-3">
-            <div className="flex justify-between items-center w-full gap-3">
-              <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">
-                추첨기에서 선택한 번호의 분석 결과입니다.
-              </p>
-              <div
-                className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(userGrade)}`}
-              >
-                {userGrade}
-              </div>
-            </div>
-            <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200 mt-3">
-              <p className="font-medium mb-1">추첨 번호 등급 안내:</p>
-              <p>
-                • {userGrade}: {getGradeDescription(userGrade)}
-              </p>
-            </div>
-          </div>
-          <AINumberDisplay numbers={originalUserNumbers} />
-          <div className="mt-3 flex justify-between">
-            <Button
-              onClick={handleAnalyzeUserNumbers}
-              variant="outline"
-              className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-            >
-              <BarChart3 className="w-4 h-4 mr-1" />당첨 패턴 보기
-            </Button>
-            <Button
-              onClick={generateAIRecommendation}
-              disabled={isGenerating}
-              className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white"
-            >
-              {isGenerating ? (
-                <>
-                  <Sparkles className="w-4 h-4 mr-1 animate-spin" />
-                  패턴 연산 중...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-1" />
-                  AI 추천 받기
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {recommendedNumbers.length > 0 && (
+    <div>
+      <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
             <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
-            <h3 className="font-medium text-gray-800 dark:text-gray-200">AI 번호 추천</h3>
+            <h3 className="font-medium text-gray-800 dark:text-gray-200">추첨 번호</h3>
           </div>
         </div>
-      )}
 
-      {recommendedNumbers.length > 0 && (
-        <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4">
-          <div className="flex flex-col mb-3">
-            <div className="flex justify-between items-center w-full gap-3">
-              <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">
-                과거 당첨 패턴과 함께 등장한 번호 분석을 기반으로 생성된 추천 번호입니다.
-              </p>
-              {aiGrade && (
-                <div
-                  className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(aiGrade)}`}
-                >
-                  {aiGrade}
+        {showUserAnalysis && originalUserNumbers.length === 6 && userGrade && (
+          <div>
+            <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mb-4">
+              <div className="flex flex-col mb-3">
+                <div className="flex justify-between items-center w-full gap-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">
+                    추첨기에서 선택한 번호의 분석 결과입니다.
+                  </p>
+                  <div
+                    className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(userGrade)}`}
+                  >
+                    {userGrade}
+                  </div>
                 </div>
-              )}
+                <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200 mt-3">
+                  <p className="font-medium mb-1">추첨 번호 등급 안내:</p>
+                  <p>
+                    • {userGrade}: {getGradeDescription(userGrade)}
+                  </p>
+                </div>
+              </div>
+              <AINumberDisplay numbers={originalUserNumbers} />
             </div>
-            {aiGrade && (
-              <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200 mt-3">
-                <p className="font-medium mb-1">추천 등급 안내:</p>
-                <p>
-                  • {aiGrade}: {getGradeDescription(aiGrade)}
-                </p>
-              </div>
-            )}
-          </div>
-          <AINumberDisplay numbers={recommendedNumbers} />
-          <div className="mt-3 flex justify-between">
-            <Button
-              onClick={handleAnalyzeAINumbers}
-              variant="outline"
-              className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-            >
-              <BarChart3 className="w-4 h-4 mr-1" />당첨 패턴 보기
-            </Button>
-            {isSaved ? (
-              <div className="text-sm text-green-600 flex items-center justify-center md:w-24 md:justify-end">
-                <Check className="w-4 h-4 mr-1" />
-                기록 저장됨
-              </div>
-            ) : (
+            <div className="mt-3 flex justify-between">
               <Button
-                onClick={handleSaveToHistory}
-                className="bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white whitespace-nowrap"
+                onClick={handleAnalyzeUserNumbers}
+                variant="outline"
+                className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
               >
-                <Save className="w-4 h-4 mr-1" />
-                AI 추천 번호 저장
+                <BarChart3 className="w-4 h-4 mr-1" />당첨 패턴 보기
               </Button>
-            )}
+              <Button
+                onClick={generateAIRecommendation}
+                disabled={isGenerating}
+                className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white"
+              >
+                {isGenerating ? (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-1 animate-spin" />
+                    패턴 연산 중...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-1" />
+                    AI 추천 받기
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-          <div className="mt-4 flex flex-col items-center gap-3 md:flex-row md:justify-between md:items-center md:gap-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              * 이 추천은 과거 데이터 패턴을 기반으로 하며, 당첨을 보장하지 않습니다.
+        )}
+      </div>
+      {recommendedNumbers.length > 0 && (
+        <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
+              <h3 className="font-medium text-gray-800 dark:text-gray-200">AI 번호 추천</h3>
+            </div>
+          </div>
+          <div>
+            <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4">
+              <div className="flex flex-col mb-3">
+                <div className="flex justify-between items-center w-full gap-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">
+                    과거 당첨 패턴과 함께 등장한 번호 분석을 기반으로 생성된 추천 번호입니다.
+                  </p>
+                  {aiGrade && (
+                    <div
+                      className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(aiGrade)}`}
+                    >
+                      {aiGrade}
+                    </div>
+                  )}
+                </div>
+                {aiGrade && (
+                  <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200 mt-3">
+                    <p className="font-medium mb-1">추천 등급 안내:</p>
+                    <p>
+                      • {aiGrade}: {getGradeDescription(aiGrade)}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <AINumberDisplay numbers={recommendedNumbers} />
+
+              <div className="mt-4 flex flex-col items-center gap-3 md:flex-row md:justify-between md:items-center md:gap-4">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  * 이 추천은 과거 데이터 패턴을 기반으로 하며, 당첨을 보장하지 않습니다.
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex justify-between">
+              <Button
+                onClick={handleAnalyzeAINumbers}
+                variant="outline"
+                className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+              >
+                <BarChart3 className="w-4 h-4 mr-1" />당첨 패턴 보기
+              </Button>
+              {isSaved ? (
+                <div className="text-sm text-green-600 flex items-center justify-center md:w-24 md:justify-end">
+                  <Check className="w-4 h-4 mr-1" />
+                  기록 저장됨
+                </div>
+              ) : (
+                <Button
+                  onClick={handleSaveToHistory}
+                  className="bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white whitespace-nowrap"
+                >
+                  <Save className="w-4 h-4 mr-1" />
+                  AI 번호 저장
+                </Button>
+              )}
             </div>
           </div>
         </div>
