@@ -54,7 +54,7 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }
             <path d="M20 8v8"></path>
             <path d="M8 16h8"></path>
           </svg>
-          <h3 className="font-medium text-gray-800 dark:text-gray-200">다중 번호 분석</h3>
+          <h3 className="font-medium text-gray-800 dark:text-gray-200">당첨 패턴 통계</h3>
         </div>
 
         {/* 필터 컨트롤 */}

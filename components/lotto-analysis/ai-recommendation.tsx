@@ -651,32 +651,12 @@ export default function AIRecommendation({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
-          <h3 className="font-medium text-gray-800 dark:text-gray-200">AI 번호 추천</h3>
+          <h3 className="font-medium text-gray-800 dark:text-gray-200">추첨 번호</h3>
         </div>
-        <Button
-          onClick={generateAIRecommendation}
-          disabled={isGenerating}
-          className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white"
-        >
-          {isGenerating ? (
-            <>
-              <Sparkles className="w-4 h-4 mr-1 animate-spin" />
-              패턴 연산 중...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4 mr-1" />
-              AI 추천 받기
-            </>
-          )}
-        </Button>
       </div>
 
       {showUserAnalysis && originalUserNumbers.length === 6 && userGrade && (
         <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mb-4">
-          <div className="flex items-center mb-3">
-            <h4 className="font-medium text-gray-800 dark:text-gray-200">추첨 번호 분석</h4>
-          </div>
           <div className="flex flex-col mb-3">
             <div className="flex justify-between items-center w-full gap-3">
               <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">
@@ -696,23 +676,46 @@ export default function AIRecommendation({
             </div>
           </div>
           <AINumberDisplay numbers={originalUserNumbers} />
-          <div className="mt-3 flex justify-center">
+          <div className="mt-3 flex justify-between">
             <Button
               onClick={handleAnalyzeUserNumbers}
               variant="outline"
               className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
             >
-              <BarChart3 className="w-4 h-4 mr-1" />이 번호로 분석하기
+              <BarChart3 className="w-4 h-4 mr-1" />당첨 패턴 보기
+            </Button>
+            <Button
+              onClick={generateAIRecommendation}
+              disabled={isGenerating}
+              className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white"
+            >
+              {isGenerating ? (
+                <>
+                  <Sparkles className="w-4 h-4 mr-1 animate-spin" />
+                  패턴 연산 중...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-1" />
+                  AI 추천 받기
+                </>
+              )}
             </Button>
           </div>
         </div>
       )}
 
       {recommendedNumbers.length > 0 && (
-        <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4">
-          <div className="flex items-center mb-3">
-            <h4 className="font-medium text-gray-800 dark:text-gray-200">AI 추천 번호</h4>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
+            <h3 className="font-medium text-gray-800 dark:text-gray-200">AI 번호 추천</h3>
           </div>
+        </div>
+      )}
+
+      {recommendedNumbers.length > 0 && (
+        <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4">
           <div className="flex flex-col mb-3">
             <div className="flex justify-between items-center w-full gap-3">
               <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">
@@ -736,19 +739,14 @@ export default function AIRecommendation({
             )}
           </div>
           <AINumberDisplay numbers={recommendedNumbers} />
-          <div className="mt-3 flex justify-center">
+          <div className="mt-3 flex justify-between">
             <Button
               onClick={handleAnalyzeAINumbers}
               variant="outline"
               className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
             >
-              <BarChart3 className="w-4 h-4 mr-1" />이 번호로 분석하기
+              <BarChart3 className="w-4 h-4 mr-1" />당첨 패턴 보기
             </Button>
-          </div>
-          <div className="mt-4 flex flex-col items-center gap-3 md:flex-row md:justify-between md:items-center md:gap-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              * 이 추천은 과거 데이터 패턴을 기반으로 하며, 당첨을 보장하지 않습니다.
-            </div>
             {isSaved ? (
               <div className="text-sm text-green-600 flex items-center justify-center md:w-24 md:justify-end">
                 <Check className="w-4 h-4 mr-1" />
@@ -763,6 +761,11 @@ export default function AIRecommendation({
                 AI 추천 번호 저장
               </Button>
             )}
+          </div>
+          <div className="mt-4 flex flex-col items-center gap-3 md:flex-row md:justify-between md:items-center md:gap-4">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              * 이 추천은 과거 데이터 패턴을 기반으로 하며, 당첨을 보장하지 않습니다.
+            </div>
           </div>
         </div>
       )}
