@@ -25,6 +25,7 @@ interface LottoAnalytics {
   oddEvenDistribution: StringFrequencyMap
   sectionDistribution: StringFrequencyMap
   consecutiveDistribution: StringFrequencyMap
+  latestDrawNumbers: number[] // --- (MODIFIED) ---
 }
 
 // --- 3단계: 컴포넌트 구현 ---
@@ -102,6 +103,7 @@ export default function AIRecommendation({
         quadrupletLastSeen,
         recentFrequencies,
         gapMap,
+        latestDrawNumbers, // --- (NEW) ---
       } = analyticsData
 
       const RECENT_THRESHOLD = 156 // 4쌍둥이 페널티 기준 (3년)
@@ -142,14 +144,24 @@ export default function AIRecommendation({
         // F. 미출현 기간(Gap) 점수
         const gapScore = getGapScore(currentNumbers, gapMap)
 
+        // G. (NEW) 이월수 점수
+        const carryOverCount = currentNumbers.filter(num => latestDrawNumbers.includes(num)).length;
+        let carryOverScore = 0;
+        if (carryOverCount === 0) carryOverScore = 20;      // 0개 (가장 흔함)
+        else if (carryOverCount === 1) carryOverScore = 15; // 1개 (두번째로 흔함)
+        else if (carryOverCount === 2) carryOverScore = -10; // 2개 (드묾)
+        else carryOverScore = -30;                          // 3개 이상 (매우 드묾)
+
         // 3-2-4. 최종 점수 계산 (각 점수에 가중치를 부여하여 합산)
+        // --- (MODIFIED) ---
         const totalScore =
           gradeScore * 0.2 + // 밸런스(등급) 20%
           quadrupletScore * 0.1 + // 4쌍둥이 페널티 10%
-          (pairScore / 150) * 50 * 0.35 + // 2쌍둥이 점수 35%
-          (tripletScore / 20) * 50 * 0.2 + // 3쌍둥이 점수 20%
+          (pairScore / 150) * 50 * 0.30 + // 2쌍둥이 점수 30% (기존 35%)
+          (tripletScore / 20) * 50 * 0.15 + // 3쌍둥이 점수 15% (기존 20%)
           (recentScore / 30) * 50 * 0.05 + // 최근 빈도 점수 5%
-          (gapScore / 600) * 50 * 0.1 // 미출현 기간 점수 10%
+          (gapScore / 600) * 50 * 0.1 + // 미출현 기간 점수 10%
+          (carryOverScore / 20) * 50 * 0.1; // (NEW) 이월수 점수 10%
 
         // 3-2-5. 상위 TOP_K 후보군 관리
         if (topCandidates.length < TOP_K) {
