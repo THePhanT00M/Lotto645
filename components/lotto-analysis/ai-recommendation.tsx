@@ -102,7 +102,7 @@ export default function AIRecommendation({
       const RECENT_THRESHOLD = 156 // 3년
       const latestDrawNo = winningNumbers[winningNumbers.length - 1].drawNo
 
-      const ITERATIONS = 50000
+      const ITERATIONS = 100000
       const TOP_K = 50
       const topCandidates: { combination: number[]; score: number }[] = []
 
