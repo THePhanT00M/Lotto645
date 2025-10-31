@@ -419,7 +419,6 @@ export default function AdvancedAnalysis({
   // --- 로직 이동: 종료 ---
 
   return (
-    // [수정] space-y-6 wrapper div 제거
     <div className="space-y-6">
       {/* [리팩토링] DIV 1: 추첨 번호 (User Analysis)
         ai-recommendation.tsx에서 가져온 UI
