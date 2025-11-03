@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Sparkles, AlertCircle } from "lucide-react"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
 import { getBallColor } from "@/utils/lotto-utils"
-import { winningNumbers } from "@/data/winning-numbers"
+import { supabase } from "@/lib/supabaseClient" // Supabase 클라이언트 import
 import type { LottoResult, WinningLottoNumbers } from "@/types/lotto"
 import {
   Select,
@@ -23,11 +23,36 @@ interface LottoAnalysisProps {
 }
 
 export function LottoAnalysis({ history }: LottoAnalysisProps) {
+  // Supabase에서 가져온 당첨 번호 상태
+  const [winningNumbers, setWinningNumbers] = useState<WinningLottoNumbers[]>([])
+  const [isLoading, setIsLoading] = useState(true) // 로딩 상태 추가
+
   // 모든 추첨 기록을 분석 대상으로 설정
   const allResults = history
 
+  // Supabase에서 당첨 번호 데이터 가져오기
+  useEffect(() => {
+    const fetchWinningNumbers = async () => {
+      setIsLoading(true)
+      const { data, error } = await supabase
+        .from("winning_numbers")
+        .select("*")
+        .order("drawNo", { ascending: true }) // 회차 번호 기준 오름차순 정렬
+
+      if (error) {
+        console.error("Error fetching winning numbers:", error)
+        setWinningNumbers([])
+      } else if (data) {
+        setWinningNumbers(data as WinningLottoNumbers[])
+      }
+      setIsLoading(false)
+    }
+
+    fetchWinningNumbers()
+  }, [])
+
   // 회차 번호 기준으로 정렬된 당첨 번호 데이터
-  const sortedWinningNumbers = [...winningNumbers].sort((a, b) => a.drawNo - b.drawNo)
+  const sortedWinningNumbers = winningNumbers // 이미 오름차순으로 정렬됨
 
   // 회차 선택 상태 추가
   const [selectedDrawNo, setSelectedDrawNo] = useState<string>("auto")
@@ -42,7 +67,9 @@ export function LottoAnalysis({ history }: LottoAnalysisProps) {
     } else if (mode === "specific" && selectedDrawNo === "auto") {
       // 특정 회차 모드로 변경 시 기본값으로 가장 최근 회차 선택
       const latestDraw = [...sortedWinningNumbers].sort((a, b) => b.drawNo - a.drawNo)[0]
-      setSelectedDrawNo(latestDraw.drawNo.toString())
+      if (latestDraw) {
+        setSelectedDrawNo(latestDraw.drawNo.toString())
+      }
     }
   }
 
@@ -81,12 +108,12 @@ export function LottoAnalysis({ history }: LottoAnalysisProps) {
   const filteredResults =
     analysisMode === "specific" && selectedDraw
       ? (() => {
-          const { startDate, endDate } = getDateRangeForDraw(selectedDraw)
-          return allResults.filter((result) => {
-            const resultDate = new Date(result.timestamp)
-            return resultDate > startDate && resultDate < endDate
-          })
-        })()
+        const { startDate, endDate } = getDateRangeForDraw(selectedDraw)
+        return allResults.filter((result) => {
+          const resultDate = new Date(result.timestamp)
+          return resultDate > startDate && resultDate < endDate
+        })
+      })()
       : allResults
 
   // 각 추첨 기록에 대한 일치도 분석
@@ -114,7 +141,7 @@ export function LottoAnalysis({ history }: LottoAnalysisProps) {
         matchCount: 0,
         bonusMatch: false,
         rank: "미발표",
-        matchingNumbers: [],
+        matchingNumbers: [] as number[], // 타입스크립트 오류 수정
         date: resultDate,
         targetDraw: null,
         isPending: true,
@@ -175,6 +202,18 @@ export function LottoAnalysis({ history }: LottoAnalysisProps) {
   // AI 추천과 일반 추첨 통계
   const aiRecommendedCount = completedAnalysis.filter((result) => result.result.isAiRecommended).length
   const regularDrawCount = completedAnalysis.filter((result) => !result.result.isAiRecommended).length
+
+  // 로딩 중일 때 표시
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center mb-6">
+        <div className="flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+          <p className="ml-3 text-gray-500">당첨 번호 분석 데이터를 불러오는 중...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (allResults.length === 0) {
     return (

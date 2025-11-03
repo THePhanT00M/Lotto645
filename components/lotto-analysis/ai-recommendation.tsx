@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Sparkles, Save, Check, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { winningNumbers } from "@/data/winning-numbers" // 전체 당첨 번호 데이터
+// import { winningNumbers } from "@/data/winning-numbers" // 정적 데이터 import 제거
 import { saveLottoResult } from "@/utils/lotto-storage"
 import AINumberDisplay from "@/components/lotto-analysis/ai-number-display"
 
@@ -25,7 +25,9 @@ interface LottoAnalytics {
   oddEvenDistribution: StringFrequencyMap
   sectionDistribution: StringFrequencyMap
   consecutiveDistribution: StringFrequencyMap
-  latestDrawNumbers: number[] // --- (MODIFIED) ---
+  latestDrawNumbers: number[]
+  latestDrawNo: number // (NEW)
+  winningNumbersSet: Set<string> // (NEW)
 }
 
 // --- 3단계: 컴포넌트 구현 ---
@@ -48,7 +50,8 @@ interface AIRecommendationProps {
     latestDrawNo: number,
     recentThreshold: number,
   ) => number
-  winningNumbersSet: Set<string>
+  winningNumbersSet: Set<string> // (MODIFIED) 부모로부터 직접 받음
+  latestDrawNo: number // (NEW) 부모로부터 직접 받음
   // 콜백
   onRecommendationGenerated?: (numbers: number[]) => void
   onAnalyzeNumbers?: (numbers: number[]) => void
@@ -67,7 +70,8 @@ export default function AIRecommendation({
                                            getRecentFrequencyScore,
                                            getGapScore,
                                            getQuadrupletScore,
-                                           winningNumbersSet,
+                                           winningNumbersSet, // (MODIFIED)
+                                           latestDrawNo, // (NEW)
                                            onRecommendationGenerated,
                                            onAnalyzeNumbers,
                                            isGenerating,
@@ -103,11 +107,11 @@ export default function AIRecommendation({
         quadrupletLastSeen,
         recentFrequencies,
         gapMap,
-        latestDrawNumbers, // --- (NEW) ---
-      } = analyticsData
+        latestDrawNumbers,
+      } = analyticsData // (MODIFIED) analyticsData에서 모두 가져옴
 
       const RECENT_THRESHOLD = 156 // 4쌍둥이 페널티 기준 (3년)
-      const latestDrawNo = winningNumbers[winningNumbers.length - 1].drawNo
+      // const latestDrawNo = winningNumbers[winningNumbers.length - 1].drawNo // (REMOVED) prop으로 받음
 
       const ITERATIONS = 100000 // 10만 번의 조합을 테스트
       const TOP_K = 50 // 가장 점수가 높은 상위 50개의 조합을 저장
@@ -120,7 +124,7 @@ export default function AIRecommendation({
         const combinationKey = currentNumbers.join("-")
 
         // 3-2-2. 과거 1등 당첨 번호와 동일한 조합인지 확인 (동일하면 폐기)
-        if (winningNumbersSet.has(combinationKey)) {
+        if (winningNumbersSet.has(combinationKey)) { // (MODIFIED) prop 사용
           continue
         }
 
@@ -136,7 +140,7 @@ export default function AIRecommendation({
         const quadrupletScore = getQuadrupletScore(
           currentNumbers,
           quadrupletLastSeen,
-          latestDrawNo,
+          latestDrawNo, // (MODIFIED) prop 사용
           RECENT_THRESHOLD,
         )
         // E. 최근 출현 빈도 점수 (최근 2년)
