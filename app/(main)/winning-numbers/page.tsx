@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getBallColor } from "@/utils/lotto-utils"
 import { useMobile } from "@/hooks/use-mobile"
-import { winningNumbers } from "@/data/winning-numbers"
+import { supabase } from "@/lib/supabaseClient"
+import type { WinningLottoNumbers } from "@/types/lotto"
 
 export default function WinningNumbersPage() {
   const [currentDrawIndex, setCurrentDrawIndex] = useState(0)
@@ -16,20 +17,42 @@ export default function WinningNumbersPage() {
   const [pendingScrollIndex, setPendingScrollIndex] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const [winningNumbers, setWinningNumbers] = useState<WinningLottoNumbers[]>([])
+
   const selectedDrawRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const isMobile = useMobile()
 
-  // Get reversed winning numbers for display (newest first)
-  const reversedWinningNumbers = [...winningNumbers].reverse()
+  const reversedWinningNumbers = winningNumbers
   const currentDraw = reversedWinningNumbers[currentDrawIndex]
 
   useEffect(() => {
-    // Initialize data
-    setCurrentDrawIndex(0)
-    updateVisibleDraws(0, 0, 50)
-    setIsLoading(false)
+    const fetchWinningNumbers = async () => {
+      setIsLoading(true)
+      const { data, error } = await supabase
+        .from("winning_numbers")
+        .select("*")
+        .order("drawNo", { ascending: false }) // 최신 회차가 먼저 오도록 내림차순 정렬
+
+      if (error) {
+        console.error("Error fetching winning numbers:", error)
+        setWinningNumbers([]) // 에러 발생 시 빈 배열로 설정
+      } else if (data) {
+        setWinningNumbers(data as WinningLottoNumbers[])
+      }
+      setIsLoading(false)
+    }
+
+    fetchWinningNumbers()
   }, [])
+
+  useEffect(() => {
+    if (winningNumbers.length > 0) {
+      // Initialize data
+      setCurrentDrawIndex(0)
+      updateVisibleDraws(0, 0, 50)
+    }
+  }, [winningNumbers])
 
   // Handle pending scroll after visible draws update
   useEffect(() => {
@@ -73,6 +96,9 @@ export default function WinningNumbersPage() {
 
   // Update visible draws when currentDrawIndex changes
   useEffect(() => {
+    // [수정] 데이터가 로드된 후에만 실행
+    if (reversedWinningNumbers.length === 0) return
+
     // Ensure the selected draw is in the visible range
     if (currentDrawIndex < visibleRange.start || currentDrawIndex >= visibleRange.end) {
       // Calculate new visible range centered around the current draw
@@ -83,7 +109,7 @@ export default function WinningNumbersPage() {
 
     // Set pending scroll to ensure we scroll after render
     setPendingScrollIndex(currentDrawIndex)
-  }, [currentDrawIndex])
+  }, [currentDrawIndex, reversedWinningNumbers.length]) // [수정] reversedWinningNumbers.length 추가
 
   // Handle scroll events to load more draws
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
