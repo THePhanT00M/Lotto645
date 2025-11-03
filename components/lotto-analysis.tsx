@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { winningNumbers } from "@/data/winning-numbers"
+import type { WinningLottoNumbers } from "@/types/lotto" // 타입 import
+import { supabase } from "@/lib/supabaseClient" // Supabase 클라이언트 import
 import AdvancedAnalysis from "./lotto-analysis/advanced-analysis"
+import { Skeleton } from "@/components/ui/skeleton" // 로딩 스켈레톤 추가
 
 interface LottoAnalysisProps {
   numbers: number[]
@@ -20,6 +22,10 @@ type MultipleNumberType = {
 }
 
 export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
+  // DB에서 가져온 당첨 번호 상태
+  const [winningNumbers, setWinningNumbers] = useState<WinningLottoNumbers[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
   // 유사한 당첨 번호 상태
   const [similarDraws, setSimilarDraws] = useState<
     {
@@ -36,20 +42,42 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
 
   const [analysisNumbers, setAnalysisNumbers] = useState<number[]>(numbers)
 
+  // Supabase에서 당첨 번호 데이터 가져오기
+  useEffect(() => {
+    const fetchWinningNumbers = async () => {
+      setIsLoading(true)
+      const { data, error } = await supabase
+        .from("winning_numbers")
+        .select("*")
+        .order("drawNo", { ascending: true }) // 분석을 위해 오름차순으로 정렬
+
+      if (error) {
+        console.error("Error fetching winning numbers:", error)
+        setWinningNumbers([])
+      } else if (data) {
+        setWinningNumbers(data as WinningLottoNumbers[])
+      }
+      setIsLoading(false)
+    }
+
+    fetchWinningNumbers()
+  }, [])
+
   useEffect(() => {
     setAnalysisNumbers(numbers)
   }, [numbers])
 
+  // winningNumbers 상태나 analysisNumbers 상태가 변경될 때 분석 함수 재실행
   useEffect(() => {
-    if (analysisNumbers.length === 6) {
+    if (analysisNumbers.length === 6 && winningNumbers.length > 0) {
       findSimilarDraws(analysisNumbers)
       setMultipleNumbers(findMultiplesFromSelectedNumbers(analysisNumbers))
     }
-  }, [analysisNumbers])
+  }, [analysisNumbers, winningNumbers])
 
   const findSimilarDraws = (nums: number[]) => {
     // 선택한 번호와 유사한 과거 당첨 번호 찾기 (4개 이상 일치)
-    const similar = winningNumbers
+    const similar = winningNumbers // 이제 DB에서 가져온 상태 사용
       .map((draw) => {
         const matchCount = nums.filter((num) => draw.numbers.includes(num)).length
         return {
@@ -81,7 +109,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
             // 이 4쌍둥이 조합이 과거 당첨 번호에 몇 번 등장했는지 확인
             const appearances: { drawNo: number; date: string }[] = []
 
-            for (const draw of winningNumbers) {
+            for (const draw of winningNumbers) { // DB 상태 사용
               // 4개 번호가 모두 포함되어 있는지 확인
               if (quad.every((num) => draw.numbers.includes(num))) {
                 appearances.push({
@@ -112,7 +140,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
           // 이 3쌍둥이 조합이 과거 당첨 번호에 몇 번 등장했는지 확인
           const appearances: { drawNo: number; date: string }[] = []
 
-          for (const draw of winningNumbers) {
+          for (const draw of winningNumbers) { // DB 상태 사용
             // 3개 번호가 모두 포함되어 있는지 확인
             if (triplet.every((num) => draw.numbers.includes(num))) {
               appearances.push({
@@ -141,7 +169,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         // 이 2쌍둥이 조합이 과거 당첨 번호에 몇 번 등장했는지 확인
         const appearances: { drawNo: number; date: string }[] = []
 
-        for (const draw of winningNumbers) {
+        for (const draw of winningNumbers) { // DB 상태 사용
           // 2개 번호가 모두 포함되어 있는지 확인
           if (pair.every((num) => draw.numbers.includes(num))) {
             appearances.push({
@@ -189,15 +217,35 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         <p className="text-xl font-semibold text-black dark:text-white flex items-center gap-2 mb-0">번호 분석 결과</p>
       </div>
 
-      <AdvancedAnalysis
-        numbers={analysisNumbers}
-        userDrawnNumbers={numbers}
-        multipleNumbers={multipleNumbers}
-        similarDraws={similarDraws}
-        winningNumbersCount={winningNumbers.length}
-        getBallColor={getBallColor}
-        onNumbersChange={setAnalysisNumbers}
-      />
+      {isLoading ? (
+        // 로딩 스켈레톤
+        <div className="space-y-6">
+          <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
+            <Skeleton className="h-6 w-32 mb-4" />
+            <Skeleton className="h-24 w-full" />
+            <div className="mt-3 flex justify-between">
+              <Skeleton className="h-10 w-36" />
+              <Skeleton className="h-10 w-36" />
+            </div>
+          </div>
+          <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
+            <Skeleton className="h-6 w-40 mb-3" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </div>
+      ) : (
+        // 데이터 로드 완료 후 실제 컴포넌트 렌더링
+        <AdvancedAnalysis
+          numbers={analysisNumbers}
+          userDrawnNumbers={numbers}
+          winningNumbers={winningNumbers} // DB에서 가져온 데이터 전달
+          multipleNumbers={multipleNumbers}
+          similarDraws={similarDraws}
+          winningNumbersCount={winningNumbers.length}
+          getBallColor={getBallColor}
+          onNumbersChange={setAnalysisNumbers}
+        />
+      )}
 
       <div className="bg-white dark:bg-[rgb(38,38,38)] rounded-lg p-4 mt-6 text-sm text-gray-700 dark:text-gray-200">
         <p>
