@@ -99,10 +99,17 @@ const config: Config = {
             height: "0",
           },
         },
+        // [수정] Shimmer 애니메이션 키프레임
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        // [수정] Shimmer 애니메이션 등록
+        shimmer: "shimmer 2s linear infinite",
       },
     },
   },
