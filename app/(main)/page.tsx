@@ -52,7 +52,11 @@ export default function Home() {
 
         {/* Analysis Section - Only show when numbers are drawn */}
         {drawnNumbers.length === 6 && (
-          <LottoAnalysis numbers={drawnNumbers} key={`analysis-${activeTab}-${drawnNumbers.join("-")}`} />
+          <LottoAnalysis
+            numbers={drawnNumbers}
+            // [수정] key에서 activeTab을 제거하여 탭 전환 시 불필요한 리마운트를 방지합니다.
+            key={drawnNumbers.join("-")}
+          />
         )}
 
         {/* Tips Section */}
