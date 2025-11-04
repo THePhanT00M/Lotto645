@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getBallColor } from "@/utils/lotto-utils"
-import { saveLottoResult } from "@/utils/lotto-storage"
-import { useToast } from "@/hooks/use-toast"
+import { saveLottoResult } from "@/utils/lotto-storage" // 1. 로컬 저장 유틸 임포트
+import { useToast } from "@/hooks/use-toast" // 2. 토스트 훅 임포트
 import { Check, Lock, X } from "lucide-react"
 import LottoCongratulation from "@/components/lotto-congratulation"
 import LottoNumberDisplay from "@/components/lotto-number-display"
@@ -17,138 +17,127 @@ interface NumberSelectorProps {
 }
 
 export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers }: NumberSelectorProps) {
-  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([])
-  const [mode, setMode] = useState<"select" | "exclude" | "fix">("select")
-  const [excludedNumbers, setExcludedNumbers] = useState<number[]>([])
-  const [fixedNumbers, setFixedNumbers] = useState<number[]>([])
-  const [isSaved, setIsSaved] = useState(false)
-  const [showCongrats, setShowCongrats] = useState(false)
+  // 3. 상태 변수 정의
+  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]) // 현재 선택된 번호
+  const [mode, setMode] = useState<"select" | "exclude" | "fix">("select") // 현재 탭 모드 (선택/제외/고정)
+  const [excludedNumbers, setExcludedNumbers] = useState<number[]>([]) // 제외 번호
+  const [fixedNumbers, setFixedNumbers] = useState<number[]>([]) // 고정 번호
+  const [isSaved, setIsSaved] = useState(false) // 저장 완료(로컬) 여부
+  const [showCongrats, setShowCongrats] = useState(false) // 축하 메시지 표시 여부
 
-  // 결과 통지 여부를 추적하는 ref
-  const hasNotifiedRef = useRef(false)
+  // 4. DOM 참조 및 통지/저장 상태 관리
+  const hasNotifiedRef = useRef(false) // 상위 컴포넌트로 완료 통지를 한 번만 보내기 위한 Ref
+  const lastSaveTimeRef = useRef(0) // 중복 저장을 방지하기 위한 마지막 저장 시간 Ref
+  const drawnNumbersSectionRef = useRef<HTMLDivElement>(null) // 결과 영역 스크롤을 위한 Ref
 
-  // 마지막 저장 시간을 추적하는 ref
-  const lastSaveTimeRef = useRef(0)
+  const { toast } = useToast() // 5. toast 훅 사용 선언
 
-  // Add a new ref for the drawn numbers section
-  const drawnNumbersSectionRef = useRef<HTMLDivElement>(null)
-
-  const { toast } = useToast()
-
-  // 컴포넌트가 마운트될 때 통지 상태 초기화
+  // 6. 컴포넌트 마운트 시 통지 및 저장 상태 초기화
   useEffect(() => {
     hasNotifiedRef.current = false
     lastSaveTimeRef.current = 0
   }, [])
 
-  // 랜덤 번호 생성 함수
+  /**
+   * 7. (반)자동 번호 생성 함수
+   * @param count 고정 수를 제외하고 뽑을 번호의 개수
+   */
   const generateRandomNumbers = (count: number) => {
     if (count <= 0) return
 
-    // 고정된 번호만 유지하고 나머지는 초기화
+    // 7-1. 고정된 번호만 남기고 나머지 선택 해제
     setSelectedNumbers([...fixedNumbers])
 
-    // 제외된 번호와 고정된 번호를 제외한 번호 풀 생성
+    // 7-2. 뽑기 가능한 번호 풀 생성 (1~45 중, 제외된 번호와 고정된 번호를 뺀 나머지)
     const availableNumbers = Array.from({ length: 45 }, (_, i) => i + 1).filter(
       (n) => !excludedNumbers.includes(n) && !fixedNumbers.includes(n),
     )
 
-    // 필요한 개수만큼 랜덤 번호 선택
+    // 7-3. 필요한 개수(count)만큼 랜덤 번호 선택
     const newNumbers: number[] = []
     const tempAvailable = [...availableNumbers]
-
     for (let i = 0; i < count && tempAvailable.length > 0; i++) {
       const randomIndex = Math.floor(Math.random() * tempAvailable.length)
       newNumbers.push(tempAvailable[randomIndex])
       tempAvailable.splice(randomIndex, 1)
     }
 
-    // 고정된 번호와 새로 선택된 번호를 합쳐서 설정
+    // 7-4. 고정된 번호와 새로 선택된 번호를 합쳐서 상태 업데이트
     setSelectedNumbers([...fixedNumbers, ...newNumbers])
 
-    // 저장 상태 초기화
+    // 7-5. 저장 및 통지 상태 초기화
     setIsSaved(false)
-
-    // 통지 상태 초기화
     hasNotifiedRef.current = false
     lastSaveTimeRef.current = 0
   }
 
-  // Toggle a number in the appropriate array based on the current mode
+  /**
+   * 8. 번호판(1~45) 클릭 시 번호 토글 함수
+   * @param number 클릭된 번호
+   */
   const toggleNumber = (number: number) => {
-    if (mode === "select") {
+    if (mode === "select") { // 8-1. '번호 선택' 탭일 때
       if (selectedNumbers.includes(number)) {
-        // 고정된 번호는 선택 해제할 수 없음
+        // 8-1-1. 이미 선택된 번호 클릭 시 (고정 번호가 아니라면)
         if (!fixedNumbers.includes(number)) {
           setSelectedNumbers(selectedNumbers.filter((n) => n !== number))
-          // 선택 해제 시 통지 상태 초기화
           hasNotifiedRef.current = false
           setIsSaved(false)
           lastSaveTimeRef.current = 0
-
-          // 번호가 6개에서 5개로 줄어들 때 부모 컴포넌트에 초기화 이벤트 전달
+          // 8-1-2. 6개에서 5개로 줄어들 때, 상위 컴포넌트(분석) 리셋
           if (selectedNumbers.length === 6) {
             onReset()
           }
         }
       } else {
-        // 고정된 번호 개수를 고려하여 선택 가능한 번호 개수 제한
+        // 8-1-3. 새 번호 선택 시 (6개 미만일 때만)
         if (selectedNumbers.length < 6) {
           setSelectedNumbers([...selectedNumbers, number])
-          // 새 번호 선택 시 통지 상태 초기화
           hasNotifiedRef.current = false
           setIsSaved(false)
           lastSaveTimeRef.current = 0
         }
       }
-    } else if (mode === "exclude") {
+    } else if (mode === "exclude") { // 8-2. '번호 제외' 탭일 때
       if (excludedNumbers.includes(number)) {
         setExcludedNumbers(excludedNumbers.filter((n) => n !== number))
       } else {
-        // Can't exclude a fixed number
+        // 8-2-1. 고정된 번호는 제외할 수 없음
         if (!fixedNumbers.includes(number)) {
           setExcludedNumbers([...excludedNumbers, number])
-          // Also remove from selected if it's there
+          // 8-2-2. 만약 선택된 번호였다면, 선택 목록에서도 제거
           if (selectedNumbers.includes(number)) {
             setSelectedNumbers(selectedNumbers.filter((n) => n !== number))
-            // 선택 해제 시 통지 상태 초기화
             hasNotifiedRef.current = false
             setIsSaved(false)
             lastSaveTimeRef.current = 0
-
-            // 번호가 6개에서 5개로 줄어들 때 부모 컴포넌트에 초기화 이벤트 전달
             if (selectedNumbers.length === 6) {
               onReset()
             }
           }
         }
       }
-    } else if (mode === "fix") {
+    } else if (mode === "fix") { // 8-3. '번호 고정' 탭일 때
       if (fixedNumbers.includes(number)) {
+        // 8-3-1. 고정 해제
         setFixedNumbers(fixedNumbers.filter((n) => n !== number))
-        // 고정 해제 시 선택된 번호에서도 제거
-        setSelectedNumbers(selectedNumbers.filter((n) => n !== number))
-        // 선택 해제 시 통지 상태 초기화
+        setSelectedNumbers(selectedNumbers.filter((n) => n !== number)) // 선택 목록에서도 제거
         hasNotifiedRef.current = false
         setIsSaved(false)
         lastSaveTimeRef.current = 0
-
-        // 번호가 6개에서 5개로 줄어들 때 부모 컴포넌트에 초기화 이벤트 전달
         if (selectedNumbers.length === 6) {
           onReset()
         }
       } else {
-        // 고정 번호 추가 시 총 선택 가능한 번호(6개)를 초과하지 않도록 제한
+        // 8-3-2. 고정 추가
         const nonFixedSelectedCount = selectedNumbers.filter((n) => !fixedNumbers.includes(n)).length
-
+        // 8-3-3. 총 6개를 넘지 않고, 제외된 번호가 아닐 때만 고정 가능
         if (fixedNumbers.length < 6 && fixedNumbers.length + nonFixedSelectedCount < 6) {
-          // Can't fix an excluded number
           if (!excludedNumbers.includes(number)) {
             setFixedNumbers([...fixedNumbers, number])
-            // Also add to selected if it's not there
+            // 8-3-4. 선택 목록에도 자동 추가
             if (!selectedNumbers.includes(number)) {
               setSelectedNumbers([...selectedNumbers, number])
-              // 새 번호 선택 시 통지 상태 초기화
               hasNotifiedRef.current = false
               setIsSaved(false)
               lastSaveTimeRef.current = 0
@@ -159,7 +148,9 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
     }
   }
 
-  // Reset all selections
+  /**
+   * 9. '초기화' 버튼 클릭 시 모든 상태 리셋
+   */
   const resetAll = () => {
     setSelectedNumbers([])
     setExcludedNumbers([])
@@ -168,107 +159,129 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
     setShowCongrats(false)
     hasNotifiedRef.current = false
     lastSaveTimeRef.current = 0
-
-    // 부모 컴포넌트에 초기화 이벤트 전달
-    onReset()
+    onReset() // 상위 컴포넌트(분석) 리셋
   }
 
-  // Get the appropriate class for a number based on its state
+  /**
+   * 10. 번호판 UI 스타일 결정 함수
+   */
   const getNumberClass = (number: number) => {
     if (fixedNumbers.includes(number)) {
-      return "bg-green-200 dark:bg-green-900/50"
+      return "bg-green-200 dark:bg-green-900/50" // 고정됨
     } else if (excludedNumbers.includes(number)) {
-      return "bg-red-200 dark:bg-red-900/50"
+      return "bg-red-200 dark:bg-red-900/50" // 제외됨
     } else if (selectedNumbers.includes(number)) {
-      return "text-white dark:text-black"
+      return "text-white dark:text-black" // 선택됨
     }
+    // 기본 상태
     return "bg-white dark:bg-[rgb(38,38,38)] hover:bg-gray-200 dark:hover:bg-[rgb(100,100,100)]"
   }
 
-  // Auto-save when 6 numbers are selected
+  /**
+   * 11. [수정됨] 6개 번호가 선택되면 자동으로 저장 및 DB 로깅을 처리하는 useEffect
+   */
   useEffect(() => {
+    // 11-1. 선택된 번호가 6개이고, 아직 저장되지 않았을 때
     if (selectedNumbers.length === 6 && !isSaved) {
-      // Sort the selected numbers
+
+      // 11-2. 번호 정렬
       const sortedNumbers = [...selectedNumbers].sort((a, b) => a - b)
 
-      // 결과를 한 번만 통지
+      // 11-3. 상위 컴포넌트로 '선택 완료' 통지를 한 번만 보냄
       if (!hasNotifiedRef.current) {
         onSelectComplete(sortedNumbers)
         hasNotifiedRef.current = true
 
-        // 현재 시간과 마지막 저장 시간 사이에 최소 3초 이상 경과했는지 확인
+        // 11-4. 5초 이내 중복 저장을 방지하기 위해 시간 확인
         const currentTime = Date.now()
-        if (currentTime - lastSaveTimeRef.current > 3000) {
-          // 충분한 시간이 경과했으면 저장 진행
+        if (currentTime - lastSaveTimeRef.current > 5000) { // 5초로 변경 (utils/lotto-storage와 동일하게)
+
+          // 11-5. 로컬 저장 시도 (사용자 히스토리 UI용)
           const saved = saveLottoResult(sortedNumbers)
 
-          // 저장에 성공한 경우에만 토스트 메시지 표시
+          // 11-6. 로컬 저장이 성공한 경우 (중복이 아닐 때)
           if (saved) {
-            // Show toast notification
+            // 11-6-1. 토스트 알림 표시
             toast({
               title: "저장 완료",
               description: "선택한 번호가 기록에 저장되었습니다.",
             })
 
-            // 마지막 저장 시간 업데이트
+            // 11-6-2. 마지막 저장 시간 업데이트
             lastSaveTimeRef.current = currentTime
+
+            // 11-6-3. 서버 DB에 비동기 저장 (통계 수집용)
+            fetch('/api/log-draw', { // API 이름 변경
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                numbers: sortedNumbers,
+                source: 'manual', // 출처: 'manual' (수동/반자동)
+                // score는 AI가 아니므로 보내지 않음
+                // device_info는 API 서버에서 헤더를 통해 자동으로 수집
+              }),
+            }).catch((err) => {
+              // 11-6-4. 서버 저장 실패 시 콘솔에만 에러 기록
+              console.error("서버 통계 저장 실패 (manual):", err);
+            });
           }
         }
       }
 
-      // Mark as saved
+      // 11-7. UI 상태를 '저장됨'으로 변경
       setIsSaved(true)
 
-      // Scroll to the drawn numbers section and then show congratulation message
+      // 11-8. 잠시 후 결과 영역으로 스크롤하고 축하 메시지 표시
       setTimeout(() => {
         if (drawnNumbersSectionRef.current) {
           drawnNumbersSectionRef.current.scrollIntoView({
             behavior: "smooth",
             block: "center",
           })
-
-          // Show congratulation message after scrolling
           setTimeout(() => {
             setShowCongrats(true)
-          }, 500)
+          }, 500) // 스크롤 시간 고려
         }
       }, 100)
     } else if (selectedNumbers.length < 6) {
-      // Reset saved state when numbers change
+      // 11-9. 번호가 6개 미만이 되면 저장/축하 상태 리셋
       setIsSaved(false)
       setShowCongrats(false)
     }
-  }, [selectedNumbers, isSaved, toast, onSelectComplete])
+  }, [selectedNumbers, isSaved, toast, onSelectComplete]) // 12. 의존성 배열
 
-  // 부모 컴포넌트에서 전달받은 번호 처리
+  /**
+   * 13. 상위 컴포넌트(lotto-machine)에서 추첨한 번호를 받아오는 useEffect
+   */
   useEffect(() => {
+    // 13-1. 부모로부터 6개의 번호를 받으면, 이 컴포넌트의 상태도 동기화
     if (drawnNumbers && drawnNumbers.length === 6) {
       setSelectedNumbers(drawnNumbers)
-      setIsSaved(true)
+      setIsSaved(true) // 부모가 보낸 번호는 이미 저장된 것으로 간주
       hasNotifiedRef.current = true
 
-      // Scroll to the drawn numbers section and then show congratulation message
+      // 13-2. 결과 영역으로 스크롤 및 축하 메시지 표시
       setTimeout(() => {
         if (drawnNumbersSectionRef.current) {
           drawnNumbersSectionRef.current.scrollIntoView({
             behavior: "smooth",
             block: "center",
           })
-
-          // Show congratulation message after scrolling
           setTimeout(() => {
             setShowCongrats(true)
           }, 500)
         }
       }, 100)
 
-      // 부모 컴포넌트에서 전달받은 번호는 이미 저장되었다고 가정
+      // 13-3. 중복 저장 방지 시간 업데이트
       lastSaveTimeRef.current = Date.now()
     }
-  }, [drawnNumbers])
+  }, [drawnNumbers]) // 14. 의존성 배열
 
+  // 15. JSX 렌더링
   return (
     <div className="w-full">
+      {/* 15-1. 상단 탭 (선택/고정/제외) */}
       <div className="mb-6">
         <Tabs defaultValue="select" onValueChange={(value) => setMode(value as any)}>
           <TabsList className="grid w-full grid-cols-3 bg-gray-200 dark:bg-[#262626] p-1 rounded-sm">
@@ -295,6 +308,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
             </TabsTrigger>
           </TabsList>
 
+          {/* 탭별 설명 */}
           <TabsContent value="select" className="mt-2">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
               원하는 번호를 선택하세요. 최대 6개까지 선택할 수 있습니다.
@@ -312,6 +326,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
           </TabsContent>
         </Tabs>
 
+        {/* 15-2. 컨트롤 패널 (상태 표시, 초기화, 자동 버튼) */}
         <div className="w-full bg-gray-200 dark:bg-[#262626] rounded-lg p-2 mt-4">
           {/* 상태 표시 영역 */}
           <div className="grid grid-cols-3 gap-2 mb-3 text-center">
@@ -391,39 +406,38 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
         </div>
       </div>
 
-      {/* Number Grid */}
+      {/* 15-3. 번호 선택 그리드 (1-45) */}
       <div className="">
-        {/* 전체 번호 그리드 (1-45) */}
         <div className="grid grid-cols-5 sm:grid-cols-9 gap-2 sm:gap-3 place-items-center">
           {Array.from({ length: 45 }, (_, i) => i + 1).map((number) => {
             const isSelected = selectedNumbers.includes(number)
             const isFixed = fixedNumbers.includes(number)
             const isExcluded = excludedNumbers.includes(number)
-
-            // 동적 크기 계산
             const ballSize = "w-10 h-10"
 
             return (
               <button
                 key={number}
                 onClick={() => toggleNumber(number)}
+                // 15-3-1. 버튼 비활성화 로직
                 disabled={
-                  (mode === "select" && selectedNumbers.length >= 6 && !selectedNumbers.includes(number)) ||
-                  (mode === "select" && fixedNumbers.includes(number)) ||
-                  (mode === "fix" && fixedNumbers.length >= 6 && !fixedNumbers.includes(number)) ||
-                  (mode === "exclude" && fixedNumbers.includes(number)) ||
-                  (mode === "fix" && excludedNumbers.includes(number))
+                  (mode === "select" && selectedNumbers.length >= 6 && !selectedNumbers.includes(number)) || // 선택 모드: 6개 다 찼는데, 이미 선택된 공이 아닐 때
+                  (mode === "select" && fixedNumbers.includes(number)) || // 선택 모드: 고정된 공은 해제 불가
+                  (mode === "fix" && fixedNumbers.length >= 6 && !fixedNumbers.includes(number)) || // 고정 모드: 6개 다 찼는데, 이미 고정된 공이 아닐 때
+                  (mode === "exclude" && fixedNumbers.includes(number)) || // 제외 모드: 고정된 공은 제외 불가
+                  (mode === "fix" && excludedNumbers.includes(number)) // 고정 모드: 제외된 공은 고정 불가
                 }
                 className={`relative ${ballSize} rounded-full flex items-center justify-center font-medium text-sm sm:text-base transition-all ${getNumberClass(
                   number,
                 )}`}
                 style={{
+                  // 15-3-2. 선택되었고 고정되지 않은 공에만 공 색상 적용
                   backgroundColor: isSelected && !isFixed ? getBallColor(number) : "",
                 }}
               >
                 {number}
 
-                {/* 상태 아이콘 표시 */}
+                {/* 15-3-3. 상태 아이콘 표시 (고정/제외/선택) */}
                 {isFixed && (
                   <div className="absolute -top-1 -right-1 bg-green-500 rounded-full w-4 h-4 flex items-center justify-center">
                     <Lock className="w-2.5 h-2.5 text-white" />
@@ -445,19 +459,19 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
         </div>
       </div>
 
-      {/* Congratulatory Message */}
+      {/* 15-4. 축하 메시지 (6개 선택 완료 시) */}
       {showCongrats && (
         <div className="mb-6">
           <LottoCongratulation show={showCongrats} className="w-full max-w-none" />
         </div>
       )}
 
-      {/* Selected Numbers Display */}
+      {/* 15-5. 선택된 번호 표시 (스크롤 대상 Ref 지정) */}
       <LottoNumberDisplay
         ref={drawnNumbersSectionRef}
         numbers={selectedNumbers}
         fixedNumbers={fixedNumbers}
-        isSaved={isSaved}
+        isSaved={isSaved} // '기록 저장됨' 텍스트 표시 여부
         className="mt-6"
       />
     </div>

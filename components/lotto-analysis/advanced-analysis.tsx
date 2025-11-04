@@ -44,9 +44,10 @@ interface LottoAnalytics {
 const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytics => {
   // useMemo를 사용해 전체 당첨 번호 데이터가 변경되지 않는 한 통계 계산을 반복하지 않도록 캐시합니다.
   return useMemo(() => {
+    // 1. (수행) 로또 분석 캐싱 시작
     console.log("Lotto Analytics: Caching started...")
 
-    // 1등 당첨 번호 조합을 Set으로 만들어 중복 체크에 사용 (빠른 조회를 위해)
+    // 2. (수행) 1등 당첨 번호 조합을 Set으로 만들어 중복 체크에 사용
     const winningNumbersSet = new Set(
       winningNumbers.map((draw) => [...draw.numbers].sort((a, b) => a - b).join("-")),
     )
@@ -66,8 +67,8 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
     const consecutiveDistribution: StringFrequencyMap = new Map() // 연속번호 분포
 
     const totalDraws = winningNumbers.length
+    // 3. (수행) 당첨 번호 데이터가 없으면 빈 객체 반환 (오류 방지)
     if (totalDraws === 0) {
-      // 데이터가 없는 경우 빈 객체 반환 (오류 방지)
       return {
         numberFrequencies, pairFrequencies, tripletFrequencies, quadrupletLastSeen,
         recentFrequencies, gapMap, weightedNumberList, sumStats, oddEvenDistribution,
@@ -79,49 +80,49 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
     const RECENT_DRAW_COUNT = 104 // 최근 2년 (약 104주)
     const recentDrawsStart = Math.max(0, totalDraws - RECENT_DRAW_COUNT) // 최근 2년 데이터 시작 인덱스
 
-    // 번호별 마지막 등장 회차 (Gap 계산용)
+    // 4. (수행) 번호별 마지막 등장 회차 (Gap 계산용)
     const lastSeen: Map<number, number> = new Map()
     for (let i = 1; i <= 45; i++) {
       lastSeen.set(i, 0)
     }
 
     // --- B. 전체 당첨 번호(winningNumbers)를 순회하며 통계 데이터 구축 ---
+    // 5. (수행) 각 회차별로 반복
     winningNumbers.forEach((draw, index) => {
       const drawNumbers = [...draw.numbers].sort((a, b) => a - b) // 당첨번호 6개 (정렬)
       const allDrawNumbers = [...draw.numbers, draw.bonusNo] // 보너스 번호 포함 7개
 
-      // --- 1. 개별 번호 통계 (보너스 포함 7개) ---
+      // 6. (수행) 개별 번호 통계 (보너스 포함 7개)
       for (const num of allDrawNumbers) {
-        // 1-1. 전체 출현 빈도
+        // 6-1. 전체 출현 빈도
         const freq = (numberFrequencies.get(num) || 0) + 1
         numberFrequencies.set(num, freq)
-        // 1-2. 가중치 목록에 추가 (많이 나온 번호일수록 목록에 더 많이 들어감)
+        // 6-2. 가중치 목록에 추가
         weightedNumberList.push(num)
-        // 1-3. 마지막 출현 회차 기록 (Gap 계산용)
+        // 6-3. 마지막 출현 회차 기록
         lastSeen.set(num, draw.drawNo)
-        // 1-4. 최근 2년 출현 빈도
+        // 6-4. 최근 2년 출현 빈도
         if (index >= recentDrawsStart) {
           recentFrequencies.set(num, (recentFrequencies.get(num) || 0) + 1)
         }
       }
 
-      // --- 2. 조합 통계 (당첨번호 6개 기준) ---
-      // 2-1. 6개 번호 합계
+      // 7. (수행) 조합 통계 (당첨번호 6개 기준)
+      // 7-1. 6개 번호 합계
       const sum = drawNumbers.reduce((a, b) => a + b, 0)
       sumStats.values.push(sum)
-      // 2-2. 홀짝 비율
+      // 7-2. 홀짝 비율
       const oddCount = drawNumbers.filter((n) => n % 2 === 1).length
       const evenCount = 6 - oddCount
       const oddEvenKey = `${oddCount}:${evenCount}`
       oddEvenDistribution.set(oddEvenKey, (oddEvenDistribution.get(oddEvenKey) || 0) + 1)
-      // 2-3. 구간별 개수 (1-15, 16-30, 31-45)
+      // 7-3. 구간별 개수 (1-15, 16-30, 31-45)
       const s1 = drawNumbers.filter((n) => n <= 15).length
       const s2 = drawNumbers.filter((n) => n > 15 && n <= 30).length
       const s3 = drawNumbers.filter((n) => n > 30).length
-      // (예: "4:1:1", "3:2:1") 가장 많이 나온 구간 순서로 정렬하여 키 생성
       const sectionKey = [s1, s2, s3].sort((a, b) => b - a).join(":")
       sectionDistribution.set(sectionKey, (sectionDistribution.get(sectionKey) || 0) + 1)
-      // 2-4. 연속번호 개수
+      // 7-4. 연속번호 개수
       let consecutiveCount = 0
       for (let i = 0; i < drawNumbers.length - 1; i++) {
         if (drawNumbers[i + 1] - drawNumbers[i] === 1) {
@@ -131,7 +132,7 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
       const consecutiveKey = `${consecutiveCount}쌍` // (예: "0쌍", "1쌍", "2쌍")
       consecutiveDistribution.set(consecutiveKey, (consecutiveDistribution.get(consecutiveKey) || 0) + 1)
 
-      // 2-5. 2개 번호 조합 (Pair) 빈도
+      // 7-5. 2개 번호 조합 (Pair) 빈도
       for (let i = 0; i < drawNumbers.length; i++) {
         for (let j = i + 1; j < drawNumbers.length; j++) {
           const key = `${drawNumbers[i]}-${drawNumbers[j]}`
@@ -139,7 +140,7 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
         }
       }
 
-      // 2-6. 3개 번호 조합 (Triplet) 빈도
+      // 7-6. 3개 번호 조합 (Triplet) 빈도
       for (let i = 0; i < drawNumbers.length - 2; i++) {
         for (let j = i + 1; j < drawNumbers.length - 1; j++) {
           for (let k = j + 1; k < drawNumbers.length; k++) {
@@ -149,7 +150,7 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
         }
       }
 
-      // 2-7. 4개 번호 조합 (Quadruplet) 마지막 출현 회차
+      // 7-7. 4개 번호 조합 (Quadruplet) 마지막 출현 회차
       for (let i = 0; i < drawNumbers.length - 3; i++) {
         for (let j = i + 1; j < drawNumbers.length - 2; j++) {
           for (let k = j + 1; k < drawNumbers.length - 1; k++) {
@@ -160,29 +161,31 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
           }
         }
       }
-    }) // End of winningNumbers.forEach
+    }) // 8. (수행) 회차별 반복 종료
 
     // --- C. 최종 통계 계산 (후처리) ---
+    // 9. (수행) 마지막 회차 번호 계산
     const latestDrawNo = winningNumbers[totalDraws - 1].drawNo
     for (let i = 1; i <= 45; i++) {
-      // 3-1. 한 번도 안 나온 번호 처리 (최소 1회 보장, 가중치 목록에 추가)
+      // 9-1. 한 번도 안 나온 번호 처리
       if (!numberFrequencies.has(i)) {
-        numberFrequencies.set(i, 1) // 1회로 설정 (0으로 나누기 방지 등)
+        numberFrequencies.set(i, 1) // 1회로 설정
         weightedNumberList.push(i) // 가중치 목록에 최소 1번 추가
       }
-      // 3-2. 미출현 기간(Gap) 계산
+      // 9-2. 미출현 기간(Gap) 계산
       gapMap.set(i, latestDrawNo - (lastSeen.get(i) || 0))
     }
-    // 3-3. 6개 번호 합계의 평균(mean) 및 표준편차(stdDev) 계산
+    // 10. (수행) 6개 번호 합계의 평균(mean) 및 표준편차(stdDev) 계산
     const sumTotal = sumStats.values.reduce((a, b) => a + b, 0)
     sumStats.mean = sumTotal / totalDraws
     const variance = sumStats.values.reduce((a, b) => a + Math.pow(b - sumStats.mean, 2), 0) / totalDraws
     sumStats.stdDev = Math.sqrt(variance)
 
-    // --- 3-4. (NEW) 직전 회차 번호 (이월수 분석용) ---
+    // 11. (수행) 직전 회차 번호 (이월수 분석용)
     const latestDraw = winningNumbers[totalDraws - 1]
     const latestDrawNumbers = [...latestDraw.numbers, latestDraw.bonusNo]
 
+    // 12. (수행) 로또 분석 캐싱 완료
     console.log("Lotto Analytics: Caching complete.")
     // --- D. 모든 통계 데이터 반환 ---
     return {
@@ -197,11 +200,11 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
       oddEvenDistribution,
       sectionDistribution,
       consecutiveDistribution,
-      latestDrawNumbers, // (NEW)
-      latestDrawNo, // (NEW)
-      winningNumbersSet, // (NEW)
+      latestDrawNumbers,
+      latestDrawNo,
+      winningNumbersSet,
     }
-  }, [winningNumbers]) // winningNumbers prop이 변경될 때만 재계산
+  }, [winningNumbers]) // 13. (수행) winningNumbers prop이 변경될 때만 재계산
 }
 
 // --- 2단계: AI 추천 로직 (ai-recommendation.tsx에서 이동) ---
@@ -219,25 +222,10 @@ const generateCombination = (weightedList: number[]): number[] => {
   }
   return Array.from(numbers).sort((a, b) => a - b)
 }
-/** (헬퍼) 등급별 점수 반환 (AI 평가 가중치용) */
-const getGradeScore = (grade: Grade): number => {
-  switch (grade) {
-    case "최상":
-      return 80
-    case "상":
-      return 50
-    case "중상":
-      return 30
-    case "중":
-      return 10
-    case "보통":
-      return 0
-    case "중하":
-      return -20
-    case "하":
-      return -40
-  }
-}
+
+/** (헬퍼) 등급별 점수 반환 (AI 평가 가중치용) - [삭제됨] */
+// const getGradeScore = (grade: Grade): number => { ... } // 1. (변경) 이 함수는 삭제됨.
+
 /** (헬퍼) 6개 번호의 2쌍(Pair) 조합 점수 합산 */
 const getPairScore = (numbers: number[], pairMap: StringFrequencyMap): number => {
   let score = 0
@@ -287,10 +275,10 @@ const getQuadrupletScore = (
           if (lastSeenDraw) {
             const gap = latestDrawNo - lastSeenDraw
             if (gap < recentThreshold) {
-              // 최근 3년 이내에 4개 조합이 일치한 적이 있다면 큰 페널티
+              // 1. (수행) 최근 3년 이내 4개 조합 일치 시 큰 페널티
               return -150
             } else {
-              // 3년 이전에 나온 적이 있다면 작은 페널티
+              // 2. (수행) 3년 이전 조합 일치 시 작은 페널티
               maxPenalty = Math.min(maxPenalty, -40)
             }
           }
@@ -298,93 +286,101 @@ const getQuadrupletScore = (
       }
     }
   }
-  return maxPenalty // 3년 이내 조합이 없으면 0 또는 -40 반환
+  return maxPenalty // 3. (수행) 페널티 없음(0) 또는 작은 페널티(-40) 반환
 }
 /** (헬퍼) 분포도 Map에서 특정 key의 순위(빈도 기준) 반환 */
 const getRank = (distribution: StringFrequencyMap, key: string): number => {
-  // (예: 홀짝 분포 Map, "3:3" 키)
-  // 1. 분포 Map을 값(빈도) 기준으로 내림차순 정렬
+  // 1. (수행) 분포 Map을 값(빈도) 기준으로 내림차순 정렬
   const sorted = [...distribution.entries()].sort((a, b) => b[1] - a[1])
-  // 2. 정렬된 배열에서 key의 인덱스(순위) 찾기
+  // 2. (수행) 정렬된 배열에서 key의 인덱스(순위) 찾기
   const rank = sorted.findIndex((entry) => entry[0] === key)
   return rank === -1 ? 99 : rank + 1 // 1위, 2위...
 }
 
 /**
- * (핵심) 6개 번호 조합의 등급(밸런스)을 계산하는 함수
+ * [수정됨] 6개 번호 조합의 '밸런스 점수' (0~200점)를 계산하는 함수
  * @param {number[]} numbers - 정렬된 6개 번호 배열
  * @param {LottoAnalytics} stats - useLottoAnalytics에서 계산된 전체 통계 데이터
- * @returns {Grade} - "최상" ~ "하" 등급
+ * @returns {number} - 1점 단위의 세부 밸런스 점수 (최대 200점)
  */
-const calculateGrade = (numbers: number[], stats: LottoAnalytics): Grade => {
+const calculateBalanceScore = (numbers: number[], stats: LottoAnalytics): number => {
   const {
     sumStats,
     oddEvenDistribution,
     sectionDistribution,
     consecutiveDistribution,
     quadrupletLastSeen,
-    latestDrawNo, // (NEW)
+    latestDrawNo,
   } = stats
 
-  // 1. 6개 번호의 합계
+  // 1. (수행) 6개 번호의 합계
   const sum = numbers.reduce((acc, num) => acc + num, 0)
-  let score = 70 // 기본 점수
+  let score = 70 // 2. (수행) 기본 점수 70점 부여
 
-  // 2. 합계 점수: 평균(mean)에서 표준편차(stdDev) 범위 내에 있는지 확인
+  // 3. (수행) 합계 점수: 평균(mean)에서 표준편차(stdDev) 범위 내에 있는지 확인
   if (sumStats.stdDev > 0) { // stdDev가 0일 경우(데이터가 1개일 때) 오류 방지
     const sumDiff = Math.abs(sum - sumStats.mean)
-    if (sumDiff <= sumStats.stdDev) score += 35 // 1 표준편차 이내 (가장 좋음)
-    else if (sumDiff <= sumStats.stdDev * 2) score += 15 // 2 표준편차 이내 (좋음)
-    else score -= 20 // 2 표준편차 초과 (나쁨)
+    if (sumDiff <= sumStats.stdDev) score += 35 // 1 표준편차 이내 (가장 좋음: +35)
+    else if (sumDiff <= sumStats.stdDev * 2) score += 15 // 2 표준편차 이내 (좋음: +15)
+    else score -= 20 // 2 표준편차 초과 (나쁨: -20)
   }
 
-  // 3. 연속번호 점수
-  const sortedNumbers = [...numbers].sort((a, b) => a - b) // (이미 정렬되었지만 혹시 몰라 다시 정렬)
+  // 4. (수행) 연속번호 점수
+  const sortedNumbers = [...numbers].sort((a, b) => a - b)
   let consecutiveCount = 0
   for (let i = 0; i < sortedNumbers.length - 1; i++) {
     if (sortedNumbers[i + 1] - sortedNumbers[i] === 1) consecutiveCount++
   }
   const consecutiveKey = `${consecutiveCount}쌍` // "0쌍", "1쌍" 등
   const consecutiveRank = getRank(consecutiveDistribution, consecutiveKey)
-  if (consecutiveRank === 1) score += 20 // 1위 패턴
-  else if (consecutiveRank === 2) score += 10 // 2위 패턴
-  else score -= 15 // 그 외 (너무 드문 패턴)
+  if (consecutiveRank === 1) score += 20 // 1위 패턴 (+20)
+  else if (consecutiveRank === 2) score += 10 // 2위 패턴 (+10)
+  else score -= 15 // 그 외 (드문 패턴: -15)
 
-  // 4. 홀짝 비율 점수
+  // 5. (수행) 홀짝 비율 점수
   const oddCount = numbers.filter((n) => n % 2 === 1).length
   const evenCount = 6 - oddCount
   const oddEvenKey = `${oddCount}:${evenCount}` // "3:3", "4:2" 등
   const oddEvenRank = getRank(oddEvenDistribution, oddEvenKey)
-  if (oddEvenRank === 1) score += 30 // 1위 (가장 흔한 비율)
-  else if (oddEvenRank <= 3) score += 15 // 2-3위
-  else if (oddEvenRank === 4) score -= 10 // 4위
-  else score -= 20 // 5위 이하
+  if (oddEvenRank === 1) score += 30 // 1위 (가장 흔한 비율: +30)
+  else if (oddEvenRank <= 3) score += 15 // 2-3위 (+15)
+  else if (oddEvenRank === 4) score -= 10 // 4위 (-10)
+  else score -= 20 // 5위 이하 (-20)
 
-  // 5. 구간별 분포 점수 (1-15, 16-30, 31-45)
+  // 6. (수행) 구간별 분포 점수 (1-15, 16-30, 31-45)
   const s1 = numbers.filter((n) => n <= 15).length
   const s2 = numbers.filter((n) => n > 15 && n <= 30).length
   const s3 = numbers.filter((n) => n > 30).length
   const sectionKey = [s1, s2, s3].sort((a, b) => b - a).join(":") // "3:2:1", "4:1:1" 등
   const sectionRank = getRank(sectionDistribution, sectionKey)
-  if (sectionRank === 1) score += 45 // 1위 (가장 밸런스 좋은 구간)
-  else if (sectionRank <= 3) score += 20 // 2-3위
-  else if (sectionRank <= 6) score += 0 // 4-6위 (보통)
-  else score -= 20 // 7위 이하 (쏠림)
+  if (sectionRank === 1) score += 45 // 1위 (가장 밸런스 좋은 구간: +45)
+  else if (sectionRank <= 3) score += 20 // 2-3위 (+20)
+  else if (sectionRank <= 6) score += 0 // 4-6위 (보통: 0)
+  else score -= 20 // 7위 이하 (쏠림: -20)
 
-  // 6. 4쌍둥이 페널티 (밸런스 등급에도 영향)
+  // 7. (수행) 4쌍둥이 페널티 (밸런스 점수에도 영향)
   const RECENT_THRESHOLD = 156 // 3년
-  // const latestDrawNo = winningNumbers[winningNumbers.length - 1].drawNo // (MODIFIED)
   const quadrupletPenalty = getQuadrupletScore(sortedNumbers, quadrupletLastSeen, latestDrawNo, RECENT_THRESHOLD)
   score += quadrupletPenalty // (0, -40, 또는 -150)
 
-  // 7. 최종 점수에 따라 등급 결정
-  if (score >= 180) return "최상"
-  if (score >= 150) return "상"
-  if (score >= 120) return "중상"
-  if (score >= 90) return "중"
-  if (score >= 60) return "보통"
-  if (score >= 20) return "중하"
-  return "하"
+  // 8. (수행) 최종 밸런스 점수(숫자) 반환. (최대 70+35+20+30+45+0 = 200점)
+  return score
+}
+
+/**
+ * [신규] 밸런스 점수(숫자)를 7단계 등급(문자열)으로 변환하는 헬퍼 함수
+ * @param {number} score - calculateBalanceScore에서 계산된 점수
+ * @returns {Grade} - "최상" ~ "하" 등급
+ */
+const scoreToGrade = (score: number): Grade => {
+  // 1. (수행) 점수 구간에 따라 7단계 등급을 반환
+  if (score >= 180) return "최상" // 180점 이상
+  if (score >= 150) return "상"   // 150~179점
+  if (score >= 120) return "중상" // 120~149점
+  if (score >= 90) return "중"    // 90~119점
+  if (score >= 60) return "보통" // 60~89점
+  if (score >= 20) return "중하" // 20~59점
+  return "하" // 19점 이하
 }
 
 /** (헬퍼) 등급별 UI 색상 반환 */
@@ -456,75 +452,73 @@ export default function AdvancedAnalysis({
   const isFirstRender = useRef(true)
 
   // --- 로직 이동: 시작 ---
-  // useLottoAnalytics 훅을 호출하여 모든 통계 데이터를 analyticsData에 저장 (useMemo로 캐시됨)
-  const analyticsData = useLottoAnalytics(winningNumbers) // (MODIFIED) prop을 전달
-  const [userGrade, setUserGrade] = useState<Grade | null>(null) // 사용자 번호의 등급
+  // 1. (수행) useLottoAnalytics 훅을 호출하여 모든 통계 데이터를 analyticsData에 저장
+  const analyticsData = useLottoAnalytics(winningNumbers)
+  const [userGrade, setUserGrade] = useState<Grade | null>(null) // 사용자 번호의 등급 (UI 표시용)
   const [showUserAnalysis, setShowUserAnalysis] = useState(true)
-  // 'originalUserNumbers'는 사용자가 '추첨' 또는 '수동 선택'으로 생성한 원본 번호를 저장합니다.
-  // 이 상태는 AI 추천 번호가 생성되어도 변경되지 않아야 합니다. (버그 수정의 핵심)
   const [originalUserNumbers, setOriginalUserNumbers] = useState<number[]>(userDrawnNumbers)
   const [isAiAnalyzed, setIsAiAnalyzed] = useState(false) // 현재 AI 번호를 분석 중인지 여부
   const [isGenerating, setIsGenerating] = useState(false) // AI 번호 생성 로딩 상태
 
   useEffect(() => {
-    // 첫 렌더링 시 강제 리프레시 (useMemo 초기화 관련 이슈 대응)
+    // 2. (수행) 첫 렌더링 시 강제 리프레시 (useMemo 초기화 관련 이슈 대응)
     if (isFirstRender.current) {
       isFirstRender.current = false
       setForceRefresh((prev) => prev + 1)
     }
   }, [])
 
-  // [버그 수정]
-  // 이 useEffect는 이제 부모로부터 받은 *사용자 원본 번호*(`userDrawnNumbers`)가
-  // 변경될 때만 실행됩니다.
-  // '현재 분석 중인 번호'(`numbers` prop)가 변경되어도 더 이상 실행되지 않습니다.
+  // 3. (수행) 부모로부터 받은 *사용자 원본 번호*(`userDrawnNumbers`)가 변경될 때 실행
   useEffect(() => {
-    if (userDrawnNumbers && userDrawnNumbers.length === 6 && analyticsData.latestDrawNo > 0) { // (MODIFIED) analyticsData가 준비되었는지 확인
-      // 1. 사용자 원본 번호를 `originalUserNumbers` 상태에 저장합니다.
+    if (userDrawnNumbers && userDrawnNumbers.length === 6 && analyticsData.latestDrawNo > 0) {
+      // 3-1. 사용자 원본 번호를 `originalUserNumbers` 상태에 저장
       setOriginalUserNumbers([...userDrawnNumbers])
-      // 2. 사용자 번호의 등급(밸런스)을 계산합니다.
+
+      // 3-2. [수정] 사용자 번호의 밸런스 점수(숫자)를 계산
       const sortedUserNumbers = [...userDrawnNumbers].sort((a, b) => a - b)
-      setUserGrade(calculateGrade(sortedUserNumbers, analyticsData))
-      // 3. 사용자 분석 UI를 표시합니다.
+      const userScore = calculateBalanceScore(sortedUserNumbers, analyticsData)
+
+      // 3-3. [신규] 밸런스 점수를 UI에 표시할 등급(문자열)으로 변환
+      setUserGrade(scoreToGrade(userScore))
+
+      // 3-4. 사용자 분석 UI를 표시
       setShowUserAnalysis(true)
-      // 4. AI 분석 플래그를 리셋합니다.
+      // 3-5. AI 분석 플래그를 리셋
       setIsAiAnalyzed(false)
     } else {
-      // 번호가 6개가 아니면 상태 초기화
+      // 3-6. 번호가 6개가 아니면 상태 초기화
       setOriginalUserNumbers([])
       setUserGrade(null)
       setShowUserAnalysis(false)
     }
-    // 의존성 배열에서 `numbers`를 제거하고 `userDrawnNumbers`를 사용합니다.
-  }, [userDrawnNumbers, analyticsData]) // (MODIFIED) analyticsData 추가
+    // 3-7. 의존성 배열에 `analyticsData` 추가
+  }, [userDrawnNumbers, analyticsData])
 
-  /** "AI 추천 받기" 버튼 클릭 시 호출되는 함수 */
+  /** 4. "AI 추천 받기" 버튼 클릭 시 호출되는 함수 */
   const generateAIRecommendation = async () => {
-    setIsGenerating(true) // 1. 로딩 상태 시작
-    // 2. 실제 번호 생성 로직은 자식 컴포넌트(AIRecommendation)에서 실행됩니다.
-    // (isGenerating prop이 true로 변경되면 AIRecommendation의 useEffect가 트리거됨)
+    setIsGenerating(true) // 4-1. 로딩 상태 시작 (이 true 상태가 AIRecommendation 컴포넌트로 전달됨)
   }
 
-  /** "당첨 패턴 보기" (사용자 번호 카드) 버튼 클릭 시 호출 */
+  /** 5. "당첨 패턴 보기" (사용자 번호 카드) 버튼 클릭 시 호출 */
   const handleAnalyzeUserNumbers = () => {
     if (originalUserNumbers.length === 6) {
-      setIsAiAnalyzed(false) // 1. AI 분석 모드 해제
-      // 2. 부모 컴포넌트(lotto-analysis)에 분석 대상을 '사용자 원본 번호'로 변경하도록 알림
+      setIsAiAnalyzed(false) // 5-1. AI 분석 모드 해제
+      // 5-2. 부모 컴포넌트(lotto-analysis)에 분석 대상을 '사용자 원본 번호'로 변경하도록 알림
       onNumbersChange(originalUserNumbers)
     }
   }
 
-  /** (콜백) AIRecommendation 컴포넌트가 번호 생성을 완료하면 호출됨 */
+  /** 6. (콜백) AIRecommendation 컴포넌트가 번호 생성을 완료하면 호출됨 */
   const handleRecommendationGenerated = (newNumbers: number[]) => {
-    setRecommendedNumbers(newNumbers) // 1. 추천받은 번호 상태에 저장 (AI 카드 표시에 사용)
-    setIsAiAnalyzed(true) // 2. AI 분석 모드 활성화
-    setIsGenerating(false) // 3. 로딩 상태 종료
-    // 4. 부모 컴포넌트(lotto-analysis)에 분석 대상을 '새 AI 번호'로 변경하도록 알림
-    //    (이로 인해 MultipleNumberAnalysis가 AI 번호 기준으로 업데이트됨)
+    setRecommendedNumbers(newNumbers) // 6-1. 추천받은 번호 상태에 저장 (AI 카드 표시에 사용)
+    setIsAiAnalyzed(true) // 6-2. AI 분석 모드 활성화
+    setIsGenerating(false) // 6-3. 로딩 상태 종료
+    // 6-4. 부모 컴포넌트(lotto-analysis)에 분석 대상을 '새 AI 번호'로 변경하도록 알림
     onNumbersChange(newNumbers)
   }
   // --- 로직 이동: 종료 ---
 
+  // 7. (수행) JSX 렌더링
   return (
     <div className="space-y-6">
       {/* --- DIV 1: 추첨 번호 (사용자 원본 번호) 카드 --- */}
@@ -546,6 +540,7 @@ export default function AdvancedAnalysis({
                   <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">
                     추첨기에서 선택한 번호의 분석 결과입니다.
                   </p>
+                  {/* UI에는 등급(userGrade)을 표시 */}
                   <div
                     className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(
                       userGrade,
@@ -599,32 +594,32 @@ export default function AdvancedAnalysis({
       </div>
 
       {/* --- DIV 2: AI 번호 추천 카드 --- */}
-      {/* 이 컴포넌트는 AI 번호 생성이 완료될 때까지 렌더링되지 않습니다. (내부 로직) */}
+      {/* 8. (수행) AIRecommendation 컴포넌트에 수정된 함수들 전달 */}
       <AIRecommendation
-        analyticsData={analyticsData} // 1. 전체 통계 데이터 전달
-        // 2. 헬퍼 함수들 전달
-        calculateGrade={calculateGrade}
+        analyticsData={analyticsData} // 1. 전체 통계 데이터
+        // 2. [수정] 밸런스 점수 및 등급 변환 함수 전달
+        calculateBalanceScore={calculateBalanceScore}
+        scoreToGrade={scoreToGrade}
         getGradeColor={getGradeColor}
         getGradeDescription={getGradeDescription}
+        // 3. AI 생성 헬퍼 함수 전달
         generateCombination={generateCombination}
-        getGradeScore={getGradeScore}
+        // [삭제] getGradeScore는 삭제됨
         getPairScore={getPairScore}
         getTripletScore={getTripletScore}
         getRecentFrequencyScore={getRecentFrequencyScore}
         getGapScore={getGapScore}
         getQuadrupletScore={getQuadrupletScore}
-        winningNumbersSet={analyticsData.winningNumbersSet} // (MODIFIED) analyticsData에서 전달
-        latestDrawNo={analyticsData.latestDrawNo} // (NEW) analyticsData에서 전달
-        // 3. 콜백 함수 전달
+        winningNumbersSet={analyticsData.winningNumbersSet}
+        latestDrawNo={analyticsData.latestDrawNo}
+        // 4. 콜백 함수 전달
         onRecommendationGenerated={handleRecommendationGenerated} // AI가 번호 생성을 완료했을 때
         onAnalyzeNumbers={onNumbersChange} // AI 카드의 "당첨 패턴 보기" 버튼 클릭 시
-        // 4. 로딩 상태 전달
+        // 5. 로딩 상태 전달
         isGenerating={isGenerating}
       />
 
       {/* --- DIV 3: 당첨 패턴 통계 (쌍둥이 분석) --- */}
-      {/* 이 컴포넌트는 부모(lotto-analysis)로부터 받은 `multipleNumbers`를 표시합니다. */}
-      {/* `multipleNumbers`는 `numbers` prop(현재 분석 중인 번호) 기준으로 계산됩니다. */}
       <MultipleNumberAnalysis multipleNumbers={multipleNumbers} getBallColor={getBallColor} />
     </div>
   )
