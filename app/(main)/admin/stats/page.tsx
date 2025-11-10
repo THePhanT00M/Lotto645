@@ -215,40 +215,35 @@ export default function AdminStatsPage() {
         </div>
       )}
 
+      {/* 1. p-6 pb-3 -> p-4 sm:p-6 및 내부 px-6 pb-6 제거 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-          <div className="p-6 pb-3">
+          <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <Target className="w-4 h-4" />총 추첨 횟수
             </div>
-          </div>
-          <div className="px-6 pb-6">
-            <div className="text-3xl font-bold text-gray-900 dark:text-white">{totalPicks}</div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mt-3">{totalPicks}</div>
           </div>
         </div>
 
         <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-          <div className="p-6 pb-3">
+          <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <Award className="w-4 h-4" />
               전체 당첨률
             </div>
-          </div>
-          <div className="px-6 pb-6">
-            <div className="text-3xl font-bold text-green-600">{winRate}%</div>
+            <div className="text-3xl font-bold text-green-600 mt-3">{winRate}%</div>
             <p className="text-xs text-gray-500 mt-1">{winningResults.length}개 당첨</p>
           </div>
         </div>
 
         <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-          <div className="p-6 pb-3">
+          <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
               AI 추천 당첨률
             </div>
-          </div>
-          <div className="px-6 pb-6">
-            <div className="text-3xl font-bold text-blue-600">{aiWinRate}%</div>
+            <div className="text-3xl font-bold text-blue-600 mt-3">{aiWinRate}%</div>
             <p className="text-xs text-gray-500 mt-1">
               {aiWinningResults.length}/{aiRecommendedCount}개 당첨
             </p>
@@ -256,14 +251,12 @@ export default function AdminStatsPage() {
         </div>
 
         <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-          <div className="p-6 pb-3">
+          <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               일반 추첨 당첨률
             </div>
-          </div>
-          <div className="px-6 pb-6">
-            <div className="text-3xl font-bold text-purple-600">{regularWinRate}%</div>
+            <div className="text-3xl font-bold text-purple-600 mt-3">{regularWinRate}%</div>
             <p className="text-xs text-gray-500 mt-1">
               {regularWinningResults.length}/{regularDrawCount}개 당첨
             </p>
@@ -278,13 +271,14 @@ export default function AdminStatsPage() {
           <TabsTrigger value="comparison">AI vs 일반</TabsTrigger>
         </TabsList>
 
+        {/* 2. p-6 -> p-4 sm:p-6 및 px-6 pb-6 -> p-4 sm:p-6 pt-0 */}
         <TabsContent value="ranks" className="space-y-4">
           <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">당첨 등수별 분포</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">전체 분석 완료된 추첨의 등수별 통계</p>
             </div>
-            <div className="px-6 pb-6">
+            <div className="p-4 sm:p-6 pt-0">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {rankStats.map((stat) => (
                   <div
@@ -315,13 +309,14 @@ export default function AdminStatsPage() {
           </div>
         </TabsContent>
 
+        {/* 3. p-6 -> p-4 sm:p-6 및 px-6 pb-6 -> p-4 sm:p-6 pt-0 */}
         <TabsContent value="matches" className="space-y-4">
           <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">번호 일치 개수 분포</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">당첨 번호와 일치하는 개수별 통계</p>
             </div>
-            <div className="px-6 pb-6">
+            <div className="p-4 sm:p-6 pt-0">
               <div className="space-y-3">
                 {matchCountStats.map((stat) => (
                   <div key={stat.count} className="flex items-center gap-4">
@@ -349,17 +344,18 @@ export default function AdminStatsPage() {
           </div>
         </TabsContent>
 
+        {/* 4. p-6 -> p-4 sm:p-6 및 px-6 pb-6 -> p-4 sm:p-6 pt-0 */}
         <TabsContent value="comparison" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-blue-600" />
                   AI 추천 등수별 통계
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">AI로 추천받은 번호의 당첨 등수 분포</p>
               </div>
-              <div className="px-6 pb-6">
+              <div className="p-4 sm:p-6 pt-0">
                 <div className="space-y-2">
                   {aiRankStats.map((stat) => (
                     <div
@@ -380,14 +376,14 @@ export default function AdminStatsPage() {
             </div>
 
             <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <Target className="w-5 h-5 text-purple-600" />
                   일반 추첨 등수별 통계
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">수동으로 추첨한 번호의 당첨 등수 분포</p>
               </div>
-              <div className="px-6 pb-6">
+              <div className="p-4 sm:p-6 pt-0">
                 <div className="space-y-2">
                   {regularRankStats.map((stat) => (
                     <div
@@ -410,16 +406,15 @@ export default function AdminStatsPage() {
         </TabsContent>
       </Tabs>
 
+      {/* 5. p-6 -> p-4 sm:p-6 및 내부 px-6 pb-6 제거 */}
       {pendingAnalysis.length > 0 && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-2 border-yellow-200 dark:border-yellow-800">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
               <Calendar className="w-5 h-5" />
               결과 대기 중인 추첨
             </h3>
-          </div>
-          <div className="px-6 pb-6">
-            <p className="text-yellow-700 dark:text-yellow-300">
+            <p className="text-yellow-700 dark:text-yellow-300 mt-3">
               {pendingAnalysis.length}개의 추첨이 아직 당첨 결과 발표를 기다리고 있습니다. 다음 회차 추첨 후 자동으로
               분석됩니다.
             </p>
