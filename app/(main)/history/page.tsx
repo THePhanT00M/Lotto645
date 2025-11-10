@@ -173,7 +173,7 @@ export default function HistoryPage() {
   const noFilteredResults = filteredHistory.length === 0 && hasActiveFilters
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl">
+    <div className="container mx-auto px-4 py-6 max-w-5xl">
       {/* Header with filter toggle */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
