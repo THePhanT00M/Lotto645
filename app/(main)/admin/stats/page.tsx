@@ -160,9 +160,9 @@ export default function AdminStatsPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
+        <div className="flex flex-col items-center justify-center">
+          <div className="w-16 h-16 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-500">통계를 불러오는 중...</p>
         </div>
       </div>
     )
@@ -171,40 +171,44 @@ export default function AdminStatsPage() {
   return (
     <div className="container mx-auto p-4 sm:p-6  max-w-5xl space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <BarChart3 className="w-8 h-8 text-blue-600" />
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-blue-600" />
           관리자 통계 대시보드
         </h1>
         <p className="text-gray-600 dark:text-gray-400">사이트 당첨 비율 및 분석 데이터</p>
       </div>
 
       {latestDraw && (
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg p-6 border border-gray-200 dark:border-gray-800">
+        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-2 mb-4">
             <Calendar className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">최신 회차 당첨 번호</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">최신 회차 당첨 번호</h2>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="space-y-1">
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-4">
               <div className="text-2xl font-bold text-blue-600">{latestDraw.drawNo}회</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">{latestDraw.date}</div>
             </div>
-            <div className="flex-1 flex items-center justify-center gap-2 flex-wrap">
-              {latestDraw.numbers.map((number) => (
-                <div
-                  key={number}
-                  className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-black shadow-md"
-                  style={{ backgroundColor: getBallColor(number) }}
-                >
-                  {number}
+            <div className="flex items-center justify-center">
+              <div className="grid grid-cols-8 gap-2 sm:gap-3 md:gap-4 w-full max-w-md">
+                {latestDraw.numbers.map((number) => (
+                  <div
+                    key={number}
+                    className="w-full aspect-square rounded-full flex items-center justify-center text-black font-bold text-xs xs:text-sm sm:text-base shadow-md"
+                    style={{ backgroundColor: getBallColor(number) }}
+                  >
+                    {number}
+                  </div>
+                ))}
+                <div className="flex items-center justify-center">
+                  <span className="text-gray-500 text-sm xs:text-base md:text-lg font-medium">+</span>
                 </div>
-              ))}
-              <div className="w-4 h-4 rounded-full bg-gray-400 dark:bg-gray-600 mx-1" />
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-black shadow-md"
-                style={{ backgroundColor: getBallColor(latestDraw.bonusNo) }}
-              >
-                {latestDraw.bonusNo}
+                <div
+                  className="w-full aspect-square rounded-full flex items-center justify-center text-black font-bold text-xs xs:text-sm sm:text-base shadow-md"
+                  style={{ backgroundColor: getBallColor(latestDraw.bonusNo) }}
+                >
+                  {latestDraw.bonusNo}
+                </div>
               </div>
             </div>
           </div>
