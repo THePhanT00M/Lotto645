@@ -1,55 +1,76 @@
 "use client"
 
 import { useEffect, useState } from "react"
-// 1. [제거] 로컬 스토리지, 정적 데이터, Supabase 클라이언트 임포트 제거
-// import { getLottoHistory } from "@/utils/lotto-storage"
-// import { winningNumbers } from "@/data/winning-numbers"
-// import { supabase } from "@/lib/supabaseClient"
 import type { LottoResult, WinningLottoNumbers } from "@/types/lotto"
-import { BarChart3, TrendingUp, Award, Target, Sparkles, Calendar } from "lucide-react"
+// 1. 필요한 아이콘 임포트 (AlertTriangle 포함)
+import { BarChart3, TrendingUp, Award, Target, Sparkles, Calendar, AlertTriangle } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+// 2. 스켈레톤 UI 컴포넌트 임포트
+import { Skeleton } from "@/components/ui/skeleton"
 
+/**
+ * 분석 결과를 저장하기 위한 인터페이스
+ */
 interface AnalysisResult {
   result: LottoResult
   matchCount: number
   bonusMatch: boolean
   rank: string
-  targetDraw: WinningLottoNumbers | null // 항상 latestDraw가 됨
-  isPending: boolean // 항상 false가 됨
+  targetDraw: WinningLottoNumbers | null
+  isPending: boolean
 }
 
+/**
+ * 결과 대기 중인(다음 회차) 추첨 기록을 위한 타입 (LottoResult와 동일)
+ */
+type PendingResult = LottoResult
+
+/**
+ * 관리자용 통계 페이지 컴포넌트
+ */
 export default function AdminStatsPage() {
-  const [history, setHistory] = useState<LottoResult[]>([])
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([])
-  const [loading, setLoading] = useState(true)
-  const [latestDraw, setLatestDraw] = useState<WinningLottoNumbers | null>(null)
+  // 3. 상태 변수 정의
+  const [history, setHistory] = useState<LottoResult[]>([]) // '완료된' 추첨 기록
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]) // '완료된' 기록의 분석 결과
+  const [loading, setLoading] = useState(true) // 페이지 로딩 상태 (스켈레톤 UI 제어)
+  const [latestDraw, setLatestDraw] = useState<WinningLottoNumbers | null>(null) // 가장 최근 '당첨 완료'된 회차 정보
+  const [error, setError] = useState<string | null>(null) // API fetching 에러 메시지
+  const [pendingHistory, setPendingHistory] = useState<PendingResult[]>([]) // '결과 대기 중인' (다음 회차) 추첨 기록
+  const [upcomingDrawNo, setUpcomingDrawNo] = useState<number | null>(null) // 다음 추첨 회차 번호
 
-  // 2. [수정] useEffect를 API 라우트 호출로 변경
+  // 4. 페이지 마운트 시 API로부터 통계 데이터를 가져오는 useEffect
   useEffect(() => {
+    // 4-1. API 요청 시작 전, 로딩 상태를 true로 설정하고 에러 메시지를 초기화합니다.
     setLoading(true)
+    setError(null)
 
+    // 4-2. 통계 데이터를 비동기(async)로 가져오는 내부 함수를 정의합니다.
     const fetchData = async () => {
       try {
-        // 2-1. [수정] 수정된 API 라우트 호출
+        // 4-3. 서버의 어드민 통계 API 엔드포인트('/api/admin/stats')를 호출합니다.
         const response = await fetch('/api/stats')
 
+        // 4-4. API 응답이 404나 500 등 (ok=false)일 경우,
+        //      JSON 파싱을 시도하지 않고 HTTP 에러를 발생시켜 catch 블록으로 넘깁니다.
         if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.message || "데이터를 가져오는데 실패했습니다.")
+          throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`)
         }
 
+        // 4-5. 응답이 정상이면, JSON 데이터를 파싱합니다.
         const data = await response.json()
+
+        // 4-6. API가 보낸 JSON에 success: false가 포함된 경우, API가 보낸 에러 메시지를 사용해 에러를 발생시킵니다.
         if (!data.success) throw new Error(data.message)
 
-        // 2-2. [수정] API 응답은 이제 '최신 회차' 데이터만 포함
-        const { historyData, winningData } = data
+        // 4-7. API로부터 4가지 주요 데이터(완료된 기록, 대기 중인 기록, 최신 당첨 번호, 다음 회차 번호)를 추출합니다.
+        const { completedHistoryData, pendingHistoryData, latestDrawData, upcomingDrawNo } = data
 
-        // 2-3. API 응답(winningData)은 1건의 최신 회차 정보
-        const loadedLatestDraw: WinningLottoNumbers = winningData
+        // 4-8. 최신 당첨 번호 데이터를 WinningLottoNumbers 타입으로 할당합니다.
+        const loadedLatestDraw: WinningLottoNumbers = latestDrawData
 
-        // 2-4. API 응답(historyData)을 LottoResult[] 타입으로 변환
-        const loadedHistory: LottoResult[] = historyData
-          ? historyData.map((row: any) => ({
+        // 4-9. '완료된' 추첨 기록(DB 데이터)을 프론트엔드 LottoResult 타입 배열로 변환합니다. (e.g., source -> isAiRecommended)
+        const loadedCompletedHistory: LottoResult[] = completedHistoryData
+          ? completedHistoryData.map((row: any) => ({
             id: row.id.toString(),
             numbers: row.numbers,
             timestamp: new Date(row.created_at).getTime(),
@@ -58,37 +79,62 @@ export default function AdminStatsPage() {
           }))
           : []
 
-        // 2-5. 상태 업데이트
-        setHistory(loadedHistory)
-        setLatestDraw(loadedLatestDraw) // 최신 회차 1건만 저장
+        // 4-10. '대기 중인' 추첨 기록(DB 데이터)을 프론트엔드 PendingResult 타입 배열로 변환합니다.
+        const loadedPendingHistory: PendingResult[] = pendingHistoryData
+          ? pendingHistoryData.map((row: any) => ({
+            id: row.id.toString(),
+            numbers: row.numbers,
+            timestamp: new Date(row.created_at).getTime(),
+            memo: row.memo || undefined,
+            isAiRecommended: row.source === 'ai',
+          }))
+          : []
 
-        // 2-6. [수정] 단순화된 분석 로직 실행
-        // (API가 '최신 회차' 데이터만 가져오므로, 복잡한 타임스탬프 비교 불필요)
-        const results = analyzeSingleDrawResults(loadedHistory, loadedLatestDraw)
+        // 4-11. 변환된 데이터로 React 상태(state)를 일괄 업데이트합니다.
+        setHistory(loadedCompletedHistory)     // 완료된 기록
+        setPendingHistory(loadedPendingHistory) // 대기중인 기록
+        setLatestDraw(loadedLatestDraw)         // 최신 회차
+        setUpcomingDrawNo(upcomingDrawNo)       // 다음 회차 번호
+
+        // 4-12. '완료된' 기록과 '최신 당첨 번호'를 비교 분석하는 함수를 호출합니다.
+        const results = analyzeSingleDrawResults(loadedCompletedHistory, loadedLatestDraw)
+
+        // 4-13. 분석 결과를 상태에 저장합니다.
         setAnalysisResults(results)
 
       } catch (error: any) {
+        // 4-14. fetchData 함수 내에서 발생한 모든 에러(네트워크, 파싱, API 에러)를 처리하고, 에러 상태에 저장합니다.
         console.error("통계 데이터 로딩 실패:", error.message)
-        // TODO: 사용자에게 오류를 표시하는 UI 상태 추가
+        setError(error.message)
       } finally {
+        // 4-15. 데이터 요청이 성공하든 실패하든, 로딩 상태를 false로 변경하여 스켈레톤 UI를 숨깁니다.
         setLoading(false)
       }
     }
 
+    // 4-16. 정의된 비동기 함수를 실행합니다.
     fetchData()
   }, []) // 페이지 마운트 시 1회만 실행
 
-  // 3. [신규] '최신 회차' 데이터만 분석하는 단순화된 함수
+  /**
+   * (완료된) 추첨 기록 배열을 받아, (최신) 당첨 번호와 비교하여 등수와 일치 여부를 계산하는 함수
+   * @param results '완료된' 추첨 기록 (LottoResult[])
+   * @param targetDraw 비교 대상이 될 '최신' 당첨 번호 (WinningLottoNumbers)
+   * @returns 분석 완료된 결과 배열 (AnalysisResult[])
+   */
   const analyzeSingleDrawResults = (
     results: LottoResult[],
     targetDraw: WinningLottoNumbers
   ): AnalysisResult[] => {
 
+    // 1. 모든 '완료된' 기록을 순회합니다.
     return results.map((result) => {
-      // 3-1. [수정] 모든 'result'를 'targetDraw'(최신 회차)와 직접 비교
+      // 2. 기록의 번호와 최신 당첨 번호를 비교하여 일치하는 개수를 계산합니다.
       const matchCount = result.numbers.filter((num) => targetDraw.numbers.includes(num)).length
+      // 3. 보너스 번호 일치 여부를 확인합니다.
       const bonusMatch = result.numbers.includes(targetDraw.bonusNo)
 
+      // 4. 일치 개수와 보너스 여부를 기준으로 1등부터 5등, 미당첨까지 등급을 매깁니다.
       let rank = "미당첨"
       if (matchCount === 6) rank = "1등"
       else if (matchCount === 5 && bonusMatch) rank = "2등"
@@ -96,6 +142,7 @@ export default function AdminStatsPage() {
       else if (matchCount === 4) rank = "4등"
       else if (matchCount === 3) rank = "5등"
 
+      // 5. 분석이 완료된 객체를 반환합니다.
       return {
         result,
         matchCount,
@@ -107,31 +154,28 @@ export default function AdminStatsPage() {
     })
   }
 
-  // 4. [제거] analyzeAllResults 및 findTargetDrawForDate 함수 (더 이상 필요 없음)
-  // const analyzeAllResults = (...) => { ... }
-  // const findTargetDrawForDate = (...) => { ... }
-
-  // 5. [수정] 'completedAnalysis'가 이제 모든 'analysisResults'가 됨
-  const completedAnalysis = analysisResults
-  // 6. [수정] 'pendingAnalysis'는 이제 항상 0 (API에서 필터링됨)
-  const pendingAnalysis = analysisResults.filter((r) => r.isPending) // 항상 0이 됨
-
-  // (이하 나머지 코드는 모두 동일합니다)
-  const totalPicks = history.length
+  // UI 렌더링을 위한 변수 계산
+  const completedAnalysis = analysisResults // 분석 완료된 결과 목록 (UI 표시에 사용)
+  const pendingAnalysis = pendingHistory    // 분석 대기중인 결과 목록 (UI 표시에 사용)
+  const totalPicks = history.length         // 통계 카드: '완료된' 추첨의 총 횟수
   const analyzedPicks = completedAnalysis.length
   const aiRecommendedCount = completedAnalysis.filter((r) => r.result.isAiRecommended).length
   const regularDrawCount = completedAnalysis.filter((r) => !r.result.isAiRecommended).length
 
+  // 전체 당첨률 계산
   const winningResults = completedAnalysis.filter((r) => r.rank !== "미당첨")
   const winRate = analyzedPicks > 0 ? ((winningResults.length / analyzedPicks) * 100).toFixed(2) : "0.00"
 
+  // AI 추천 당첨률 계산
   const aiWinningResults = completedAnalysis.filter((r) => r.result.isAiRecommended && r.rank !== "미당첨")
   const aiWinRate = aiRecommendedCount > 0 ? ((aiWinningResults.length / aiRecommendedCount) * 100).toFixed(2) : "0.00"
 
+  // 일반 추첨 당첨률 계산
   const regularWinningResults = completedAnalysis.filter((r) => !r.result.isAiRecommended && r.rank !== "미당첨")
   const regularWinRate =
     regularDrawCount > 0 ? ((regularWinningResults.length / regularDrawCount) * 100).toFixed(2) : "0.00"
 
+  // 등수별 통계 데이터 (전체)
   const rankStats = [
     { rank: "1등", count: completedAnalysis.filter((r) => r.rank === "1등").length, color: "yellow" },
     { rank: "2등", count: completedAnalysis.filter((r) => r.rank === "2등").length, color: "orange" },
@@ -141,6 +185,7 @@ export default function AdminStatsPage() {
     { rank: "미당첨", count: completedAnalysis.filter((r) => r.rank === "미당첨").length, color: "gray" },
   ]
 
+  // 일치 개수별 통계 데이터 (전체)
   const matchCountStats = [0, 1, 2, 3, 4, 5, 6].map((count) => ({
     count,
     occurrences: completedAnalysis.filter((r) => r.matchCount === count).length,
@@ -150,6 +195,7 @@ export default function AdminStatsPage() {
         : "0.0",
   }))
 
+  // 등수별 통계 데이터 (AI)
   const aiRankStats = [
     { rank: "1등", count: completedAnalysis.filter((r) => r.result.isAiRecommended && r.rank === "1등").length },
     { rank: "2등", count: completedAnalysis.filter((r) => r.result.isAiRecommended && r.rank === "2등").length },
@@ -159,6 +205,7 @@ export default function AdminStatsPage() {
     { rank: "미당첨", count: completedAnalysis.filter((r) => r.result.isAiRecommended && r.rank === "미당첨").length },
   ]
 
+  // 등수별 통계 데이터 (일반)
   const regularRankStats = [
     { rank: "1등", count: completedAnalysis.filter((r) => !r.result.isAiRecommended && r.rank === "1등").length },
     { rank: "2등", count: completedAnalysis.filter((r) => !r.result.isAiRecommended && r.rank === "2등").length },
@@ -168,6 +215,9 @@ export default function AdminStatsPage() {
     { rank: "미당첨", count: completedAnalysis.filter((r) => !r.result.isAiRecommended && r.rank === "미당첨").length },
   ]
 
+  /**
+   * 번호에 따라 다른 공 색상을 반환하는 헬퍼 함수
+   */
   const getBallColor = (number: number): string => {
     if (number >= 1 && number <= 10) return "#FBC400"
     if (number >= 11 && number <= 20) return "#69C8F2"
@@ -176,41 +226,111 @@ export default function AdminStatsPage() {
     return "#B0D840"
   }
 
+  // 로딩 상태(true)일 때 스켈레톤 UI를 렌더링합니다.
   if (loading) {
     return (
-      <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center justify-center">
-          <div className="w-16 h-16 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-500">통계를 불러오는 중...</p>
+      <div className="container mx-auto p-4 sm:p-6  max-w-5xl space-y-6 animate-pulse">
+        {/* (스켈레톤) 페이지 제목 */}
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-64" /> {/* h1 title */}
+          <Skeleton className="h-5 w-80" /> {/* p description */}
+        </div>
+
+        {/* (스켈레톤) 최신 회차 카드 */}
+        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Skeleton className="w-5 h-5 rounded-full" />
+            <Skeleton className="h-6 w-56" />
+          </div>
+          <div className="space-y-4">
+            <div className="relative flex items-center justify-center py-1">
+              <Skeleton className="h-8 w-20" /> {/* 회차 */}
+              <Skeleton className="absolute right-0 h-5 w-24" /> {/* 날짜 */}
+            </div>
+            <div className="flex items-center justify-center">
+              <div className="grid grid-cols-8 gap-2 sm:gap-3 md:gap-4 w-full max-w-md">
+                <Skeleton className="w-full aspect-square rounded-full" />
+                <Skeleton className="w-full aspect-square rounded-full" />
+                <Skeleton className="w-full aspect-square rounded-full" />
+                <Skeleton className="w-full aspect-square rounded-full" />
+                <Skeleton className="w-full aspect-square rounded-full" />
+                <Skeleton className="w-full aspect-square rounded-full" />
+                <div className="flex items-center justify-center">
+                  {/* + sign */}
+                </div>
+                <Skeleton className="w-full aspect-square rounded-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* (스켈레톤) 상단 통계 카드 4개 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-32 rounded-lg" />
+          <Skeleton className="h-32 rounded-lg" />
+          <Skeleton className="h-32 rounded-lg" />
+          <Skeleton className="h-32 rounded-lg" />
+        </div>
+
+        {/* (스켈레톤) 탭 UI */}
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full" /> {/* TabsList */}
+          <Skeleton className="h-64 w-full rounded-lg" /> {/* TabsContent */}
         </div>
       </div>
     )
   }
 
+  // 에러 상태가 null이 아닐 때, 에러 메시지를 렌더링합니다.
+  if (error) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center min-h-[50vh]">
+        <div className="flex flex-col items-center justify-center bg-red-50 dark:bg-red-900/20 p-8 rounded-lg border border-red-200 dark:border-red-800">
+          <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
+          <h2 className="text-xl font-bold text-red-700 dark:text-red-300">데이터 로딩 실패</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-2 text-center">
+            통계 데이터를 불러오는 중 오류가 발생했습니다.
+          </p>
+          <code className="mt-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-sm text-red-600 dark:text-red-400 w-full text-center">
+            {error}
+          </code>
+        </div>
+      </div>
+    )
+  }
+
+  // 메인 페이지 UI 렌더링
   return (
     <div className="container mx-auto p-4 sm:p-6  max-w-5xl space-y-6">
+      {/* 페이지 제목 */}
       <div className="space-y-2">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-blue-600" />
           관리자 통계 대시보드
         </h1>
-        {/* [수정] 통계 기준 설명 변경 */}
         <p className="text-gray-600 dark:text-gray-400">
           최신 회차({latestDraw?.drawNo}회)에 대한 사이트 당첨 비율 및 분석 데이터
         </p>
       </div>
 
+      {/* 최신 회차 당첨 번호 섹션 */}
       {latestDraw && (
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-800">
+        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <Calendar className="w-5 h-5 text-blue-600" />
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">최신 회차 당첨 번호</h2>
           </div>
           <div className="space-y-4">
-            <div className="flex items-center justify-center gap-4">
-              <div className="text-2xl font-bold text-blue-600">{latestDraw.drawNo}회</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">{latestDraw.date}</div>
+            {/* 회차 번호(중앙)와 날짜(우측) 레이아웃 */}
+            <div className="relative flex items-center justify-center py-1">
+              <div className="text-2xl font-bold text-blue-600 text-center">
+                {latestDraw.drawNo}회
+              </div>
+              <div className="absolute right-0 text-sm text-gray-600 dark:text-gray-400">
+                {latestDraw.date}
+              </div>
             </div>
+            {/* 당첨 번호 공 */}
             <div className="flex items-center justify-center">
               <div className="grid grid-cols-8 gap-2 sm:gap-3 md:gap-4 w-full max-w-md">
                 {latestDraw.numbers.map((number) => (
@@ -237,9 +357,9 @@ export default function AdminStatsPage() {
         </div>
       )}
 
-      {/* 1. p-6 pb-3 -> p-4 sm:p-6 및 내부 px-6 pb-6 제거 */}
+      {/* 상단 통계 카드 (총 추첨, 전체 당첨률, AI 당첨률, 일반 당첨률) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
+        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
           <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <Target className="w-4 h-4" />총 추첨 횟수 ({latestDraw?.drawNo}회)
@@ -248,7 +368,7 @@ export default function AdminStatsPage() {
           </div>
         </div>
 
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
+        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
           <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <Award className="w-4 h-4" />
@@ -259,7 +379,7 @@ export default function AdminStatsPage() {
           </div>
         </div>
 
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
+        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
           <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
@@ -272,7 +392,7 @@ export default function AdminStatsPage() {
           </div>
         </div>
 
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
+        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
           <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
@@ -286,6 +406,7 @@ export default function AdminStatsPage() {
         </div>
       </div>
 
+      {/* 탭 UI (등수별, 일치 개수, AI vs 일반) */}
       <Tabs defaultValue="ranks" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-[#262626]">
           <TabsTrigger value="ranks">등수별 통계</TabsTrigger>
@@ -293,9 +414,9 @@ export default function AdminStatsPage() {
           <TabsTrigger value="comparison">AI vs 일반</TabsTrigger>
         </TabsList>
 
-        {/* 2. p-6 -> p-4 sm:p-6 및 px-6 pb-6 -> p-4 sm:p-6 pt-0 */}
+        {/* "등수별 통계" 탭 패널 */}
         <TabsContent value="ranks" className="space-y-4">
-          <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
+          <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
             <div className="p-4 sm:p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">당첨 등수별 분포</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -333,9 +454,9 @@ export default function AdminStatsPage() {
           </div>
         </TabsContent>
 
-        {/* 3. p-6 -> p-4 sm:p-6 및 px-6 pb-6 -> p-4 sm:p-6 pt-0 */}
+        {/* "일치 개수" 탭 패널 */}
         <TabsContent value="matches" className="space-y-4">
-          <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
+          <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
             <div className="p-4 sm:p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">번호 일치 개수 분포</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -370,10 +491,10 @@ export default function AdminStatsPage() {
           </div>
         </TabsContent>
 
-        {/* 4. p-6 -> p-4 sm:p-6 및 px-6 pb-6 -> p-4 sm:p-6 pt-0 */}
+        {/* "AI vs 일반" 탭 패널 */}
         <TabsContent value="comparison" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
+            <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
               <div className="p-4 sm:p-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-blue-600" />
@@ -403,7 +524,7 @@ export default function AdminStatsPage() {
               </div>
             </div>
 
-            <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
+            <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
               <div className="p-4 sm:p-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <Target className="w-5 h-5 text-purple-600" />
@@ -436,15 +557,17 @@ export default function AdminStatsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* 5. [제거] pendingAnalysis.length가 항상 0이므로 이 섹션은 더 이상 표시되지 않습니다. */}
+      {/* '결과 대기 중인' 추첨이 1개 이상 있을 경우, 해당 섹션을 렌더링합니다. */}
       {pendingAnalysis.length > 0 && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-2 border-yellow-200 dark:border-yellow-800">
           <div className="p-4 sm:p-6">
             <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              결과 대기 중인 추첨
+              {/* 다음 회차 번호를 표시합니다. */}
+              {upcomingDrawNo}회 결과 대기 중인 추첨
             </h3>
             <p className="text-yellow-700 dark:text-yellow-300 mt-3">
+              {/* 대기 중인 추첨 건수를 표시합니다. */}
               {pendingAnalysis.length}개의 추첨이 아직 당첨 결과 발표를 기다리고 있습니다. 다음 회차 추첨 후 자동으로
               분석됩니다.
             </p>
