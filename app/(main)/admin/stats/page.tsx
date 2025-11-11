@@ -227,7 +227,7 @@ export default function AdminStatsPage() {
   }
 
   // 로딩 상태(true)일 때 스켈레톤 UI를 렌더링합니다.
-  if (1) {
+  if (loading) {
     return (
       <div className="container mx-auto p-4 sm:p-6  max-w-5xl space-y-6 animate-pulse">
         {/* (스켈레톤) 페이지 제목 */}
