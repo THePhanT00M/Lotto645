@@ -277,6 +277,10 @@ export default function AdminStatsPage() {
           <Skeleton className="h-10 w-full" /> {/* TabsList */}
           <Skeleton className="h-64 w-full rounded-lg" /> {/* TabsContent */}
         </div>
+
+        <div className="space-y-4">
+          <Skeleton className="h-28 w-full rounded-lg" /> {/* TabsContent */}
+        </div>
       </div>
     )
   }
