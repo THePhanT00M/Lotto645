@@ -217,23 +217,104 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         <p className="text-xl font-semibold text-black dark:text-white flex items-center gap-2 mb-0">번호 분석 결과</p>
       </div>
 
+      {/* --- [수정 시작] 스켈레톤 UI --- */}
       {isLoading ? (
-        // 로딩 스켈레톤
+        // 1. 메인 컨테이너 (로드 완료 시의 <AdvancedAnalysis /> 레이아웃 모방)
         <div className="space-y-6">
-          <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
-            <Skeleton className="h-6 w-32 mb-4" />
-            <Skeleton className="h-24 w-full" />
+
+          {/* 2. "추첨 번호" 카드 스켈레톤 (AdvancedAnalysis의 첫 번째 카드 모방) */}
+          <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg space-y-4">
+            {/* 2-1. 카드 제목 ("추첨 번호") */}
+            <div className="flex items-center gap-2">
+              <Skeleton className="w-5 h-5 rounded-full" /> {/* 아이콘 */}
+              <Skeleton className="h-6 w-32" /> {/* 제목 */}
+            </div>
+
+            {/* 2-2. 등급 카드 */}
+            <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 space-y-3">
+              {/* 2-2-1. 등급 텍스트 및 뱃지 */}
+              <div className="flex justify-between items-center gap-3">
+                <Skeleton className="h-5 w-full max-w-sm" /> {/* 설명 텍스트 */}
+                <Skeleton className="h-8 w-20 rounded-lg" /> {/* 등급 뱃지 */}
+              </div>
+              {/* 2-2-2. 등급 설명란 */}
+              <div className="p-2 bg-white dark:bg-[#464646] rounded-lg space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+              {/* 2-2-3. 번호 표시기 (6개 공) */}
+              <div className="pt-4 pb-4 pl-2 pr-2">
+                <div className="flex max-w-xs mx-auto gap-2">
+                  <Skeleton className="w-full aspect-square rounded-full" />
+                  <Skeleton className="w-full aspect-square rounded-full" />
+                  <Skeleton className="w-full aspect-square rounded-full" />
+                  <Skeleton className="w-full aspect-square rounded-full" />
+                  <Skeleton className="w-full aspect-square rounded-full" />
+                  <Skeleton className="w-full aspect-square rounded-full" />
+                </div>
+              </div>
+            </div>
+
+            {/* 2-3. 하단 버튼 2개 */}
             <div className="mt-3 flex justify-between">
-              <Skeleton className="h-10 w-36" />
-              <Skeleton className="h-10 w-36" />
+              <Skeleton className="h-10 w-36 rounded-md" /> {/* "당첨 패턴 보기" 버튼 */}
+              <Skeleton className="h-10 w-36 rounded-md" /> {/* "AI 추천 받기" 버튼 */}
             </div>
           </div>
-          <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
-            <Skeleton className="h-6 w-40 mb-3" />
-            <Skeleton className="h-40 w-full" />
+
+          {/* 3. "당첨 패턴 통계" 카드 스켈레톤 (MultipleNumberAnalysis 카드 모방) */}
+          <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg space-y-3">
+            {/* 3-1. 카드 제목 및 필터 */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="w-5 h-5 rounded-full" /> {/* 아이콘 */}
+                <Skeleton className="h-6 w-40" /> {/* 제목 */}
+              </div>
+              <Skeleton className="h-8 w-48 rounded-md" /> {/* 쌍둥이 필터 */}
+            </div>
+
+            {/* 3-2. 내용물 카드 */}
+            <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4 space-y-3">
+              <Skeleton className="h-5 w-full max-w-md" /> {/* 설명 텍스트 */}
+
+              {/* 3-2-1. 쌍둥이 분석 그리드 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
+              </div>
+
+              {/* 3-2-2. 페이지네이션 */}
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-8 w-40" />
+                <Skeleton className="h-8 w-24" />
+              </div>
+
+              {/* 3-2-3. 통계 요약 */}
+              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <Skeleton className="h-10" />
+                  <Skeleton className="h-10" />
+                  <Skeleton className="h-10" />
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* 4. 안내 문구 스켈레톤 */}
+          <div className="bg-white dark:bg-[rgb(38,38,38)] rounded-lg p-4 mt-6 space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+
         </div>
       ) : (
+        // --- [수정 끝] ---
+
         // 데이터 로드 완료 후 실제 컴포넌트 렌더링
         <AdvancedAnalysis
           numbers={analysisNumbers}
