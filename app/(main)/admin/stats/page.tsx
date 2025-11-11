@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getLottoHistory } from "@/utils/lotto-storage"
-import { winningNumbers } from "@/data/winning-numbers"
+// 1. [제거] 로컬 스토리지, 정적 데이터, Supabase 클라이언트 임포트 제거
+// import { getLottoHistory } from "@/utils/lotto-storage"
+// import { winningNumbers } from "@/data/winning-numbers"
+// import { supabase } from "@/lib/supabaseClient"
 import type { LottoResult, WinningLottoNumbers } from "@/types/lotto"
 import { BarChart3, TrendingUp, Award, Target, Sparkles, Calendar } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -12,8 +14,8 @@ interface AnalysisResult {
   matchCount: number
   bonusMatch: boolean
   rank: string
-  targetDraw: WinningLottoNumbers | null
-  isPending: boolean
+  targetDraw: WinningLottoNumbers | null // 항상 latestDraw가 됨
+  isPending: boolean // 항상 false가 됨
 }
 
 export default function AdminStatsPage() {
@@ -22,38 +24,68 @@ export default function AdminStatsPage() {
   const [loading, setLoading] = useState(true)
   const [latestDraw, setLatestDraw] = useState<WinningLottoNumbers | null>(null)
 
+  // 2. [수정] useEffect를 API 라우트 호출로 변경
   useEffect(() => {
-    const loadedHistory = getLottoHistory()
-    setHistory(loadedHistory)
+    setLoading(true)
 
-    const sortedWinningNumbers = [...winningNumbers].sort((a, b) => b.drawNo - a.drawNo)
-    if (sortedWinningNumbers.length > 0) {
-      setLatestDraw(sortedWinningNumbers[0])
+    const fetchData = async () => {
+      try {
+        // 2-1. [수정] 수정된 API 라우트 호출
+        const response = await fetch('/api/stats')
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || "데이터를 가져오는데 실패했습니다.")
+        }
+
+        const data = await response.json()
+        if (!data.success) throw new Error(data.message)
+
+        // 2-2. [수정] API 응답은 이제 '최신 회차' 데이터만 포함
+        const { historyData, winningData } = data
+
+        // 2-3. API 응답(winningData)은 1건의 최신 회차 정보
+        const loadedLatestDraw: WinningLottoNumbers = winningData
+
+        // 2-4. API 응답(historyData)을 LottoResult[] 타입으로 변환
+        const loadedHistory: LottoResult[] = historyData
+          ? historyData.map((row: any) => ({
+            id: row.id.toString(),
+            numbers: row.numbers,
+            timestamp: new Date(row.created_at).getTime(),
+            memo: row.memo || undefined,
+            isAiRecommended: row.source === 'ai', // source 컬럼 기반으로 변환
+          }))
+          : []
+
+        // 2-5. 상태 업데이트
+        setHistory(loadedHistory)
+        setLatestDraw(loadedLatestDraw) // 최신 회차 1건만 저장
+
+        // 2-6. [수정] 단순화된 분석 로직 실행
+        // (API가 '최신 회차' 데이터만 가져오므로, 복잡한 타임스탬프 비교 불필요)
+        const results = analyzeSingleDrawResults(loadedHistory, loadedLatestDraw)
+        setAnalysisResults(results)
+
+      } catch (error: any) {
+        console.error("통계 데이터 로딩 실패:", error.message)
+        // TODO: 사용자에게 오류를 표시하는 UI 상태 추가
+      } finally {
+        setLoading(false)
+      }
     }
 
-    const results = analyzeAllResults(loadedHistory)
-    setAnalysisResults(results)
-    setLoading(false)
-  }, [])
+    fetchData()
+  }, []) // 페이지 마운트 시 1회만 실행
 
-  const analyzeAllResults = (results: LottoResult[]): AnalysisResult[] => {
-    const sortedWinningNumbers = [...winningNumbers].sort((a, b) => a.drawNo - b.drawNo)
+  // 3. [신규] '최신 회차' 데이터만 분석하는 단순화된 함수
+  const analyzeSingleDrawResults = (
+    results: LottoResult[],
+    targetDraw: WinningLottoNumbers
+  ): AnalysisResult[] => {
 
     return results.map((result) => {
-      const resultDate = new Date(result.timestamp)
-      const targetDraw = findTargetDrawForDate(resultDate, sortedWinningNumbers)
-
-      if (!targetDraw) {
-        return {
-          result,
-          matchCount: 0,
-          bonusMatch: false,
-          rank: "미발표",
-          targetDraw: null,
-          isPending: true,
-        }
-      }
-
+      // 3-1. [수정] 모든 'result'를 'targetDraw'(최신 회차)와 직접 비교
       const matchCount = result.numbers.filter((num) => targetDraw.numbers.includes(num)).length
       const bonusMatch = result.numbers.includes(targetDraw.bonusNo)
 
@@ -69,35 +101,22 @@ export default function AdminStatsPage() {
         matchCount,
         bonusMatch,
         rank,
-        targetDraw,
-        isPending: false,
+        targetDraw, // 비교 대상은 항상 이 최신 회차
+        isPending: false, // 이 데이터는 이미 추첨이 완료된 것들임
       }
     })
   }
 
-  const findTargetDrawForDate = (date: Date, draws: WinningLottoNumbers[]): WinningLottoNumbers | null => {
-    const parseDrawDate = (dateStr: string): Date => {
-      const [year, month, day] = dateStr.split("-").map(Number)
-      return new Date(year, month - 1, day, 20, 0)
-    }
+  // 4. [제거] analyzeAllResults 및 findTargetDrawForDate 함수 (더 이상 필요 없음)
+  // const analyzeAllResults = (...) => { ... }
+  // const findTargetDrawForDate = (...) => { ... }
 
-    const drawsWithDates = draws.map((draw) => ({
-      ...draw,
-      dateObj: parseDrawDate(draw.date),
-    }))
+  // 5. [수정] 'completedAnalysis'가 이제 모든 'analysisResults'가 됨
+  const completedAnalysis = analysisResults
+  // 6. [수정] 'pendingAnalysis'는 이제 항상 0 (API에서 필터링됨)
+  const pendingAnalysis = analysisResults.filter((r) => r.isPending) // 항상 0이 됨
 
-    for (const draw of drawsWithDates.sort((a, b) => a.drawNo - b.drawNo)) {
-      if (date < draw.dateObj) {
-        return draw
-      }
-    }
-
-    return null
-  }
-
-  const completedAnalysis = analysisResults.filter((r) => !r.isPending)
-  const pendingAnalysis = analysisResults.filter((r) => r.isPending)
-
+  // (이하 나머지 코드는 모두 동일합니다)
   const totalPicks = history.length
   const analyzedPicks = completedAnalysis.length
   const aiRecommendedCount = completedAnalysis.filter((r) => r.result.isAiRecommended).length
@@ -175,7 +194,10 @@ export default function AdminStatsPage() {
           <BarChart3 className="w-5 h-5 text-blue-600" />
           관리자 통계 대시보드
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">사이트 당첨 비율 및 분석 데이터</p>
+        {/* [수정] 통계 기준 설명 변경 */}
+        <p className="text-gray-600 dark:text-gray-400">
+          최신 회차({latestDraw?.drawNo}회)에 대한 사이트 당첨 비율 및 분석 데이터
+        </p>
       </div>
 
       {latestDraw && (
@@ -215,40 +237,35 @@ export default function AdminStatsPage() {
         </div>
       )}
 
+      {/* 1. p-6 pb-3 -> p-4 sm:p-6 및 내부 px-6 pb-6 제거 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-          <div className="p-6 pb-3">
+          <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
-              <Target className="w-4 h-4" />총 추첨 횟수
+              <Target className="w-4 h-4" />총 추첨 횟수 ({latestDraw?.drawNo}회)
             </div>
-          </div>
-          <div className="px-6 pb-6">
-            <div className="text-3xl font-bold text-gray-900 dark:text-white">{totalPicks}</div>
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mt-3">{totalPicks}</div>
           </div>
         </div>
 
         <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-          <div className="p-6 pb-3">
+          <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <Award className="w-4 h-4" />
               전체 당첨률
             </div>
-          </div>
-          <div className="px-6 pb-6">
-            <div className="text-3xl font-bold text-green-600">{winRate}%</div>
+            <div className="text-3xl font-bold text-green-600 mt-3">{winRate}%</div>
             <p className="text-xs text-gray-500 mt-1">{winningResults.length}개 당첨</p>
           </div>
         </div>
 
         <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-          <div className="p-6 pb-3">
+          <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
               AI 추천 당첨률
             </div>
-          </div>
-          <div className="px-6 pb-6">
-            <div className="text-3xl font-bold text-blue-600">{aiWinRate}%</div>
+            <div className="text-3xl font-bold text-blue-600 mt-3">{aiWinRate}%</div>
             <p className="text-xs text-gray-500 mt-1">
               {aiWinningResults.length}/{aiRecommendedCount}개 당첨
             </p>
@@ -256,14 +273,12 @@ export default function AdminStatsPage() {
         </div>
 
         <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-          <div className="p-6 pb-3">
+          <div className="p-4 sm:p-6">
             <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               일반 추첨 당첨률
             </div>
-          </div>
-          <div className="px-6 pb-6">
-            <div className="text-3xl font-bold text-purple-600">{regularWinRate}%</div>
+            <div className="text-3xl font-bold text-purple-600 mt-3">{regularWinRate}%</div>
             <p className="text-xs text-gray-500 mt-1">
               {regularWinningResults.length}/{regularDrawCount}개 당첨
             </p>
@@ -278,13 +293,16 @@ export default function AdminStatsPage() {
           <TabsTrigger value="comparison">AI vs 일반</TabsTrigger>
         </TabsList>
 
+        {/* 2. p-6 -> p-4 sm:p-6 및 px-6 pb-6 -> p-4 sm:p-6 pt-0 */}
         <TabsContent value="ranks" className="space-y-4">
           <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">당첨 등수별 분포</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">전체 분석 완료된 추첨의 등수별 통계</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {latestDraw?.drawNo}회차 대상 추첨의 등수별 통계
+              </p>
             </div>
-            <div className="px-6 pb-6">
+            <div className="p-4 sm:p-6 pt-0">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {rankStats.map((stat) => (
                   <div
@@ -315,13 +333,16 @@ export default function AdminStatsPage() {
           </div>
         </TabsContent>
 
+        {/* 3. p-6 -> p-4 sm:p-6 및 px-6 pb-6 -> p-4 sm:p-6 pt-0 */}
         <TabsContent value="matches" className="space-y-4">
           <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">번호 일치 개수 분포</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">당첨 번호와 일치하는 개수별 통계</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {latestDraw?.drawNo}회차 당첨 번호와 일치하는 개수별 통계
+              </p>
             </div>
-            <div className="px-6 pb-6">
+            <div className="p-4 sm:p-6 pt-0">
               <div className="space-y-3">
                 {matchCountStats.map((stat) => (
                   <div key={stat.count} className="flex items-center gap-4">
@@ -349,17 +370,20 @@ export default function AdminStatsPage() {
           </div>
         </TabsContent>
 
+        {/* 4. p-6 -> p-4 sm:p-6 및 px-6 pb-6 -> p-4 sm:p-6 pt-0 */}
         <TabsContent value="comparison" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-blue-600" />
                   AI 추천 등수별 통계
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">AI로 추천받은 번호의 당첨 등수 분포</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {latestDraw?.drawNo}회차 AI 추천 번호의 당첨 등수 분포
+                </p>
               </div>
-              <div className="px-6 pb-6">
+              <div className="p-4 sm:p-6 pt-0">
                 <div className="space-y-2">
                   {aiRankStats.map((stat) => (
                     <div
@@ -380,14 +404,16 @@ export default function AdminStatsPage() {
             </div>
 
             <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg border border-gray-200 dark:border-gray-800">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <Target className="w-5 h-5 text-purple-600" />
                   일반 추첨 등수별 통계
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">수동으로 추첨한 번호의 당첨 등수 분포</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {latestDraw?.drawNo}회차 일반 추첨 번호의 당첨 등수 분포
+                </p>
               </div>
-              <div className="px-6 pb-6">
+              <div className="p-4 sm:p-6 pt-0">
                 <div className="space-y-2">
                   {regularRankStats.map((stat) => (
                     <div
@@ -410,16 +436,15 @@ export default function AdminStatsPage() {
         </TabsContent>
       </Tabs>
 
+      {/* 5. [제거] pendingAnalysis.length가 항상 0이므로 이 섹션은 더 이상 표시되지 않습니다. */}
       {pendingAnalysis.length > 0 && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-2 border-yellow-200 dark:border-yellow-800">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
               <Calendar className="w-5 h-5" />
               결과 대기 중인 추첨
             </h3>
-          </div>
-          <div className="px-6 pb-6">
-            <p className="text-yellow-700 dark:text-yellow-300">
+            <p className="text-yellow-700 dark:text-yellow-300 mt-3">
               {pendingAnalysis.length}개의 추첨이 아직 당첨 결과 발표를 기다리고 있습니다. 다음 회차 추첨 후 자동으로
               분석됩니다.
             </p>
