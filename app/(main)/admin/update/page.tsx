@@ -45,7 +45,7 @@ export default function UpdateDrawPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
-      <div className="bg-white dark:bg-black rounded-xl shadow-sm border border-gray-100 dark:border-[rgb(26,26,26)] p-6">
+      <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg p-6">
         <div className="flex items-center mb-4">
           <DatabaseZap className="w-6 h-6 mr-2 text-blue-600" />
           <h1 className="text-2xl font-bold">당첨 번호 업데이트</h1>
