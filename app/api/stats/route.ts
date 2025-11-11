@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   })
 
   try {
-    // 3. [수정] 최신 '당첨 완료' 회차 1건을 조회
+    // 3. 최신 '당첨 완료' 회차 1건을 조회
     const { data: latestDraw, error: latestDrawError } = await supabaseAdmin
       .from("winning_numbers")
       .select("*")
@@ -42,23 +42,34 @@ export async function GET(request: Request) {
       )
     }
 
-    // 4. [신규] 최신 회차 번호 확정
+    // 4. [수정] 최신 회차 번호와 '다음' 회차 번호 정의
     const latestDrawNo = latestDraw.drawNo
+    const upcomingDrawNo = latestDrawNo + 1 // 다음 회차
 
-    // 5. [수정] 해당 최신 회차를 '대상'으로 하는 'generated_numbers'만 조회
-    const { data: generatedData, error: generatedError } = await supabaseAdmin
+    // 5. [수정] '최신 완료 회차'에 해당하는 추첨 기록 조회
+    const { data: completedData, error: completedError } = await supabaseAdmin
       .from("generated_numbers")
       .select("*")
       .eq("draw_no", latestDrawNo) // [중요] 최신 회차 번호로 필터링
 
-    if (generatedError) throw generatedError
+    if (completedError) throw completedError
 
-    // 6. [수정] '모든' 당첨 번호가 아닌, '최신' 당첨 번호 1건과 '필터링된' 추첨 기록만 반환
+    // 6. [신규] '다음 회차'에 해당하는 (결과 대기중인) 추첨 기록 조회
+    const { data: pendingData, error: pendingError } = await supabaseAdmin
+      .from("generated_numbers")
+      .select("*")
+      .eq("draw_no", upcomingDrawNo) // [중요] 다음 회차 번호로 필터링
+
+    if (pendingError) throw pendingError
+
+    // 7. [수정] 3가지 데이터를 모두 반환
     return NextResponse.json(
       {
         success: true,
-        historyData: generatedData || [], // 'generated_numbers' (최신 회차)
-        winningData: latestDraw, // 'winning_numbers' (최신 회차 1건)
+        completedHistoryData: completedData || [], // 'generated_numbers' (최신 회차)
+        pendingHistoryData: pendingData || [],     // 'generated_numbers' (다음 회차 - 대기중)
+        latestDrawData: latestDraw,             // 'winning_numbers' (최신 회차 1건)
+        upcomingDrawNo: upcomingDrawNo,           // 다음 회차 번호
       },
       { status: 200 },
     )
