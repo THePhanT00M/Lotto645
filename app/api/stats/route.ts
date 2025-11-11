@@ -62,7 +62,7 @@ export async function GET(request: Request) {
 
     if (pendingError) throw pendingError
 
-    // 7. [수정] 3가지 데이터를 모두 반환
+    // 7. 3가지 데이터를 모두 반환
     return NextResponse.json(
       {
         success: true,
