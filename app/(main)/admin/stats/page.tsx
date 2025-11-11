@@ -227,13 +227,13 @@ export default function AdminStatsPage() {
   }
 
   // 로딩 상태(true)일 때 스켈레톤 UI를 렌더링합니다.
-  if (loading) {
+  if (1) {
     return (
       <div className="container mx-auto p-4 sm:p-6  max-w-5xl space-y-6 animate-pulse">
         {/* (스켈레톤) 페이지 제목 */}
         <div className="space-y-2">
           <Skeleton className="h-7 w-64" /> {/* h1 title */}
-          <Skeleton className="h-5 w-80" /> {/* p description */}
+          <Skeleton className="h-6 w-80" /> {/* p description */}
         </div>
 
         {/* (스켈레톤) 최신 회차 카드 */}
@@ -266,16 +266,16 @@ export default function AdminStatsPage() {
 
         {/* (스켈레톤) 상단 통계 카드 4개 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Skeleton className="h-32 rounded-lg" />
-          <Skeleton className="h-32 rounded-lg" />
-          <Skeleton className="h-32 rounded-lg" />
-          <Skeleton className="h-32 rounded-lg" />
+          <Skeleton className="h-34 rounded-lg" />
+          <Skeleton className="h-34 rounded-lg" />
+          <Skeleton className="h-34 rounded-lg" />
+          <Skeleton className="h-34 rounded-lg" />
         </div>
 
         {/* (스켈레톤) 탭 UI */}
         <div className="space-y-4">
           <Skeleton className="h-10 w-full" /> {/* TabsList */}
-          <Skeleton className="h-64 w-full rounded-lg" /> {/* TabsContent */}
+          <Skeleton className="h-66 w-full rounded-lg" /> {/* TabsContent */}
         </div>
 
         <div className="space-y-4">
