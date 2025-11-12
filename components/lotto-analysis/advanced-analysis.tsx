@@ -389,6 +389,34 @@ const scoreToGrade = (score: number): Grade => {
   return "하" // 19점 이하
 }
 
+/**
+ * 30-1. [신규] 'generated_numbers' (source='ai') 통계 기반 '인기 페널티' 점수 계산
+ * @param {number[]} numbers - 분석할 6개 번호
+ * @param {FrequencyMap} generatedStats - 'ai' 소스로 생성된 번호들의 빈도수 맵
+ * @returns {number} - 페널티(음수) 또는 보너스(양수) 점수
+ */
+const getAiPopularityScore = (numbers: number[], generatedStats: FrequencyMap): number => {
+  // 1. 'ai' 생성 통계 데이터가 없으면 0점 반환
+  if (!generatedStats || generatedStats.size === 0) {
+    return 0
+  }
+
+  // 2. 현재 조합(6개)의 번호들이 'generated_stats'에 총 몇 번이나 등장했는지 합산
+  const totalAiMentions = numbers.reduce((acc, num) => acc + (generatedStats.get(num) || 0), 0)
+
+  // 3. (튜닝 영역) 합산된 빈도수에 따라 페널티 또는 보너스 부여
+  // 예: 합계가 100회 초과 (매우 흔한 'ai' 추천 조합) -> 큰 페널티
+  if (totalAiMentions > 100) return -40
+  // 예: 합계가 50회 초과 (다소 흔한 'ai' 추천 조합) -> 페널티
+  if (totalAiMentions > 50) return -20
+  // 예: 합계가 10회 미만 (희귀한 'ai' 추천 조합) -> 보너스
+  if (totalAiMentions < 10) return 15
+
+  // 4. 그 외에는 0점
+  return 0
+}
+
+
 /** 31. (헬퍼) 등급별 UI 색상 반환 */
 const getGradeColor = (grade: Grade): string => {
   switch (grade) {
@@ -443,6 +471,7 @@ interface AdvancedAnalysisProps {
   userDrawnNumbers: number[] // 사용자가 추첨기/수동으로 뽑은 원본 번호
   numbers: number[] // 현재 분석 중인 번호 (사용자 번호 또는 AI 추천 번호)
   winningNumbers: WinningLottoNumbers[] // (NEW) DB에서 가져온 전체 당첨 번호
+  generatedStats: FrequencyMap // [신규] AI 생성 통계 맵
   multipleNumbers: MultipleNumberType[] // 'numbers' prop 기준 '쌍둥이' 분석 결과
   similarDraws: SimilarDrawType[] // 'numbers' prop 기준 '유사 패턴' 분석 결과
   winningNumbersCount: number
@@ -454,6 +483,7 @@ export default function AdvancedAnalysis({
                                            userDrawnNumbers,
                                            numbers,
                                            winningNumbers, // (NEW) prop으로 받음
+                                           generatedStats, // [신규] prop 받기
                                            multipleNumbers,
                                            similarDraws,
                                            winningNumbersCount,
@@ -611,7 +641,8 @@ export default function AdvancedAnalysis({
       {/* --- DIV 2: AI 번호 추천 카드 --- */}
       {/* 49. AIRecommendation 컴포넌트에 필요한 모든 데이터와 함수를 props로 전달 */}
       <AIRecommendation
-        analyticsData={analyticsData} // 49-1. 전체 통계 데이터
+        analyticsData={analyticsData} // 49-1. (기존) 과거 당첨 통계
+        generatedStats={generatedStats} // 49-2. [신규] 'ai' 생성 통계
         // 49-2. 밸런스 점수 및 등급 변환 함수 전달
         calculateBalanceScore={calculateBalanceScore}
         scoreToGrade={scoreToGrade}
@@ -624,6 +655,7 @@ export default function AdvancedAnalysis({
         getRecentFrequencyScore={getRecentFrequencyScore}
         getGapScore={getGapScore}
         getQuadrupletScore={getQuadrupletScore}
+        getAiPopularityScore={getAiPopularityScore} // 49-4. [신규] '인기 점수' 헬퍼 함수 전달
         winningNumbersSet={analyticsData.winningNumbersSet}
         latestDrawNo={analyticsData.latestDrawNo}
         // 49-4. 콜백 함수 전달
