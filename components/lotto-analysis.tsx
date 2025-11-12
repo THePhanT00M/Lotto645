@@ -29,7 +29,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
   const [winningNumbers, setWinningNumbers] = useState<WinningLottoNumbers[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // [신규] 다음 회차 AI 생성 통계(generated_numbers) 상태
+  // [수정] AI 생성 통계 상태 (유지)
   const [generatedStats, setGeneratedStats] = useState<FrequencyMap>(new Map())
 
   // 유사한 당첨 번호 상태
@@ -48,11 +48,12 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
 
   const [analysisNumbers, setAnalysisNumbers] = useState<number[]>(numbers)
 
-  // Supabase에서 당첨 번호 데이터 및 생성 통계 가져오기
+  // [수정] Supabase에서 당첨 번호 데이터 및 API에서 생성 통계 가져오기
   useEffect(() => {
-    const fetchWinningNumbers = async () => {
+    const fetchAllData = async () => { // 1. 함수 이름 변경
       setIsLoading(true)
-      // 1. (기존) winning_numbers 가져오기
+
+      // 2. (기존) winning_numbers 가져오기 (Supabase 클라이언트 사용)
       const { data, error } = await supabase
         .from("winning_numbers")
         .select("*")
@@ -63,45 +64,40 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         setWinningNumbers([])
       } else if (data) {
         setWinningNumbers(data as WinningLottoNumbers[])
-
-        // --- [신규] generated_numbers 통계 가져오기 ---
-        try {
-          // 2. [신규] 다음 회차 번호 계산 (API 로직 참고)
-          const latestDrawNo = data[data.length - 1]?.drawNo || 0
-          const upcomingDrawNo = latestDrawNo + 1
-
-          // 3. [신규] 다음 회차(upcomingDrawNo)의 'ai' 소스 데이터만 조회
-          const { data: generatedData, error: generatedError } = await supabase
-            .from("generated_numbers")
-            .select("numbers")
-            .eq("draw_no", upcomingDrawNo)
-            .eq("source", "ai") // 사용자 요청대로 'ai' 소스만 필터링
-
-          if (generatedError) throw generatedError
-
-          // 4. [신규] AI 생성 통계 맵(Map) 생성
-          const statsMap: FrequencyMap = new Map()
-          if (generatedData) {
-            for (const row of generatedData) {
-              for (const num of row.numbers) {
-                statsMap.set(num, (statsMap.get(num) || 0) + 1)
-              }
-            }
-          }
-          // 5. [신규] 상태에 저장
-          setGeneratedStats(statsMap)
-          console.log(`Loaded ${generatedData.length} 'ai' stats for upcoming draw ${upcomingDrawNo}.`)
-
-        } catch (genError: any) {
-          console.error("Error fetching generated_numbers stats:", genError.message)
-          setGeneratedStats(new Map()) // 에러 시 빈 맵으로 초기화
-        }
-        // --- [신규] 로직 끝 ---
       }
+
+      // --- [수정] API를 통해 generated_numbers 통계 가져오기 ---
+      try {
+        // 3. [수정] /api/generated-stats 엔드포인트 호출
+        const response = await fetch('/api/generated-stats');
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || "Failed to fetch generated stats");
+        }
+
+        // 4. [수정] API에서 반환된 객체(stats)를 Map으로 변환
+        const statsMap: FrequencyMap = new Map();
+        if (result.stats) {
+          for (const [key, value] of Object.entries(result.stats)) {
+            statsMap.set(Number(key), value as number);
+          }
+        }
+
+        // 5. [수정] 상태에 저장
+        setGeneratedStats(statsMap);
+        console.log(`Loaded ${result.count} 'ai' stats for upcoming draw ${result.upcomingDrawNo} via API.`);
+
+      } catch (genError: any) {
+        console.error("Error fetching generated_numbers stats via API:", genError.message);
+        setGeneratedStats(new Map()); // 에러 시 빈 맵으로 초기화
+      }
+      // --- [수정] 로직 끝 ---
+
       setIsLoading(false)
     }
 
-    fetchWinningNumbers()
+    fetchAllData() // 6. 통합된 함수 호출
   }, [])
 
   useEffect(() => {
@@ -258,7 +254,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         <p className="text-xl font-semibold text-black dark:text-white flex items-center gap-2 mb-0">번호 분석 결과</p>
       </div>
 
-      {/* --- [수정 시작] 스켈레톤 UI --- */}
+      {/* --- [기존] 스켈레톤 UI --- */}
       {isLoading ? (
         // 1. 메인 컨테이너 (로드 완료 시의 <AdvancedAnalysis /> 레이아웃 모방)
         <div className="space-y-6">
@@ -354,14 +350,14 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
 
         </div>
       ) : (
-        // --- [수정 끝] ---
+        // --- [기존] ---
 
         // 데이터 로드 완료 후 실제 컴포넌트 렌더링
         <AdvancedAnalysis
           numbers={analysisNumbers}
           userDrawnNumbers={numbers}
           winningNumbers={winningNumbers} // DB에서 가져온 데이터 전달
-          generatedStats={generatedStats} // [신규] AI 생성 통계 전달
+          generatedStats={generatedStats} // [신규] API로 가져온 AI 생성 통계 전달
           multipleNumbers={multipleNumbers}
           similarDraws={similarDraws}
           winningNumbersCount={winningNumbers.length}
