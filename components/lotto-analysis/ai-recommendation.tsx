@@ -34,6 +34,7 @@ interface LottoAnalytics {
 // 3. 컴포넌트 Props 인터페이스 정의
 interface AIRecommendationProps {
   analyticsData: LottoAnalytics
+  generatedStats: FrequencyMap // [신규] AI 생성 통계 맵
   // [수정] calculateGrade -> calculateBalanceScore (숫자 반환)
   calculateBalanceScore: (numbers: number[], stats: LottoAnalytics) => number
   // [신규] 점수 -> 등급 변환 함수
@@ -53,6 +54,7 @@ interface AIRecommendationProps {
     latestDrawNo: number,
     recentThreshold: number,
   ) => number
+  getAiPopularityScore: (numbers: number[], generatedStats: FrequencyMap) => number // [신규] 인기 점수 함수
   winningNumbersSet: Set<string>
   latestDrawNo: number
   // 콜백 함수들
@@ -63,6 +65,7 @@ interface AIRecommendationProps {
 
 export default function AIRecommendation({
                                            analyticsData,
+                                           generatedStats, // [신규] prop 받기
                                            calculateBalanceScore, // [수정]
                                            scoreToGrade,          // [신규]
                                            getGradeColor,
@@ -74,6 +77,7 @@ export default function AIRecommendation({
                                            getRecentFrequencyScore,
                                            getGapScore,
                                            getQuadrupletScore,
+                                           getAiPopularityScore, // [신규] prop 받기
                                            winningNumbersSet,
                                            latestDrawNo,
                                            onRecommendationGenerated,
@@ -150,14 +154,16 @@ export default function AIRecommendation({
         else if (carryOverCount === 2) carryOverScore = -10;
         else carryOverScore = -30;
 
-        // 3-2-3. (수정) totalScore 가중치 조정
-        // 기존: gradeScore(-40~80) * 0.2 => 범위 [-8, 16]
-        // 새 점수(balanceScore)는 약 0~200점. (200/80 = 2.5배)
-        // 가중치를 2.5로 나눔: 0.2 / 2.5 = 0.08
+        // 3-2-2-1. [신규] AI 인기 페널티/보너스 점수 계산
+        const aiPopularityScore = getAiPopularityScore(currentNumbers, generatedStats)
+
+        // 3-2-3. (수정) totalScore 가중치 조정 + [신규] AI 인기 점수 추가
+        // aiPopularityScore에 가중치 0.1을 부여하고, pairScore 가중치를 0.30 -> 0.20으로 조정
         const totalScore =
-          balanceScore * 0.08 + // 밸런스 점수 (가중치 0.2 -> 0.08)
-          quadrupletScore * 0.1 +
-          (pairScore / 150) * 50 * 0.30 +
+          balanceScore * 0.08 +       // 밸런스 점수
+          quadrupletScore * 0.1 +     // 4쌍둥이 페널티
+          aiPopularityScore * 0.1 +   // [신규] AI 인기 페널티/보너스 (가중치 0.1)
+          (pairScore / 150) * 50 * 0.20 + // [수정] 쌍둥이 점수 (가중치 0.30 -> 0.20)
           (tripletScore / 20) * 50 * 0.15 +
           (recentScore / 30) * 50 * 0.05 +
           (gapScore / 600) * 50 * 0.1 +

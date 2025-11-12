@@ -21,10 +21,16 @@ type MultipleNumberType = {
   }[]
 }
 
+// [신규] 숫자별 빈도 맵 타입 (advanced-analysis.tsx와 동일하게)
+type FrequencyMap = Map<number, number>
+
 export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
   // DB에서 가져온 당첨 번호 상태
   const [winningNumbers, setWinningNumbers] = useState<WinningLottoNumbers[]>([])
   const [isLoading, setIsLoading] = useState(true)
+
+  // [신규] 다음 회차 AI 생성 통계(generated_numbers) 상태
+  const [generatedStats, setGeneratedStats] = useState<FrequencyMap>(new Map())
 
   // 유사한 당첨 번호 상태
   const [similarDraws, setSimilarDraws] = useState<
@@ -42,10 +48,11 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
 
   const [analysisNumbers, setAnalysisNumbers] = useState<number[]>(numbers)
 
-  // Supabase에서 당첨 번호 데이터 가져오기
+  // Supabase에서 당첨 번호 데이터 및 생성 통계 가져오기
   useEffect(() => {
     const fetchWinningNumbers = async () => {
       setIsLoading(true)
+      // 1. (기존) winning_numbers 가져오기
       const { data, error } = await supabase
         .from("winning_numbers")
         .select("*")
@@ -56,6 +63,40 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         setWinningNumbers([])
       } else if (data) {
         setWinningNumbers(data as WinningLottoNumbers[])
+
+        // --- [신규] generated_numbers 통계 가져오기 ---
+        try {
+          // 2. [신규] 다음 회차 번호 계산 (API 로직 참고)
+          const latestDrawNo = data[data.length - 1]?.drawNo || 0
+          const upcomingDrawNo = latestDrawNo + 1
+
+          // 3. [신규] 다음 회차(upcomingDrawNo)의 'ai' 소스 데이터만 조회
+          const { data: generatedData, error: generatedError } = await supabase
+            .from("generated_numbers")
+            .select("numbers")
+            .eq("draw_no", upcomingDrawNo)
+            .eq("source", "ai") // 사용자 요청대로 'ai' 소스만 필터링
+
+          if (generatedError) throw generatedError
+
+          // 4. [신규] AI 생성 통계 맵(Map) 생성
+          const statsMap: FrequencyMap = new Map()
+          if (generatedData) {
+            for (const row of generatedData) {
+              for (const num of row.numbers) {
+                statsMap.set(num, (statsMap.get(num) || 0) + 1)
+              }
+            }
+          }
+          // 5. [신규] 상태에 저장
+          setGeneratedStats(statsMap)
+          console.log(`Loaded ${generatedData.length} 'ai' stats for upcoming draw ${upcomingDrawNo}.`)
+
+        } catch (genError: any) {
+          console.error("Error fetching generated_numbers stats:", genError.message)
+          setGeneratedStats(new Map()) // 에러 시 빈 맵으로 초기화
+        }
+        // --- [신규] 로직 끝 ---
       }
       setIsLoading(false)
     }
@@ -320,6 +361,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
           numbers={analysisNumbers}
           userDrawnNumbers={numbers}
           winningNumbers={winningNumbers} // DB에서 가져온 데이터 전달
+          generatedStats={generatedStats} // [신규] AI 생성 통계 전달
           multipleNumbers={multipleNumbers}
           similarDraws={similarDraws}
           winningNumbersCount={winningNumbers.length}
