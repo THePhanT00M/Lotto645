@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     // 5. [수정] '최신 완료 회차'에 해당하는 추첨 기록 조회
     const { data: completedData, error: completedError } = await supabaseAdmin
       .from("generated_numbers")
-      .select("*")
+      .select("created_at, draw_no, id, numbers, score, source")
       .eq("draw_no", latestDrawNo) // [중요] 최신 회차 번호로 필터링
 
     if (completedError) throw completedError
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     // 6. [신규] '다음 회차'에 해당하는 (결과 대기중인) 추첨 기록 조회
     const { data: pendingData, error: pendingError } = await supabaseAdmin
       .from("generated_numbers")
-      .select("*")
+      .select("id")
       .eq("draw_no", upcomingDrawNo) // [중요] 다음 회차 번호로 필터링
 
     if (pendingError) throw pendingError
