@@ -284,7 +284,7 @@ export default function HistoryPage() {
                       </span>
 
                       {item.isAiRecommended ? (
-                        <span className="flex items-center text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded-md">
+                        <span className="flex items-center text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded-md border border-purple-100 dark:border-purple-800/50">
                           <Sparkles className="w-3 h-3 mr-1" />
                           AI 추천
                         </span>

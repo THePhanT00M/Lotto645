@@ -235,11 +235,11 @@ export default function AdminStatsPage() {
     <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
       {/* 페이지 제목 */}
       <div className="space-y-2">
-        <h1 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <h1 className="text-2xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
+          <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           관리자 통계 대시보드
         </h1>
-        <p className="text-[#606060] dark:text-[#aaaaaa]">
+        <p className="text-[#606060] dark:text-[#aaaaaa] text-sm">
           최신 회차({latestDraw?.drawNo}회차)에 대한 사이트 당첨 비율 및 분석 데이터
         </p>
       </div>
