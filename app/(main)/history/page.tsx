@@ -230,7 +230,7 @@ export default function HistoryPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDelete(item.id)}
-                  className="absolute top-3 right-3 md:hidden h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  className="absolute top-3 right-3 md:hidden px-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span className="text-xs">삭제</span>
@@ -239,7 +239,7 @@ export default function HistoryPage() {
                 {/* 모바일에서 텍스트(날짜/뱃지)가 삭제 버튼과 겹치지 않도록 pr-20 (충분한 여백) 추가 */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pr-20 md:pr-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="flex items-center text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+                    <span className="flex items-center text-xs text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
                       <Calendar className="w-3.5 h-3.5 mr-1.5" />
                       {new Date(item.timestamp).toLocaleString()}
                     </span>
