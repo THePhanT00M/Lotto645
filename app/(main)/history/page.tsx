@@ -206,9 +206,21 @@ export default function HistoryPage() {
             return (
               <div
                 key={item.id}
-                className="bg-white dark:bg-[#262626] rounded-xl p-5 border border-gray-200 dark:border-gray-800"
+                className="relative bg-white dark:bg-[#262626] rounded-xl p-5 border border-gray-200 dark:border-gray-800"
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                {/* [수정] 모바일 전용 삭제 버튼 (텍스트 포함, 우측 상단 절대 배치) */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(item.id)}
+                  className="absolute top-3 right-3 md:hidden h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span className="text-xs">삭제</span>
+                </Button>
+
+                {/* [수정] 모바일에서 텍스트(날짜/뱃지)가 삭제 버튼과 겹치지 않도록 pr-20 (충분한 여백) 추가 */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pr-20 md:pr-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="flex items-center text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
                       <Calendar className="w-3.5 h-3.5 mr-1.5" />
@@ -235,11 +247,11 @@ export default function HistoryPage() {
 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                   {/* 번호 표시 */}
-                  <div className="flex flex-wrap justify-center gap-2">
+                  <div className="flex w-full max-w-xs justify-center gap-3">
                     {item.numbers.map((num) => (
                       <div
                         key={num}
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-sm shadow-sm"
+                        className="w-full max-w-10 aspect-square rounded-full flex items-center justify-center text-black font-bold text-sm shadow-sm"
                         style={{ backgroundColor: getBallColor(num) }}
                       >
                         {num}
@@ -247,12 +259,12 @@ export default function HistoryPage() {
                     ))}
                   </div>
 
-                  {/* 액션 버튼 */}
+                  {/* 데스크탑 전용 삭제 버튼 (모바일에서는 숨김) */}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDelete(item.id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    className="hidden md:inline-flex text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
                     삭제
