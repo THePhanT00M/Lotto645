@@ -227,7 +227,7 @@ export default function HistoryPage() {
                   </div>
 
                   {rankInfo && (
-                    <div className={`px-3 py-1 rounded-full text-sm font-bold border ${rankInfo.color} self-start md:self-auto`}>
+                    <div className={`px-3 py-1 rounded-md text-sm font-bold border ${rankInfo.color} self-start md:self-auto`}>
                       {latestDraw?.drawNo}회 기준: {rankInfo.rank}
                     </div>
                   )}
