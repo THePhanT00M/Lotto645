@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Loader2, CheckCircle, AlertTriangle, DatabaseZap } from "lucide-react"
+import { Loader2, CheckCircle, AlertTriangle, DatabaseZap, RefreshCw } from "lucide-react"
 
 export default function UpdateDrawPage() {
   const [status, setStatus] = useState("업데이트 대기 중...")
@@ -57,13 +57,13 @@ export default function UpdateDrawPage() {
       </div>
 
       {/* 메인 컨텐츠 카드 */}
-      <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-6 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+      <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
 
         {/* 업데이트 버튼 */}
         <Button
           onClick={runUpdate}
           disabled={isLoading}
-          className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-medium"
+          className="w-full text-sm bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-medium"
         >
           {isLoading ? (
             <>
@@ -71,7 +71,10 @@ export default function UpdateDrawPage() {
               업데이트 중...
             </>
           ) : (
-            "수동으로 다시 업데이트"
+            <>
+              <RefreshCw className="mr-2 h-5 w-5" />
+              수동으로 다시 업데이트
+            </>
           )}
         </Button>
 
