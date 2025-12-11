@@ -189,7 +189,7 @@ export default function HistoryPage() {
             나의 추첨 기록
           </h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm">
-            저장된 번호 목록과 해당 회차 기준 당첨 결과를 확인하세요.
+            나의 추첨 기록을 확인하고 당첨 결과를 확인하세요.
           </p>
         </div>
 
@@ -354,14 +354,21 @@ export default function HistoryPage() {
         )}
       </div>
 
-      {/* 안내 문구 */}
+      {/* 안내 문구 (수정됨) */}
       <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg flex items-start gap-3 text-sm text-blue-700 dark:text-blue-300">
         <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
         <div>
           <p className="font-semibold">안내사항</p>
           <ul className="list-disc list-inside mt-1 space-y-1 opacity-90">
-            <li>이 기록은 브라우저(로컬 스토리지)에 저장되므로, 캐시를 삭제하면 기록이 사라질 수 있습니다.</li>
-            <li>당첨 결과는 저장된 회차 정보를 기준으로 분석 됩니다.</li>
+            <li>
+              이 기록은 <strong>브라우저에만 저장</strong>됩니다. 캐시 삭제나 브라우저 변경 시 데이터가 유실될 수 있습니다.
+            </li>
+            <li>
+              당첨 여부는 번호 저장 시 지정된 <strong>&#39;회차&#39;</strong>의 당첨 번호를 기준으로 자동 계산됩니다.
+            </li>
+            <li>
+              <strong>&#39;추첨 대기&#39;</strong> 상태인 기록은 실제 추첨이 완료된 후 다시 접속하시면 결과가 업데이트됩니다.
+            </li>
           </ul>
         </div>
       </div>
