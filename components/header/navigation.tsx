@@ -29,8 +29,8 @@ export default function Navigation({ showMobileMenu, isLoggedIn, onToggleMobileM
 
     if (isMobile) {
       return isActive
-        ? "flex items-center px-4 py-3 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg font-medium border-l-4 border-blue-600 dark:border-blue-400"
-        : "block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg font-medium"
+        ? "flex items-center px-4 py-3 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 rounded-md font-medium"
+        : "block px-4 py-3 text-gray-700 dark:text-gray-300 rounded-md font-medium"
     }
 
     return isActive
