@@ -274,7 +274,7 @@ export default function HistoryPage() {
                   <div className="flex justify-between items-center w-full md:w-auto">
                     {/* 왼쪽 그룹: 날짜 + 추첨 타입 */}
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="flex items-center text-xs text-gray-600 bg-gray-100 dark:bg-[rgb(88,88,88)] px-2 py-1 rounded-md border border-gray-200 dark:border-[rgb(111,111,111)] dark:text-white">
+                      <span className="flex items-center text-xs text-gray-600 bg-gray-100 dark:bg-[rgb(80,80,80)] px-2 py-1 rounded-md border border-gray-200 dark:border-[rgb(100,100,100)] dark:text-white">
                         <Calendar className="w-3.5 h-3.5 mr-1.5" />
                         {new Date(item.timestamp).toLocaleString()}
                       </span>
@@ -285,7 +285,7 @@ export default function HistoryPage() {
                           AI 추천
                         </span>
                       ) : (
-                        <span className="font-medium text-xs text-gray-600 bg-gray-100 dark:bg-[rgb(88,88,88)] px-2 py-1 rounded-md border border-gray-200 dark:border-[rgb(111,111,111)] dark:text-white">
+                        <span className="font-medium text-xs text-gray-600 bg-gray-100 dark:bg-[rgb(80,80,80)] px-2 py-1 rounded-md border border-gray-200 dark:border-[rgb(100,100,100)] dark:text-white">
                           일반/수동
                         </span>
                       )}
@@ -296,7 +296,7 @@ export default function HistoryPage() {
                       variant="ghost"
                       size="custom"
                       onClick={() => handleDelete(item.id)}
-                      className="md:hidden text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0 px-2 py-1 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800"
+                      className="md:hidden text-xs px-2 py-1 text-red-500 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span className="text-xs ml-1">삭제</span>
@@ -345,7 +345,7 @@ export default function HistoryPage() {
                     variant="ghost"
                     size="custom"
                     onClick={() => handleDelete(item.id)}
-                    className="hidden md:inline-flex text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0 px-2 py-1 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800"
+                    className="hidden md:inline-flex text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0 px-2 py-1 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
                     삭제
@@ -358,7 +358,7 @@ export default function HistoryPage() {
       </div>
 
       {/* 안내 문구 (수정됨) */}
-      <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg flex items-start gap-3 text-sm text-blue-700 dark:text-blue-300">
+      <div className="bg-blue-50 dark:bg-blue-900/40 p-4 rounded-lg flex items-start gap-3 text-sm text-blue-700 dark:text-blue-400">
         <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
         <div>
           <p className="font-semibold">안내사항</p>
