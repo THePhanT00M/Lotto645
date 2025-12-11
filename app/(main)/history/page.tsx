@@ -267,37 +267,40 @@ export default function HistoryPage() {
                 key={item.id}
                 className="relative bg-white dark:bg-[#262626] rounded-xl p-5 border border-gray-200 dark:border-gray-800"
               >
-                {/* 모바일 전용 삭제 버튼 (텍스트 포함, 우측 상단 절대 배치) */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(item.id)}
-                  className="absolute top-3 right-3 md:hidden h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span className="text-xs">삭제</span>
-                </Button>
+                {/* [수정] pr-20 제거하고 items-center로 정렬 */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 md:pr-0">
 
-                {/* 정보 표시 영역 (좌: 날짜/타입, 우: 회차/등수) */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pr-20 md:pr-0">
-
-                  {/* 왼쪽 그룹: 날짜 + 추첨 타입 */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="flex items-center text-xs text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
-                      <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                      {new Date(item.timestamp).toLocaleString()}
-                    </span>
-
-                    {item.isAiRecommended ? (
-                      <span className="flex items-center text-xs font-medium text-purple-600 bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded-md border border-purple-100 dark:border-purple-800">
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        AI 추천
+                  {/* [수정] 모바일 레이아웃 래퍼: 왼쪽 정보 그룹 + 삭제 버튼 */}
+                  <div className="flex justify-between items-center w-full md:w-auto">
+                    {/* 왼쪽 그룹: 날짜 + 추첨 타입 */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="flex items-center text-xs text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
+                        <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                        {new Date(item.timestamp).toLocaleString()}
                       </span>
-                    ) : (
-                      <span className="text-xs font-medium text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
-                        일반/수동
-                      </span>
-                    )}
+
+                      {item.isAiRecommended ? (
+                        <span className="flex items-center text-xs font-medium text-purple-600 bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded-md border border-purple-100 dark:border-purple-800">
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          AI 추천
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
+                          일반/수동
+                        </span>
+                      )}
+                    </div>
+
+                    {/* [추가] 모바일 전용 삭제 버튼 (Flex 컨테이너 내부로 이동하여 수직 중앙 정렬) */}
+                    <Button
+                      variant="ghost"
+                      size="custom"
+                      onClick={() => handleDelete(item.id)}
+                      className="md:hidden text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0 px-2 py-1 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span className="text-xs ml-1">삭제</span>
+                    </Button>
                   </div>
 
                   {/* 오른쪽 그룹: 회차 + 등수(결과) */}
@@ -340,9 +343,9 @@ export default function HistoryPage() {
                   {/* 데스크탑 전용 삭제 버튼 (모바일에서는 숨김) */}
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="custom"
                     onClick={() => handleDelete(item.id)}
-                    className="hidden md:inline-flex text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    className="hidden md:inline-flex text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0 px-2 py-1 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
                     삭제
