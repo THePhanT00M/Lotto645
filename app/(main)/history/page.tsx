@@ -150,9 +150,12 @@ export default function HistoryPage() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>취소</AlertDialogCancel>
+                {/* 취소 버튼 스타일 적용 */}
+                <AlertDialogCancel className="border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-black dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800">
+                  취소
+                </AlertDialogCancel>
                 <AlertDialogAction onClick={handleClearAll} className="bg-red-600 hover:bg-red-700">
-                  삭제 확인
+                  삭제
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -194,7 +197,7 @@ export default function HistoryPage() {
           <div className="flex flex-col items-center justify-center py-16 bg-gray-50 dark:bg-[#262626] rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
             <History className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
             <p className="text-lg font-medium text-gray-500 dark:text-gray-400">저장된 추첨 기록이 없습니다.</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">번호를 생성하고 '저장' 버튼을 눌러 기록을 남겨보세요.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">번호를 추첨 하고 기록을 남겨보세요.</p>
           </div>
         ) : (
           history.map((item) => {
