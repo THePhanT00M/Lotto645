@@ -5,7 +5,7 @@ import { Sparkles, Save, Check, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { saveLottoResult } from "@/utils/lotto-storage"
 import AINumberDisplay from "@/components/lotto-analysis/ai-number-display"
-import { useToast } from "@/hooks/use-toast" // 1. 토스트 훅 임포트
+import { useToast } from "@/hooks/use-toast"
 
 // --- 1단계: 타입 및 헬퍼 함수 (상위 컴포넌트에서 Props로 받음) ---
 type Grade = "하" | "중하" | "보통" | "중" | "중상" | "상" | "최상"
@@ -34,16 +34,12 @@ interface LottoAnalytics {
 // 3. 컴포넌트 Props 인터페이스 정의
 interface AIRecommendationProps {
   analyticsData: LottoAnalytics
-  generatedStats: FrequencyMap // [신규] AI 생성 통계 맵
-  // [수정] calculateGrade -> calculateBalanceScore (숫자 반환)
+  generatedStats: FrequencyMap
   calculateBalanceScore: (numbers: number[], stats: LottoAnalytics) => number
-  // [신규] 점수 -> 등급 변환 함수
   scoreToGrade: (score: number) => Grade
   getGradeColor: (grade: Grade) => string
   getGradeDescription: (grade: Grade) => string
-  // AI 생성 헬퍼 함수들
   generateCombination: (weightedList: number[]) => number[]
-  // [삭제] getGradeScore는 더 이상 필요 없음
   getPairScore: (numbers: number[], pairMap: StringFrequencyMap) => number
   getTripletScore: (numbers: number[], tripletMap: StringFrequencyMap) => number
   getRecentFrequencyScore: (numbers: number[], recentMap: FrequencyMap) => number
@@ -54,30 +50,28 @@ interface AIRecommendationProps {
     latestDrawNo: number,
     recentThreshold: number,
   ) => number
-  getAiPopularityScore: (numbers: number[], generatedStats: FrequencyMap) => number // [신규] 인기 점수 함수
+  getAiPopularityScore: (numbers: number[], generatedStats: FrequencyMap) => number
   winningNumbersSet: Set<string>
   latestDrawNo: number
-  // 콜백 함수들
   onRecommendationGenerated?: (numbers: number[]) => void
   onAnalyzeNumbers?: (numbers: number[]) => void
-  isGenerating: boolean // 4. 상위 컴포넌트로부터 생성 시작 여부를 props로 받음
+  isGenerating: boolean
 }
 
 export default function AIRecommendation({
                                            analyticsData,
-                                           generatedStats, // [신규] prop 받기
-                                           calculateBalanceScore, // [수정]
-                                           scoreToGrade,          // [신규]
+                                           generatedStats,
+                                           calculateBalanceScore,
+                                           scoreToGrade,
                                            getGradeColor,
                                            getGradeDescription,
                                            generateCombination,
-                                           // getGradeScore, // [삭제]
                                            getPairScore,
                                            getTripletScore,
                                            getRecentFrequencyScore,
                                            getGapScore,
                                            getQuadrupletScore,
-                                           getAiPopularityScore, // [신규] prop 받기
+                                           getAiPopularityScore,
                                            winningNumbersSet,
                                            latestDrawNo,
                                            onRecommendationGenerated,
@@ -86,10 +80,10 @@ export default function AIRecommendation({
                                          }: AIRecommendationProps) {
   // 5. 컴포넌트 내부 상태 변수들
   const [recommendedNumbers, setRecommendedNumbers] = useState<number[]>([])
-  const [isSaved, setIsSaved] = useState(false) // 6. [중요] 이 상태는 '로컬 저장' 여부만 추적
-  const [aiGrade, setAiGrade] = useState<Grade | null>(null) // UI 표시용 등급
-  const [aiScore, setAiScore] = useState<number | null>(null) // [신규] DB 저장용 세부 점수
-  const { toast } = useToast() // 7. toast 훅 사용 선언
+  const [isSaved, setIsSaved] = useState(false)
+  const [aiGrade, setAiGrade] = useState<Grade | null>(null)
+  const [aiScore, setAiScore] = useState<number | null>(null)
+  const { toast } = useToast()
 
   /**
    * AI 추천 번호 생성 및 *자동 서버 저장*
@@ -100,7 +94,7 @@ export default function AIRecommendation({
     setIsSaved(false)
     setRecommendedNumbers([])
     setAiGrade(null)
-    setAiScore(null) // [신규] 점수 상태 초기화
+    setAiScore(null)
 
     // 2. (수행) UI 멈춤 방지를 위한 비동기 처리
     await new Promise((resolve) => setTimeout(resolve, 0))
@@ -132,7 +126,6 @@ export default function AIRecommendation({
           continue
         }
 
-        // --- [수정] 점수 계산 로직 변경 ---
         // 3-2-1. (수정) 밸런스 점수(0~200점)를 직접 계산
         const balanceScore = calculateBalanceScore(currentNumbers, analyticsData)
 
@@ -147,28 +140,26 @@ export default function AIRecommendation({
         )
         const recentScore = getRecentFrequencyScore(currentNumbers, recentFrequencies)
         const gapScore = getGapScore(currentNumbers, gapMap)
-        const carryOverCount = currentNumbers.filter(num => latestDrawNumbers.includes(num)).length;
-        let carryOverScore = 0;
-        if (carryOverCount === 0) carryOverScore = 20;
-        else if (carryOverCount === 1) carryOverScore = 15;
-        else if (carryOverCount === 2) carryOverScore = -10;
-        else carryOverScore = -30;
+        const carryOverCount = currentNumbers.filter((num) => latestDrawNumbers.includes(num)).length
+        let carryOverScore = 0
+        if (carryOverCount === 0) carryOverScore = 20
+        else if (carryOverCount === 1) carryOverScore = 15
+        else if (carryOverCount === 2) carryOverScore = -10
+        else carryOverScore = -30
 
         // 3-2-2-1. [신규] AI 인기 페널티/보너스 점수 계산
         const aiPopularityScore = getAiPopularityScore(currentNumbers, generatedStats)
 
         // 3-2-3. (수정) totalScore 가중치 조정 + [신규] AI 인기 점수 추가
-        // aiPopularityScore에 가중치 0.1을 부여하고, pairScore 가중치를 0.30 -> 0.20으로 조정
         const totalScore =
-          balanceScore * 0.08 +       // 밸런스 점수
-          quadrupletScore * 0.1 +     // 4쌍둥이 페널티
-          aiPopularityScore * 0.1 +   // [신규] AI 인기 페널티/보너스 (가중치 0.1)
-          (pairScore / 150) * 50 * 0.20 + // [수정] 쌍둥이 점수 (가중치 0.30 -> 0.20)
+          balanceScore * 0.08 +
+          quadrupletScore * 0.1 +
+          aiPopularityScore * 0.1 +
+          (pairScore / 150) * 50 * 0.2 +
           (tripletScore / 20) * 50 * 0.15 +
           (recentScore / 30) * 50 * 0.05 +
           (gapScore / 600) * 50 * 0.1 +
-          (carryOverScore / 20) * 50 * 0.1;
-        // ---------------------------------
+          (carryOverScore / 20) * 50 * 0.1
 
         // 3-2-4. (기존) 상위 TOP_K 후보군 관리
         if (topCandidates.length < TOP_K) {
@@ -186,7 +177,7 @@ export default function AIRecommendation({
             topCandidates[minIndex] = { combination: currentNumbers, score: totalScore }
           }
         }
-      } // End of ITERATIONS loop
+      }
 
       // 3-3. (기존) 최종 조합 선택
       let combination: number[]
@@ -202,54 +193,44 @@ export default function AIRecommendation({
     })
 
     // --- 4단계: 결과 처리 및 *자동 서버 저장* ---
-    // 4-1. [수정] 최종 밸런스 점수(숫자) 계산
     const finalBalanceScore = calculateBalanceScore(finalCombination, analyticsData)
-    // 4-2. [신규] 밸런스 점수를 UI용 등급(문자열)으로 변환
     const finalGrade = scoreToGrade(finalBalanceScore)
 
-    // 4-3. (수정) React 상태 업데이트 (UI 등급, DB용 점수 모두)
     setRecommendedNumbers(finalCombination)
-    setAiGrade(finalGrade) // (UI용)
-    setAiScore(finalBalanceScore) // (DB 저장용)
+    setAiGrade(finalGrade)
+    setAiScore(finalBalanceScore)
 
     // 4-4. [수정] 서버 DB에 자동으로 저장 (통계 수집용)
     try {
-      // 4-4-1. /api/log-draw 엔드포인트 호출
-      const response = await fetch('/api/log-draw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/log-draw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          numbers: finalCombination,   // 생성된 번호
-          source: 'ai',                // 출처: 'ai'
-          score: finalBalanceScore,    // [수정] 1점 단위의 세부 밸런스 점수
-          // device_info와 ip_address는 API 서버가 담당
+          numbers: finalCombination,
+          source: "ai",
+          score: finalBalanceScore,
         }),
-      });
+      })
 
       if (!response.ok) {
-        // 4-4-2. API 호출 실패 시 에러 처리
-        const result = await response.json();
-        throw new Error(result.message || "서버 통계 저장 실패");
+        const result = await response.json()
+        throw new Error(result.message || "서버 통계 저장 실패")
       }
 
-      // 4-4-3. 서버 저장 성공 로그
-      console.log("AI 추천 번호가 서버 통계 DB에 자동으로 저장되었습니다.");
-
+      console.log("AI 추천 번호가 서버 통계 DB에 자동으로 저장되었습니다.")
     } catch (error: any) {
-      // 4-4-4. (중요) 자동 저장이 실패해도 사용자 경험을 막지 않음.
-      console.error("자동 서버 저장 실패:", error.message);
+      console.error("자동 서버 저장 실패:", error.message)
       toast({
         title: "서버 통계 자동 저장 실패",
         description: "AI 번호 생성은 완료되었으나, 서버 통계 기록 중 오류가 발생했습니다.",
         variant: "destructive",
-      });
+      })
     }
 
-    // 4-5. (기존) 부모 컴포넌트(advanced-analysis)에 생성된 번호 전달
     if (onRecommendationGenerated) {
-      onRecommendationGenerated(finalCombination);
+      onRecommendationGenerated(finalCombination)
     }
-  };
+  }
 
   // 10. (기존) 'isGenerating' prop이 true가 되면 AI 추천 로직 실행
   useEffect(() => {
@@ -260,33 +241,32 @@ export default function AIRecommendation({
   }, [isGenerating])
 
   /**
-   * [신규] "AI 번호 저장" 버튼 클릭 시 *로컬*에만 저장합니다.
+   * [수정] "AI 번호 저장" 버튼 클릭 시 *로컬*에만 저장합니다.
+   * 저장 시 다음 회차 정보(targetDrawNo)를 포함합니다.
    */
   const handleSaveToHistory = () => {
-    // 1. (수행) 번호가 6개이고, 아직 (로컬)저장되지 않은 상태인지 확인
     if (recommendedNumbers.length === 6 && !isSaved) {
+      // [추가] 다음 회차 번호 계산 (최신 회차 + 1)
+      const targetDrawNo = latestDrawNo + 1
 
-      // 2. (수행) 로컬 저장소에 저장 (사용자 히스토리 UI용)
-      const localSaveSuccess = saveLottoResult(recommendedNumbers, true);
+      // [수정] saveLottoResult 호출 시 targetDrawNo 전달
+      const localSaveSuccess = saveLottoResult(recommendedNumbers, true, targetDrawNo)
 
       if (localSaveSuccess) {
-        // 3. (수행) 로컬 저장 성공 시, UI를 '저장됨'으로 변경
-        setIsSaved(true);
-        // 4. (수행) 로컬 저장 성공 토스트 알림
+        setIsSaved(true)
         toast({
           title: "기록 저장 완료",
-          description: "AI 추천 번호가 '추첨 기록' 페이지에 저장되었습니다.",
-        });
+          description: `${targetDrawNo}회차 AI 추천 번호가 '추첨 기록'에 저장되었습니다.`,
+        })
       } else {
-        // 5. (수행) 로컬 저장 실패 시 (예: 5초 내 중복)
         toast({
           title: "저장 건너뜀",
           description: "이 번호는 이미 최근에 저장되었습니다.",
           variant: "destructive",
-        });
+        })
       }
     }
-  };
+  }
 
   /**
    * "당첨 패턴 보기" 버튼 클릭 시 (상위 컴포넌트로 이벤트 전달)
@@ -297,12 +277,10 @@ export default function AIRecommendation({
     }
   }
 
-  // 11. (기존) AI 추천 번호가 생성되기 전에는 아무것도 렌더링하지 않음
   if (recommendedNumbers.length === 0) {
     return null
   }
 
-  // 12. (기존) AI 추천 번호 카드 렌더링
   return (
     <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
       <div className="flex items-center justify-between mb-4">
@@ -333,7 +311,9 @@ export default function AIRecommendation({
             {/* AI 등급 설명 */}
             {aiGrade && (
               <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200 mt-3">
-                <p className="font-medium mb-1">추천 등급 안내 (밸런스 점수: {aiScore}점):</p> {/* [수정] 세부 점수 표시 */}
+                <p className="font-medium mb-1">
+                  추천 등급 안내 (밸런스 점수: {aiScore}점):
+                </p>
                 <p>
                   • {aiGrade}: {getGradeDescription(aiGrade)}
                 </p>
@@ -360,15 +340,13 @@ export default function AIRecommendation({
             당첨 패턴 보기
           </Button>
           {isSaved ? (
-            // 13. [로컬] 저장이 완료되면 '기록 저장됨' 텍스트 표시
             <div className="text-sm text-green-600 flex items-center justify-center md:w-24 md:justify-end">
               <Check className="w-4 h-4 mr-1" />
               기록 저장됨
             </div>
           ) : (
-            // 14. [로컬] 저장 전에는 'AI 번호 저장' 버튼 표시
             <Button
-              onClick={handleSaveToHistory} // 15. [신규] 로컬 저장 전용 함수 연결
+              onClick={handleSaveToHistory}
               className="bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white whitespace-nowrap"
             >
               <Save className="w-4 h-4 mr-1" />

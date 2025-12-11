@@ -9,6 +9,7 @@ import LottoCongratulation from "@/components/lotto-congratulation"
 import LottoNumberDisplay from "@/components/lotto-number-display"
 import { getRandomNumber } from "@/utils/lotto-utils"
 import { saveLottoResult } from "@/utils/lotto-storage" // 1. 로컬 저장소 유틸 임포트
+import { supabase } from "@/lib/supabaseClient" // [추가] Supabase 클라이언트 임포트
 
 interface LottoMachineProps {
   onDrawComplete: (numbers: number[]) => void
@@ -25,10 +26,32 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
   const [isDrawingAll, setIsDrawingAll] = useState(false) // '한번에 뽑기' 진행 중 여부
   const [showCongrats, setShowCongrats] = useState(false) // 축하 메시지 표시 여부
   const [isSaved, setIsSaved] = useState(false) // 저장 완료(로컬) 여부
+  const [targetDrawNo, setTargetDrawNo] = useState<number | undefined>(undefined) // [추가] 목표 회차 상태
 
   // 2. DOM 참조 및 통지 상태 관리
   const hasNotifiedRef = useRef(false) // 상위 컴포넌트로 완료 통지를 한 번만 보내기 위한 Ref
   const resultsRef = useRef<HTMLDivElement>(null) // 추첨 완료 시 스크롤할 결과 영역 Ref
+
+  // [추가] 컴포넌트 마운트 시 최신 회차 정보 가져오기
+  useEffect(() => {
+    const fetchTargetDrawNo = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("winning_numbers")
+          .select("drawNo")
+          .order("drawNo", { ascending: false })
+          .limit(1)
+          .single()
+
+        if (data) {
+          setTargetDrawNo(data.drawNo + 1) // 다음 회차 = 최신 회차 + 1
+        }
+      } catch (e) {
+        console.error("Failed to fetch latest draw number:", e)
+      }
+    }
+    fetchTargetDrawNo()
+  }, [])
 
   // 3. 컴포넌트 마운트 시 추첨기 초기화
   useEffect(() => {
@@ -64,7 +87,8 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
 
       // 6-3. 로컬 저장소에 먼저 저장 (사용자 히스토리 UI용)
       //      (utils/lotto-storage.ts의 5초 내 중복 저장 방지 로직 포함)
-      const saved = saveLottoResult(sortedBalls);
+      // [수정] saveLottoResult에 targetDrawNo 전달 (AI 아님 = false)
+      const saved = saveLottoResult(sortedBalls, false, targetDrawNo);
 
       // 6-4. 로컬 저장이 성공한 경우에만 (중복이 아닐 때)
       if (saved) {
@@ -116,7 +140,7 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
 
       return () => clearTimeout(timer)
     }
-  }, [isComplete, balls, showCongrats, onDrawComplete]) // 7. 의존성 배열
+  }, [isComplete, balls, showCongrats, onDrawComplete, targetDrawNo]) // 7. 의존성 배열 (targetDrawNo 추가)
 
   /**
    * 8. 추첨기 초기화 함수

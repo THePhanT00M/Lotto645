@@ -4,6 +4,7 @@ export interface LottoResult {
   timestamp: number
   memo?: string // Optional memo field
   isAiRecommended?: boolean // Flag to indicate if this was an AI recommendation
+  drawNo?: number // [추가] 회차 정보 (선택 사항)
 }
 
 export interface WinningLottoNumbers {

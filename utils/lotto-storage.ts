@@ -13,7 +13,7 @@ const areNumbersEqual = (numbers1: number[], numbers2: number[]): boolean => {
   return sorted1.every((num, index) => num === sorted2[index])
 }
 
-// 이미 동일한 번호 세트가 저장되어 있는지 확인하는 함수
+// 이미 동일한 번호 세트가 저장되어 있는지 확인하는 함수 (수정 없음)
 const isDuplicateNumbers = (numbers: number[], history: LottoResult[]): boolean => {
   // 최근 10개의 결과만 확인 (성능 최적화)
   const recentHistory = history.slice(0, 10)
@@ -21,14 +21,18 @@ const isDuplicateNumbers = (numbers: number[], history: LottoResult[]): boolean 
   return recentHistory.some((result) => areNumbersEqual(result.numbers, numbers))
 }
 
-// Save a new lotto result to localStorage
-export const saveLottoResult = (numbers: number[], isAiRecommended?: boolean): boolean => {
+// [수정] drawNo(회차) 파라미터 추가
+export const saveLottoResult = (
+  numbers: number[],
+  isAiRecommended?: boolean,
+  drawNo?: number
+): boolean => {
   // Skip if not in browser environment
   if (typeof window === "undefined") return false
 
   const history = getLottoHistory()
 
-  // 중복 번호 세트 확인 (최근 5초 이내에 저장된 동일한 호 세트가 있는지)
+  // 중복 번호 세트 확인 (최근 5초 이내에 저장된 동일한 번호 세트가 있는지)
   const currentTime = Date.now()
   const recentDuplicate = history.find((result) => {
     return areNumbersEqual(result.numbers, numbers) && currentTime - result.timestamp < 5000 // 5초 이내
@@ -40,11 +44,13 @@ export const saveLottoResult = (numbers: number[], isAiRecommended?: boolean): b
     return false
   }
 
+  // [수정] drawNo 필드 추가하여 저장
   const newResult: LottoResult = {
     id: generateId(),
     numbers: [...numbers],
     timestamp: Date.now(),
     isAiRecommended: isAiRecommended || false,
+    drawNo: drawNo, // 회차 정보 저장 (없으면 undefined)
   }
 
   history.unshift(newResult) // Add to the beginning of the array
@@ -61,7 +67,7 @@ export const saveLottoResult = (numbers: number[], isAiRecommended?: boolean): b
   }
 }
 
-// Get all lotto history from localStorage
+// Get all lotto history from localStorage (수정 없음)
 export const getLottoHistory = (): LottoResult[] => {
   if (typeof window === "undefined") return []
 
@@ -76,7 +82,7 @@ export const getLottoHistory = (): LottoResult[] => {
   }
 }
 
-// Update a specific lotto result (for adding/editing memos)
+// Update a specific lotto result (수정 없음)
 export const updateLottoResult = (id: string, updates: Partial<LottoResult>): boolean => {
   if (typeof window === "undefined") return false
 
@@ -97,7 +103,7 @@ export const updateLottoResult = (id: string, updates: Partial<LottoResult>): bo
   }
 }
 
-// Delete a specific lotto result by ID
+// Delete a specific lotto result by ID (수정 없음)
 export const deleteLottoResult = (id: string): boolean => {
   if (typeof window === "undefined") return false
 
@@ -116,7 +122,7 @@ export const deleteLottoResult = (id: string): boolean => {
   }
 }
 
-// Clear all lotto history
+// Clear all lotto history (수정 없음)
 export const clearLottoHistory = (): void => {
   if (typeof window === "undefined") return
 
@@ -127,7 +133,7 @@ export const clearLottoHistory = (): void => {
   }
 }
 
-// Generate a unique ID
+// Generate a unique ID (수정 없음)
 const generateId = (): string => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
 }
