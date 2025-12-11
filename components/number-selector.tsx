@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast" // 2. 토스트 훅 임포트
 import { Check, Lock, X } from "lucide-react"
 import LottoCongratulation from "@/components/lotto-congratulation"
 import LottoNumberDisplay from "@/components/lotto-number-display"
+import { supabase } from "@/lib/supabaseClient" // [추가] Supabase 클라이언트 임포트
 
 interface NumberSelectorProps {
   onSelectComplete: (numbers: number[]) => void
@@ -24,6 +25,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
   const [fixedNumbers, setFixedNumbers] = useState<number[]>([]) // 고정 번호
   const [isSaved, setIsSaved] = useState(false) // 저장 완료(로컬) 여부
   const [showCongrats, setShowCongrats] = useState(false) // 축하 메시지 표시 여부
+  const [targetDrawNo, setTargetDrawNo] = useState<number | undefined>(undefined) // [추가] 목표 회차 상태
 
   // 4. DOM 참조 및 통지/저장 상태 관리
   const hasNotifiedRef = useRef(false) // 상위 컴포넌트로 완료 통지를 한 번만 보내기 위한 Ref
@@ -36,6 +38,27 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
   useEffect(() => {
     hasNotifiedRef.current = false
     lastSaveTimeRef.current = 0
+  }, [])
+
+  // [추가] 최신 회차 정보 가져오기
+  useEffect(() => {
+    const fetchTargetDrawNo = async () => {
+      try {
+        const { data } = await supabase
+          .from("winning_numbers")
+          .select("drawNo")
+          .order("drawNo", { ascending: false })
+          .limit(1)
+          .single()
+
+        if (data) {
+          setTargetDrawNo(data.drawNo + 1) // 다음 회차 = 최신 회차 + 1
+        }
+      } catch (e) {
+        console.error("Failed to fetch latest draw number:", e)
+      }
+    }
+    fetchTargetDrawNo()
   }, [])
 
   /**
@@ -194,24 +217,24 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
 
         // 11-4. 5초 이내 중복 저장을 방지하기 위해 시간 확인
         const currentTime = Date.now()
-        if (currentTime - lastSaveTimeRef.current > 5000) { // 5초로 변경 (utils/lotto-storage와 동일하게)
+        if (currentTime - lastSaveTimeRef.current > 5000) {
 
-          // 11-5. 로컬 저장 시도 (사용자 히스토리 UI용)
-          const saved = saveLottoResult(sortedNumbers)
+          // [수정] saveLottoResult에 targetDrawNo 전달 (AI 아님 = false)
+          const saved = saveLottoResult(sortedNumbers, false, targetDrawNo)
 
           // 11-6. 로컬 저장이 성공한 경우 (중복이 아닐 때)
           if (saved) {
             // 11-6-1. 토스트 알림 표시
             toast({
               title: "저장 완료",
-              description: "선택한 번호가 기록에 저장되었습니다.",
+              description: `${targetDrawNo ? targetDrawNo + "회차 " : ""}선택 번호가 기록에 저장되었습니다.`,
             })
 
             // 11-6-2. 마지막 저장 시간 업데이트
             lastSaveTimeRef.current = currentTime
 
             // 11-6-3. 서버 DB에 비동기 저장 (통계 수집용)
-            fetch('/api/log-draw', { // API 이름 변경
+            fetch('/api/log-draw', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -248,7 +271,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
       setIsSaved(false)
       setShowCongrats(false)
     }
-  }, [selectedNumbers, isSaved, toast, onSelectComplete]) // 12. 의존성 배열
+  }, [selectedNumbers, isSaved, toast, onSelectComplete, targetDrawNo]) // [수정] 의존성 추가
 
   /**
    * 13. 상위 컴포넌트(lotto-machine)에서 추첨한 번호를 받아오는 useEffect
