@@ -26,7 +26,7 @@ export default function FAQPage() {
       {/* 탭 섹션 */}
       <Tabs defaultValue="service" className="space-y-4">
         {/* TabsList: 라이트 모드에선 유튜브 칩 배경 느낌의 연한 회색(#f2f2f2/gray-100) 적용 */}
-        <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-[#0f0f0f] p-1 rounded-lg border border-transparent dark:border-[#272727]">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-[#0f0f0f] p-1 rounded-sm">
           <TabsTrigger
             value="service"
             className="text-[#606060] data-[state=active]:bg-white data-[state=active]:text-[#0f0f0f] data-[state=active]:shadow-sm dark:text-[#aaaaaa] dark:data-[state=active]:bg-[#272727] dark:data-[state=active]:text-[#f1f1f1] rounded-md transition-colors font-medium"
