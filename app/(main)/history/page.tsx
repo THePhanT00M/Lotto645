@@ -69,9 +69,24 @@ export default function HistoryPage() {
   }
 
   // 등수 계산 함수 (최신 회차 기준 시뮬레이션)
-  const calculateRank = (numbers: number[]) => {
+  // [수정] 매개변수를 numbers 배열에서 item 객체 전체로 변경하여 timestamp 접근
+  const calculateRank = (item: LottoResult) => {
     if (!latestDraw) return null
 
+    // [추가] 날짜 비교 로직: 기록 생성 시간이 최신 회차 날짜의 끝보다 늦으면 '추첨 대기'로 처리
+    const [year, month, day] = latestDraw.date.split("-").map(Number)
+    // 로컬 시간 기준 해당 날짜의 객체 생성
+    const drawEndDate = new Date(year, month - 1, day)
+    drawEndDate.setHours(23, 59, 59, 999) // 해당 날짜의 마지막 시간으로 설정
+
+    if (item.timestamp > drawEndDate.getTime()) {
+      return {
+        rank: "추첨 대기",
+        color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"
+      }
+    }
+
+    const numbers = item.numbers
     const matchCount = numbers.filter((n) => latestDraw.numbers.includes(n)).length
     const bonusMatch = numbers.includes(latestDraw.bonusNo)
 
@@ -182,9 +197,10 @@ export default function HistoryPage() {
             <span className="font-medium">최신 회차({latestDraw?.drawNo}회) 당첨 가능성</span>
           </div>
           <div className="text-3xl font-bold text-gray-900 dark:text-white">
+            {/* [수정] 추첨 대기 상태는 당첨 횟수 카운트에서 제외 */}
             {history.filter(item => {
-              const rank = calculateRank(item.numbers)?.rank;
-              return rank && rank !== "미당첨";
+              const rank = calculateRank(item)?.rank;
+              return rank && rank !== "미당첨" && rank !== "추첨 대기";
             }).length}
             <span className="text-sm font-normal text-gray-500 ml-1">건 (5등 이상)</span>
           </div>
@@ -201,14 +217,15 @@ export default function HistoryPage() {
           </div>
         ) : (
           history.map((item) => {
-            const rankInfo = calculateRank(item.numbers)
+            // [수정] calculateRank 호출 시 item 전체 전달
+            const rankInfo = calculateRank(item)
 
             return (
               <div
                 key={item.id}
                 className="relative bg-white dark:bg-[#262626] rounded-xl p-5 border border-gray-200 dark:border-gray-800"
               >
-                {/* [수정] 모바일 전용 삭제 버튼 (텍스트 포함, 우측 상단 절대 배치) */}
+                {/* 모바일 전용 삭제 버튼 (텍스트 포함, 우측 상단 절대 배치) */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -219,7 +236,7 @@ export default function HistoryPage() {
                   <span className="text-xs">삭제</span>
                 </Button>
 
-                {/* [수정] 모바일에서 텍스트(날짜/뱃지)가 삭제 버튼과 겹치지 않도록 pr-20 (충분한 여백) 추가 */}
+                {/* 모바일에서 텍스트(날짜/뱃지)가 삭제 버튼과 겹치지 않도록 pr-20 (충분한 여백) 추가 */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pr-20 md:pr-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="flex items-center text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
@@ -240,7 +257,11 @@ export default function HistoryPage() {
 
                   {rankInfo && (
                     <div className={`px-3 py-1 rounded-md text-sm font-bold border ${rankInfo.color} self-start md:self-auto`}>
-                      {latestDraw?.drawNo}회 기준: {rankInfo.rank}
+                      {/* [수정] 추첨 대기일 경우 텍스트를 다르게 표시하거나 회차 정보 생략 가능 */}
+                      {rankInfo.rank === "추첨 대기"
+                        ? rankInfo.rank
+                        : `${latestDraw?.drawNo}회 기준: ${rankInfo.rank}`
+                      }
                     </div>
                   )}
                 </div>
