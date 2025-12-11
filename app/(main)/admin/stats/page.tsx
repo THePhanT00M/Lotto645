@@ -2,15 +2,10 @@
 
 import { useEffect, useState } from "react"
 import type { LottoResult, WinningLottoNumbers } from "@/types/lotto"
-// 1. 필요한 아이콘 임포트 (AlertTriangle 포함)
 import { BarChart3, TrendingUp, Award, Target, Sparkles, Calendar, AlertTriangle } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-// 2. 스켈레톤 UI 컴포넌트 임포트
 import { Skeleton } from "@/components/ui/skeleton"
 
-/**
- * 분석 결과를 저장하기 위한 인터페이스
- */
 interface AnalysisResult {
   result: LottoResult
   matchCount: number
@@ -20,66 +15,47 @@ interface AnalysisResult {
   isPending: boolean
 }
 
-/**
- * 결과 대기 중인(다음 회차) 추첨 기록을 위한 타입 (LottoResult와 동일)
- */
 type PendingResult = LottoResult
 
-/**
- * 관리자용 통계 페이지 컴포넌트
- */
 export default function AdminStatsPage() {
-  // 3. 상태 변수 정의
-  const [history, setHistory] = useState<LottoResult[]>([]) // '완료된' 추첨 기록
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]) // '완료된' 기록의 분석 결과
-  const [loading, setLoading] = useState(true) // 페이지 로딩 상태 (스켈레톤 UI 제어)
-  const [latestDraw, setLatestDraw] = useState<WinningLottoNumbers | null>(null) // 가장 최근 '당첨 완료'된 회차 정보
-  const [error, setError] = useState<string | null>(null) // API fetching 에러 메시지
-  const [pendingHistory, setPendingHistory] = useState<PendingResult[]>([]) // '결과 대기 중인' (다음 회차) 추첨 기록
-  const [upcomingDrawNo, setUpcomingDrawNo] = useState<number | null>(null) // 다음 추첨 회차 번호
+  const [history, setHistory] = useState<LottoResult[]>([])
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([])
+  const [loading, setLoading] = useState(true)
+  const [latestDraw, setLatestDraw] = useState<WinningLottoNumbers | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [pendingHistory, setPendingHistory] = useState<PendingResult[]>([])
+  const [upcomingDrawNo, setUpcomingDrawNo] = useState<number | null>(null)
 
-  // 4. 페이지 마운트 시 API로부터 통계 데이터를 가져오는 useEffect
   useEffect(() => {
-    // 4-1. API 요청 시작 전, 로딩 상태를 true로 설정하고 에러 메시지를 초기화합니다.
     setLoading(true)
     setError(null)
 
-    // 4-2. 통계 데이터를 비동기(async)로 가져오는 내부 함수를 정의합니다.
     const fetchData = async () => {
       try {
-        // 4-3. 서버의 어드민 통계 API 엔드포인트('/api/admin/stats')를 호출합니다.
         const response = await fetch('/api/stats')
 
-        // 4-4. API 응답이 404나 500 등 (ok=false)일 경우,
-        //      JSON 파싱을 시도하지 않고 HTTP 에러를 발생시켜 catch 블록으로 넘깁니다.
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`)
         }
 
-        // 4-5. 응답이 정상이면, JSON 데이터를 파싱합니다.
         const data = await response.json()
 
-        // 4-6. API가 보낸 JSON에 success: false가 포함된 경우, API가 보낸 에러 메시지를 사용해 에러를 발생시킵니다.
         if (!data.success) throw new Error(data.message)
 
-        // 4-7. API로부터 4가지 주요 데이터(완료된 기록, 대기 중인 기록, 최신 당첨 번호, 다음 회차 번호)를 추출합니다.
         const { completedHistoryData, pendingHistoryData, latestDrawData, upcomingDrawNo } = data
 
-        // 4-8. 최신 당첨 번호 데이터를 WinningLottoNumbers 타입으로 할당합니다.
         const loadedLatestDraw: WinningLottoNumbers = latestDrawData
 
-        // 4-9. '완료된' 추첨 기록(DB 데이터)을 프론트엔드 LottoResult 타입 배열로 변환합니다. (e.g., source -> isAiRecommended)
         const loadedCompletedHistory: LottoResult[] = completedHistoryData
           ? completedHistoryData.map((row: any) => ({
             id: row.id.toString(),
             numbers: row.numbers,
             timestamp: new Date(row.created_at).getTime(),
             memo: row.memo || undefined,
-            isAiRecommended: row.source === 'ai', // source 컬럼 기반으로 변환
+            isAiRecommended: row.source === 'ai',
           }))
           : []
 
-        // 4-10. '대기 중인' 추첨 기록(DB 데이터)을 프론트엔드 PendingResult 타입 배열로 변환합니다.
         const loadedPendingHistory: PendingResult[] = pendingHistoryData
           ? pendingHistoryData.map((row: any) => ({
             id: row.id.toString(),
@@ -90,51 +66,33 @@ export default function AdminStatsPage() {
           }))
           : []
 
-        // 4-11. 변환된 데이터로 React 상태(state)를 일괄 업데이트합니다.
-        setHistory(loadedCompletedHistory)     // 완료된 기록
-        setPendingHistory(loadedPendingHistory) // 대기중인 기록
-        setLatestDraw(loadedLatestDraw)         // 최신 회차
-        setUpcomingDrawNo(upcomingDrawNo)       // 다음 회차 번호
+        setHistory(loadedCompletedHistory)
+        setPendingHistory(loadedPendingHistory)
+        setLatestDraw(loadedLatestDraw)
+        setUpcomingDrawNo(upcomingDrawNo)
 
-        // 4-12. '완료된' 기록과 '최신 당첨 번호'를 비교 분석하는 함수를 호출합니다.
         const results = analyzeSingleDrawResults(loadedCompletedHistory, loadedLatestDraw)
-
-        // 4-13. 분석 결과를 상태에 저장합니다.
         setAnalysisResults(results)
 
       } catch (error: any) {
-        // 4-14. fetchData 함수 내에서 발생한 모든 에러(네트워크, 파싱, API 에러)를 처리하고, 에러 상태에 저장합니다.
         console.error("통계 데이터 로딩 실패:", error.message)
         setError(error.message)
       } finally {
-        // 4-15. 데이터 요청이 성공하든 실패하든, 로딩 상태를 false로 변경하여 스켈레톤 UI를 숨깁니다.
         setLoading(false)
       }
     }
 
-    // 4-16. 정의된 비동기 함수를 실행합니다.
     fetchData()
-  }, []) // 페이지 마운트 시 1회만 실행
+  }, [])
 
-  /**
-   * (완료된) 추첨 기록 배열을 받아, (최신) 당첨 번호와 비교하여 등수와 일치 여부를 계산하는 함수
-   * @param results '완료된' 추첨 기록 (LottoResult[])
-   * @param targetDraw 비교 대상이 될 '최신' 당첨 번호 (WinningLottoNumbers)
-   * @returns 분석 완료된 결과 배열 (AnalysisResult[])
-   */
   const analyzeSingleDrawResults = (
     results: LottoResult[],
     targetDraw: WinningLottoNumbers
   ): AnalysisResult[] => {
-
-    // 1. 모든 '완료된' 기록을 순회합니다.
     return results.map((result) => {
-      // 2. 기록의 번호와 최신 당첨 번호를 비교하여 일치하는 개수를 계산합니다.
       const matchCount = result.numbers.filter((num) => targetDraw.numbers.includes(num)).length
-      // 3. 보너스 번호 일치 여부를 확인합니다.
       const bonusMatch = result.numbers.includes(targetDraw.bonusNo)
 
-      // 4. 일치 개수와 보너스 여부를 기준으로 1등부터 5등, 미당첨까지 등급을 매깁니다.
       let rank = "미당첨"
       if (matchCount === 6) rank = "1등"
       else if (matchCount === 5 && bonusMatch) rank = "2등"
@@ -142,50 +100,55 @@ export default function AdminStatsPage() {
       else if (matchCount === 4) rank = "4등"
       else if (matchCount === 3) rank = "5등"
 
-      // 5. 분석이 완료된 객체를 반환합니다.
       return {
         result,
         matchCount,
         bonusMatch,
         rank,
-        targetDraw, // 비교 대상은 항상 이 최신 회차
-        isPending: false, // 이 데이터는 이미 추첨이 완료된 것들임
+        targetDraw,
+        isPending: false,
       }
     })
   }
 
-  // UI 렌더링을 위한 변수 계산
-  const completedAnalysis = analysisResults // 분석 완료된 결과 목록 (UI 표시에 사용)
-  const pendingAnalysis = pendingHistory    // 분석 대기중인 결과 목록 (UI 표시에 사용)
-  const totalPicks = history.length         // 통계 카드: '완료된' 추첨의 총 횟수
+  const completedAnalysis = analysisResults
+  const pendingAnalysis = pendingHistory
+  const totalPicks = history.length
   const analyzedPicks = completedAnalysis.length
   const aiRecommendedCount = completedAnalysis.filter((r) => r.result.isAiRecommended).length
   const regularDrawCount = completedAnalysis.filter((r) => !r.result.isAiRecommended).length
 
-  // 전체 당첨률 계산
   const winningResults = completedAnalysis.filter((r) => r.rank !== "미당첨")
   const winRate = analyzedPicks > 0 ? ((winningResults.length / analyzedPicks) * 100).toFixed(2) : "0.00"
 
-  // AI 추천 당첨률 계산
   const aiWinningResults = completedAnalysis.filter((r) => r.result.isAiRecommended && r.rank !== "미당첨")
   const aiWinRate = aiRecommendedCount > 0 ? ((aiWinningResults.length / aiRecommendedCount) * 100).toFixed(2) : "0.00"
 
-  // 일반 추첨 당첨률 계산
   const regularWinningResults = completedAnalysis.filter((r) => !r.result.isAiRecommended && r.rank !== "미당첨")
   const regularWinRate =
     regularDrawCount > 0 ? ((regularWinningResults.length / regularDrawCount) * 100).toFixed(2) : "0.00"
 
-  // 등수별 통계 데이터 (전체)
+  // 등수별 스타일 매핑 (History 페이지와 통일)
+  const getRankStyle = (rank: string) => {
+    switch (rank) {
+      case "1등": return "text-[#0f0f0f] bg-[#fff8c5] border-[#f1e05a] dark:text-[#f1f1f1] dark:bg-[#5c4d00] dark:border-[#8b7500]";
+      case "2등": return "text-[#0f0f0f] bg-[#ffebd4] border-[#ffcc99] dark:text-[#f1f1f1] dark:bg-[#5e3000] dark:border-[#995c00]";
+      case "3등": return "text-[#0f0f0f] bg-[#dff0d8] border-[#d6e9c6] dark:text-[#f1f1f1] dark:bg-[#1e3a1e] dark:border-[#2b542c]";
+      case "4등": return "text-[#0f0f0f] bg-[#d9edf7] border-[#bce8f1] dark:text-[#f1f1f1] dark:bg-[#103046] dark:border-[#1a4a6e]";
+      case "5등": return "text-[#0f0f0f] bg-[#f3e5f5] border-[#e1bee7] dark:text-[#f1f1f1] dark:bg-[#341b3a] dark:border-[#5c2b66]";
+      default: return "text-[#606060] bg-[#f9f9f9] border-[#e5e5e5] dark:text-[#aaaaaa] dark:bg-[#272727] dark:border-[#3f3f3f]";
+    }
+  }
+
   const rankStats = [
-    { rank: "1등", count: completedAnalysis.filter((r) => r.rank === "1등").length, color: "yellow" },
-    { rank: "2등", count: completedAnalysis.filter((r) => r.rank === "2등").length, color: "orange" },
-    { rank: "3등", count: completedAnalysis.filter((r) => r.rank === "3등").length, color: "green" },
-    { rank: "4등", count: completedAnalysis.filter((r) => r.rank === "4등").length, color: "blue" },
-    { rank: "5등", count: completedAnalysis.filter((r) => r.rank === "5등").length, color: "purple" },
-    { rank: "미당첨", count: completedAnalysis.filter((r) => r.rank === "미당첨").length, color: "gray" },
+    { rank: "1등", count: completedAnalysis.filter((r) => r.rank === "1등").length },
+    { rank: "2등", count: completedAnalysis.filter((r) => r.rank === "2등").length },
+    { rank: "3등", count: completedAnalysis.filter((r) => r.rank === "3등").length },
+    { rank: "4등", count: completedAnalysis.filter((r) => r.rank === "4등").length },
+    { rank: "5등", count: completedAnalysis.filter((r) => r.rank === "5등").length },
+    { rank: "미당첨", count: completedAnalysis.filter((r) => r.rank === "미당첨").length },
   ]
 
-  // 일치 개수별 통계 데이터 (전체)
   const matchCountStats = [0, 1, 2, 3, 4, 5, 6].map((count) => ({
     count,
     occurrences: completedAnalysis.filter((r) => r.matchCount === count).length,
@@ -195,7 +158,6 @@ export default function AdminStatsPage() {
         : "0.0",
   }))
 
-  // 등수별 통계 데이터 (AI)
   const aiRankStats = [
     { rank: "1등", count: completedAnalysis.filter((r) => r.result.isAiRecommended && r.rank === "1등").length },
     { rank: "2등", count: completedAnalysis.filter((r) => r.result.isAiRecommended && r.rank === "2등").length },
@@ -205,7 +167,6 @@ export default function AdminStatsPage() {
     { rank: "미당첨", count: completedAnalysis.filter((r) => r.result.isAiRecommended && r.rank === "미당첨").length },
   ]
 
-  // 등수별 통계 데이터 (일반)
   const regularRankStats = [
     { rank: "1등", count: completedAnalysis.filter((r) => !r.result.isAiRecommended && r.rank === "1등").length },
     { rank: "2등", count: completedAnalysis.filter((r) => !r.result.isAiRecommended && r.rank === "2등").length },
@@ -215,9 +176,6 @@ export default function AdminStatsPage() {
     { rank: "미당첨", count: completedAnalysis.filter((r) => !r.result.isAiRecommended && r.rank === "미당첨").length },
   ]
 
-  /**
-   * 번호에 따라 다른 공 색상을 반환하는 헬퍼 함수
-   */
   const getBallColor = (number: number): string => {
     if (number >= 1 && number <= 10) return "#FBC400"
     if (number >= 11 && number <= 20) return "#69C8F2"
@@ -226,76 +184,46 @@ export default function AdminStatsPage() {
     return "#B0D840"
   }
 
-  // 로딩 상태(true)일 때 스켈레톤 UI를 렌더링합니다.
   if (loading) {
     return (
-      <div className="container mx-auto p-4 sm:p-6  max-w-5xl space-y-6 animate-pulse">
-        {/* (스켈레톤) 페이지 제목 */}
+      <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6 animate-pulse">
         <div className="space-y-2">
-          <Skeleton className="h-7 w-64" /> {/* h1 title */}
-          <Skeleton className="h-6 w-80" /> {/* p description */}
+          <Skeleton className="h-7 w-64 bg-gray-200 dark:bg-[#272727]" />
+          <Skeleton className="h-6 w-80 bg-gray-200 dark:bg-[#272727]" />
         </div>
-
-        {/* (스켈레톤) 최신 회차 카드 */}
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg p-4 sm:p-6">
+        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-lg p-4 sm:p-6 border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="flex items-center gap-2 mb-4">
-            <Skeleton className="w-5 h-5 rounded-full" />
-            <Skeleton className="h-6 w-56" />
+            <Skeleton className="w-5 h-5 rounded-full bg-gray-200 dark:bg-[#272727]" />
+            <Skeleton className="h-6 w-56 bg-gray-200 dark:bg-[#272727]" />
           </div>
           <div className="space-y-4">
-            <div className="relative flex items-center justify-center py-1">
-              <Skeleton className="h-8 w-20" /> {/* 회차 */}
-              <Skeleton className="absolute right-0 h-5 w-24" /> {/* 날짜 */}
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="grid grid-cols-8 gap-2 sm:gap-3 md:gap-4 w-full max-w-md">
-                <Skeleton className="w-full aspect-square rounded-full" />
-                <Skeleton className="w-full aspect-square rounded-full" />
-                <Skeleton className="w-full aspect-square rounded-full" />
-                <Skeleton className="w-full aspect-square rounded-full" />
-                <Skeleton className="w-full aspect-square rounded-full" />
-                <Skeleton className="w-full aspect-square rounded-full" />
-                <div className="flex items-center justify-center">
-                  {/* + sign */}
-                </div>
-                <Skeleton className="w-full aspect-square rounded-full" />
-              </div>
+            <Skeleton className="h-8 w-20 mx-auto bg-gray-200 dark:bg-[#272727]" />
+            <div className="flex items-center justify-center gap-2">
+              {[...Array(7)].map((_, i) => (
+                <Skeleton key={i} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-[#272727]" />
+              ))}
             </div>
           </div>
         </div>
-
-        {/* (스켈레톤) 상단 통계 카드 4개 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Skeleton className="h-34 rounded-lg" />
-          <Skeleton className="h-34 rounded-lg" />
-          <Skeleton className="h-34 rounded-lg" />
-          <Skeleton className="h-34 rounded-lg" />
-        </div>
-
-        {/* (스켈레톤) 탭 UI */}
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-full" /> {/* TabsList */}
-          <Skeleton className="h-66 w-full rounded-lg" /> {/* TabsContent */}
-        </div>
-
-        <div className="space-y-4">
-          <Skeleton className="h-28 w-full rounded-lg" /> {/* TabsContent */}
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-34 rounded-lg bg-gray-200 dark:bg-[#272727]" />
+          ))}
         </div>
       </div>
     )
   }
 
-  // 에러 상태가 null이 아닐 때, 에러 메시지를 렌더링합니다.
   if (error) {
     return (
       <div className="container mx-auto p-6 flex items-center justify-center min-h-[50vh]">
-        <div className="flex flex-col items-center justify-center bg-red-50 dark:bg-red-900/20 p-8 rounded-lg border border-red-200 dark:border-red-800">
-          <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
-          <h2 className="text-xl font-bold text-red-700 dark:text-red-300">데이터 로딩 실패</h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-2 text-center">
+        <div className="flex flex-col items-center justify-center bg-[#fff0f0] dark:bg-[#3e1b1b] p-8 rounded-lg border border-[#ffcdcd] dark:border-[#5c2b2b]">
+          <AlertTriangle className="w-16 h-16 text-[#cc0000] mb-4" />
+          <h2 className="text-xl font-bold text-[#cc0000] dark:text-[#ff9999]">데이터 로딩 실패</h2>
+          <p className="text-[#606060] dark:text-[#aaaaaa] mt-2 text-center">
             통계 데이터를 불러오는 중 오류가 발생했습니다.
           </p>
-          <code className="mt-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-sm text-red-600 dark:text-red-400 w-full text-center">
+          <code className="mt-4 p-2 bg-[#f9f9f9] dark:bg-[#272727] rounded text-sm text-[#cc0000] dark:text-[#ff9999] w-full text-center">
             {error}
           </code>
         </div>
@@ -303,54 +231,51 @@ export default function AdminStatsPage() {
     )
   }
 
-  // 메인 페이지 UI 렌더링
   return (
-    <div className="container mx-auto p-4 sm:p-6  max-w-5xl space-y-6">
+    <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
       {/* 페이지 제목 */}
       <div className="space-y-2">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-blue-600" />
+        <h1 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           관리자 통계 대시보드
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          최신 회차({latestDraw?.drawNo}회)에 대한 사이트 당첨 비율 및 분석 데이터
+        <p className="text-[#606060] dark:text-[#aaaaaa]">
+          최신 회차({latestDraw?.drawNo}회차)에 대한 사이트 당첨 비율 및 분석 데이터
         </p>
       </div>
 
       {/* 최신 회차 당첨 번호 섹션 */}
       {latestDraw && (
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg p-4 sm:p-6">
+        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="flex items-center gap-2 mb-4">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">최신 회차 당첨 번호</h2>
+            <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">최신 회차 당첨 번호</h2>
           </div>
           <div className="space-y-4">
-            {/* 회차 번호(중앙)와 날짜(우측) 레이아웃 */}
             <div className="relative flex items-center justify-center py-1">
-              <div className="text-2xl font-bold text-blue-600 text-center">
-                {latestDraw.drawNo}회
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 text-center">
+                {latestDraw.drawNo}회차
               </div>
-              <div className="absolute right-0 text-sm text-gray-600 dark:text-gray-400">
+              <div className="absolute right-0 text-sm text-[#606060] dark:text-[#aaaaaa]">
                 {latestDraw.date}
               </div>
             </div>
-            {/* 당첨 번호 공 */}
             <div className="flex items-center justify-center">
               <div className="grid grid-cols-8 gap-2 sm:gap-3 md:gap-4 w-full max-w-md">
                 {latestDraw.numbers.map((number) => (
                   <div
                     key={number}
-                    className="w-full aspect-square rounded-full flex items-center justify-center text-black font-bold text-xs xs:text-sm sm:text-base shadow-md"
+                    className="w-full aspect-square rounded-full flex items-center justify-center text-black font-bold text-xs xs:text-sm sm:text-base shadow-sm"
                     style={{ backgroundColor: getBallColor(number) }}
                   >
                     {number}
                   </div>
                 ))}
                 <div className="flex items-center justify-center">
-                  <span className="text-gray-500 text-sm xs:text-base md:text-lg font-medium">+</span>
+                  <span className="text-[#606060] dark:text-[#aaaaaa] text-sm xs:text-base md:text-lg font-medium">+</span>
                 </div>
                 <div
-                  className="w-full aspect-square rounded-full flex items-center justify-center text-black font-bold text-xs xs:text-sm sm:text-base shadow-md"
+                  className="w-full aspect-square rounded-full flex items-center justify-center text-black font-bold text-xs xs:text-sm sm:text-base shadow-sm"
                   style={{ backgroundColor: getBallColor(latestDraw.bonusNo) }}
                 >
                   {latestDraw.bonusNo}
@@ -361,69 +286,84 @@ export default function AdminStatsPage() {
         </div>
       )}
 
-      {/* 상단 통계 카드 (총 추첨, 전체 당첨률, AI 당첨률, 일반 당첨률) */}
+      {/* 상단 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
+        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="p-4 sm:p-6">
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+            <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <Target className="w-4 h-4" />총 추첨 횟수 ({latestDraw?.drawNo}회)
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mt-3">{totalPicks}</div>
+            <div className="text-3xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] mt-3">{totalPicks}</div>
           </div>
         </div>
 
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
+        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="p-4 sm:p-6">
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+            <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <Award className="w-4 h-4" />
               전체 당첨률
             </div>
-            <div className="text-3xl font-bold text-green-600 mt-3">{winRate}%</div>
-            <p className="text-xs text-gray-500 mt-1">{winningResults.length}개 당첨</p>
+            <div className="text-3xl font-bold text-green-600 dark:text-green-500 mt-3">{winRate}%</div>
+            <p className="text-xs text-[#606060] dark:text-[#aaaaaa] mt-1">{winningResults.length}개 당첨</p>
           </div>
         </div>
 
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
+        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="p-4 sm:p-6">
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+            <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
               AI 추천 당첨률
             </div>
-            <div className="text-3xl font-bold text-blue-600 mt-3">{aiWinRate}%</div>
-            <p className="text-xs text-gray-500 mt-1">
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-3">{aiWinRate}%</div>
+            <p className="text-xs text-[#606060] dark:text-[#aaaaaa] mt-1">
               {aiWinningResults.length}/{aiRecommendedCount}개 당첨
             </p>
           </div>
         </div>
 
-        <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
+        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="p-4 sm:p-6">
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+            <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               일반 추첨 당첨률
             </div>
-            <div className="text-3xl font-bold text-purple-600 mt-3">{regularWinRate}%</div>
-            <p className="text-xs text-gray-500 mt-1">
+            <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-3">{regularWinRate}%</div>
+            <p className="text-xs text-[#606060] dark:text-[#aaaaaa] mt-1">
               {regularWinningResults.length}/{regularDrawCount}개 당첨
             </p>
           </div>
         </div>
       </div>
 
-      {/* 탭 UI (등수별, 일치 개수, AI vs 일반) */}
+      {/* 탭 UI */}
       <Tabs defaultValue="ranks" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-[#262626]">
-          <TabsTrigger value="ranks">등수별 통계</TabsTrigger>
-          <TabsTrigger value="matches">일치 개수</TabsTrigger>
-          <TabsTrigger value="comparison">AI vs 일반</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 bg-[#f2f2f2] dark:bg-[#0f0f0f] p-1 rounded-lg border dark:border-[#272727]">
+          <TabsTrigger
+            value="ranks"
+            className="text-[#606060] data-[state=active]:bg-white data-[state=active]:text-[#0f0f0f] data-[state=active]:shadow-sm dark:text-[#aaaaaa] dark:data-[state=active]:bg-[#272727] dark:data-[state=active]:text-[#f1f1f1] rounded-md transition-colors font-medium"
+          >
+            등수별 통계
+          </TabsTrigger>
+          <TabsTrigger
+            value="matches"
+            className="text-[#606060] data-[state=active]:bg-white data-[state=active]:text-[#0f0f0f] data-[state=active]:shadow-sm dark:text-[#aaaaaa] dark:data-[state=active]:bg-[#272727] dark:data-[state=active]:text-[#f1f1f1] rounded-md transition-colors font-medium"
+          >
+            일치 개수
+          </TabsTrigger>
+          <TabsTrigger
+            value="comparison"
+            className="text-[#606060] data-[state=active]:bg-white data-[state=active]:text-[#0f0f0f] data-[state=active]:shadow-sm dark:text-[#aaaaaa] dark:data-[state=active]:bg-[#272727] dark:data-[state=active]:text-[#f1f1f1] rounded-md transition-colors font-medium"
+          >
+            AI vs 일반
+          </TabsTrigger>
         </TabsList>
 
         {/* "등수별 통계" 탭 패널 */}
         <TabsContent value="ranks" className="space-y-4">
-          <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
+          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <div className="p-4 sm:p-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">당첨 등수별 분포</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">당첨 등수별 분포</h3>
+              <p className="text-sm text-[#606060] dark:text-[#aaaaaa] mt-1">
                 {latestDraw?.drawNo}회차 대상 추첨의 등수별 통계
               </p>
             </div>
@@ -432,23 +372,11 @@ export default function AdminStatsPage() {
                 {rankStats.map((stat) => (
                   <div
                     key={stat.rank}
-                    className={`p-4 rounded-lg border-2 ${
-                      stat.color === "yellow"
-                        ? "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800"
-                        : stat.color === "orange"
-                          ? "bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800"
-                          : stat.color === "green"
-                            ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
-                            : stat.color === "blue"
-                              ? "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800"
-                              : stat.color === "purple"
-                                ? "bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800"
-                                : "bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-800"
-                    }`}
+                    className={`p-4 rounded-lg border ${getRankStyle(stat.rank)}`}
                   >
-                    <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{stat.rank}</div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{stat.count}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <div className="text-sm font-medium mb-2 opacity-80">{stat.rank}</div>
+                    <div className="text-2xl font-bold">{stat.count}</div>
+                    <div className="text-xs opacity-70 mt-1">
                       {analyzedPicks > 0 ? ((stat.count / analyzedPicks) * 100).toFixed(2) : 0}%
                     </div>
                   </div>
@@ -460,10 +388,10 @@ export default function AdminStatsPage() {
 
         {/* "일치 개수" 탭 패널 */}
         <TabsContent value="matches" className="space-y-4">
-          <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
+          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <div className="p-4 sm:p-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">번호 일치 개수 분포</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">번호 일치 개수 분포</h3>
+              <p className="text-sm text-[#606060] dark:text-[#aaaaaa] mt-1">
                 {latestDraw?.drawNo}회차 당첨 번호와 일치하는 개수별 통계
               </p>
             </div>
@@ -471,23 +399,23 @@ export default function AdminStatsPage() {
               <div className="space-y-3">
                 {matchCountStats.map((stat) => (
                   <div key={stat.count} className="flex items-center gap-4">
-                    <div className="w-20 text-sm font-medium text-gray-700 dark:text-gray-300">{stat.count}개 일치</div>
-                    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-8 relative overflow-hidden">
+                    <div className="w-20 text-sm font-medium text-[#606060] dark:text-[#aaaaaa]">{stat.count}개 일치</div>
+                    <div className="flex-1 bg-[#e5e5e5] dark:bg-[#3f3f3f] rounded-full h-8 relative overflow-hidden">
                       <div
                         className="bg-gradient-to-r from-purple-500 to-blue-500 h-full rounded-full flex items-center justify-end pr-3 transition-all duration-500"
-                        style={{ width: `${stat.percentage}%` }}
+                        style={{ width: `${Math.max(Number(stat.percentage), 0)}%` }}
                       >
                         {Number.parseFloat(stat.percentage) > 5 && (
                           <span className="text-xs font-medium text-white">{stat.occurrences}</span>
                         )}
                       </div>
                       {Number.parseFloat(stat.percentage) <= 5 && stat.occurrences > 0 && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#606060] dark:text-[#aaaaaa]">
                           {stat.occurrences}
                         </span>
                       )}
                     </div>
-                    <div className="w-16 text-sm text-gray-600 dark:text-gray-400 text-right">{stat.percentage}%</div>
+                    <div className="w-16 text-sm text-[#606060] dark:text-[#aaaaaa] text-right">{stat.percentage}%</div>
                   </div>
                 ))}
               </div>
@@ -498,13 +426,13 @@ export default function AdminStatsPage() {
         {/* "AI vs 일반" 탭 패널 */}
         <TabsContent value="comparison" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
+            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="p-4 sm:p-6">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-blue-600" />
+                <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   AI 추천 등수별 통계
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm text-[#606060] dark:text-[#aaaaaa] mt-1">
                   {latestDraw?.drawNo}회차 AI 추천 번호의 당첨 등수 분포
                 </p>
               </div>
@@ -513,12 +441,12 @@ export default function AdminStatsPage() {
                   {aiRankStats.map((stat) => (
                     <div
                       key={stat.rank}
-                      className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded"
+                      className="flex items-center justify-between p-2 bg-[#f2f8ff] dark:bg-[#263850] rounded border border-[#d3e3fd] dark:border-[#263850]"
                     >
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{stat.rank}</span>
+                      <span className="text-sm font-medium text-[#0f0f0f] dark:text-[#f1f1f1]">{stat.rank}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-blue-600">{stat.count}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{stat.count}</span>
+                        <span className="text-xs text-[#606060] dark:text-[#aaaaaa]">
                           ({aiRecommendedCount > 0 ? ((stat.count / aiRecommendedCount) * 100).toFixed(1) : 0}%)
                         </span>
                       </div>
@@ -528,13 +456,13 @@ export default function AdminStatsPage() {
               </div>
             </div>
 
-            <div className="bg-gray-100 dark:bg-[rgb(26,26,26)] rounded-lg">
+            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="p-4 sm:p-6">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Target className="w-5 h-5 text-purple-600" />
+                <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
+                  <Target className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   일반 추첨 등수별 통계
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm text-[#606060] dark:text-[#aaaaaa] mt-1">
                   {latestDraw?.drawNo}회차 일반 추첨 번호의 당첨 등수 분포
                 </p>
               </div>
@@ -543,12 +471,12 @@ export default function AdminStatsPage() {
                   {regularRankStats.map((stat) => (
                     <div
                       key={stat.rank}
-                      className="flex items-center justify-between p-2 bg-purple-50 dark:bg-purple-900/20 rounded"
+                      className="flex items-center justify-between p-2 bg-[#f3e5f5] dark:bg-[#341b3a] rounded border border-[#e1bee7] dark:border-[#5c2b66]"
                     >
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{stat.rank}</span>
+                      <span className="text-sm font-medium text-[#0f0f0f] dark:text-[#f1f1f1]">{stat.rank}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-purple-600">{stat.count}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-lg font-bold text-purple-600 dark:text-purple-400">{stat.count}</span>
+                        <span className="text-xs text-[#606060] dark:text-[#aaaaaa]">
                           ({regularDrawCount > 0 ? ((stat.count / regularDrawCount) * 100).toFixed(1) : 0}%)
                         </span>
                       </div>
@@ -561,17 +489,15 @@ export default function AdminStatsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* '결과 대기 중인' 추첨이 1개 이상 있을 경우, 해당 섹션을 렌더링합니다. */}
+      {/* 결과 대기 중 섹션 */}
       {pendingAnalysis.length > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-2 border-yellow-200 dark:border-yellow-800">
+        <div className="bg-[#fff8c5] dark:bg-[#3e3400] rounded-xl border border-[#f1e05a] dark:border-[#8b7500]">
           <div className="p-4 sm:p-6">
-            <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+            <h3 className="text-lg font-bold text-[#5c4d00] dark:text-[#ffd700] flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              {/* 다음 회차 번호를 표시합니다. */}
-              {upcomingDrawNo}회 결과 대기 중인 추첨
+              {upcomingDrawNo}회차 결과 대기 중인 추첨
             </h3>
-            <p className="text-yellow-700 dark:text-yellow-300 mt-3">
-              {/* 대기 중인 추첨 건수를 표시합니다. */}
+            <p className="text-[#5c4d00] dark:text-[#e0e0e0] mt-3">
               {pendingAnalysis.length}개의 추첨이 아직 당첨 결과 발표를 기다리고 있습니다. 다음 회차 추첨 후 자동으로
               분석됩니다.
             </p>
