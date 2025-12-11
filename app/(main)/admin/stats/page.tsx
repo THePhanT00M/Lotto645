@@ -186,12 +186,12 @@ export default function AdminStatsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6 animate-pulse">
+      <div className="container mx-auto p-5 max-w-5xl space-y-6 animate-pulse">
         <div className="space-y-2">
           <Skeleton className="h-7 w-64 bg-gray-200 dark:bg-[#272727]" />
           <Skeleton className="h-6 w-80 bg-gray-200 dark:bg-[#272727]" />
         </div>
-        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-lg p-4 sm:p-6 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-lg p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="flex items-center gap-2 mb-4">
             <Skeleton className="w-5 h-5 rounded-full bg-gray-200 dark:bg-[#272727]" />
             <Skeleton className="h-6 w-56 bg-gray-200 dark:bg-[#272727]" />
@@ -232,7 +232,7 @@ export default function AdminStatsPage() {
   }
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
+    <div className="container mx-auto p-5 max-w-5xl space-y-6">
       {/* 페이지 제목 */}
       <div className="space-y-2">
         <h1 className="text-2xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
@@ -289,7 +289,7 @@ export default function AdminStatsPage() {
       {/* 상단 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
-          <div className="p-4 sm:p-6">
+          <div className="p-5">
             <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <Target className="w-4 h-4" />총 추첨 횟수 ({latestDraw?.drawNo}회)
             </div>
@@ -298,7 +298,7 @@ export default function AdminStatsPage() {
         </div>
 
         <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
-          <div className="p-4 sm:p-6">
+          <div className="p-5">
             <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <Award className="w-4 h-4" />
               전체 당첨률
@@ -309,7 +309,7 @@ export default function AdminStatsPage() {
         </div>
 
         <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
-          <div className="p-4 sm:p-6">
+          <div className="p-5">
             <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
               AI 추천 당첨률
@@ -322,7 +322,7 @@ export default function AdminStatsPage() {
         </div>
 
         <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
-          <div className="p-4 sm:p-6">
+          <div className="p-5">
             <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               일반 추첨 당첨률
@@ -361,13 +361,13 @@ export default function AdminStatsPage() {
         {/* "등수별 통계" 탭 패널 */}
         <TabsContent value="ranks" className="space-y-4">
           <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
-            <div className="p-4 sm:p-6">
+            <div className="p-5">
               <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">당첨 등수별 분포</h3>
               <p className="text-sm text-[#606060] dark:text-[#aaaaaa] mt-1">
                 {latestDraw?.drawNo}회차 대상 추첨의 등수별 통계
               </p>
             </div>
-            <div className="p-4 sm:p-6 pt-0">
+            <div className="p-5 pt-0">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {rankStats.map((stat) => (
                   <div
@@ -389,13 +389,13 @@ export default function AdminStatsPage() {
         {/* "일치 개수" 탭 패널 */}
         <TabsContent value="matches" className="space-y-4">
           <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
-            <div className="p-4 sm:p-6">
+            <div className="p-5">
               <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">번호 일치 개수 분포</h3>
               <p className="text-sm text-[#606060] dark:text-[#aaaaaa] mt-1">
                 {latestDraw?.drawNo}회차 당첨 번호와 일치하는 개수별 통계
               </p>
             </div>
-            <div className="p-4 sm:p-6 pt-0">
+            <div className="p-5 pt-0">
               <div className="space-y-3">
                 {matchCountStats.map((stat) => (
                   <div key={stat.count} className="flex items-center gap-4">
@@ -427,7 +427,7 @@ export default function AdminStatsPage() {
         <TabsContent value="comparison" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
-              <div className="p-4 sm:p-6">
+              <div className="p-5">
                 <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   AI 추천 등수별 통계
@@ -436,7 +436,7 @@ export default function AdminStatsPage() {
                   {latestDraw?.drawNo}회차 AI 추천 번호의 당첨 등수 분포
                 </p>
               </div>
-              <div className="p-4 sm:p-6 pt-0">
+              <div className="p-5 pt-0">
                 <div className="space-y-2">
                   {aiRankStats.map((stat) => (
                     <div
@@ -457,7 +457,7 @@ export default function AdminStatsPage() {
             </div>
 
             <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
-              <div className="p-4 sm:p-6">
+              <div className="p-5">
                 <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
                   <Target className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   일반 추첨 등수별 통계
@@ -466,7 +466,7 @@ export default function AdminStatsPage() {
                   {latestDraw?.drawNo}회차 일반 추첨 번호의 당첨 등수 분포
                 </p>
               </div>
-              <div className="p-4 sm:p-6 pt-0">
+              <div className="p-5 pt-0">
                 <div className="space-y-2">
                   {regularRankStats.map((stat) => (
                     <div
@@ -492,7 +492,7 @@ export default function AdminStatsPage() {
       {/* 결과 대기 중 섹션 */}
       {pendingAnalysis.length > 0 && (
         <div className="bg-[#fff8c5] dark:bg-[#3e3400] rounded-xl border border-[#f1e05a] dark:border-[#8b7500]">
-          <div className="p-4 sm:p-6">
+          <div className="p-5">
             <h3 className="text-lg font-bold text-[#5c4d00] dark:text-[#ffd700] flex items-center gap-2">
               <Calendar className="w-5 h-5" />
               {upcomingDrawNo}회차 결과 대기 중인 추첨
