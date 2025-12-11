@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function FAQPage() {
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl space-y-6">
+    <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
       {/* 헤더 섹션 */}
       <div className="flex flex-col space-y-2">
         <h1 className="text-2xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
