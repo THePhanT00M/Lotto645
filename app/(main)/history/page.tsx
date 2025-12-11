@@ -274,7 +274,7 @@ export default function HistoryPage() {
                   <div className="flex justify-between items-center w-full md:w-auto">
                     {/* 왼쪽 그룹: 날짜 + 추첨 타입 */}
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="flex items-center text-xs text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
+                      <span className="flex items-center text-xs text-gray-600 bg-gray-100 dark:bg-[rgb(88,88,88)] px-2 py-1 rounded-md border border-gray-200 dark:border-[rgb(111,111,111)] dark:text-white">
                         <Calendar className="w-3.5 h-3.5 mr-1.5" />
                         {new Date(item.timestamp).toLocaleString()}
                       </span>
@@ -285,7 +285,7 @@ export default function HistoryPage() {
                           AI 추천
                         </span>
                       ) : (
-                        <span className="text-xs font-medium text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">
+                        <span className="font-medium text-xs text-gray-600 bg-gray-100 dark:bg-[rgb(88,88,88)] px-2 py-1 rounded-md border border-gray-200 dark:border-[rgb(111,111,111)] dark:text-white">
                           일반/수동
                         </span>
                       )}
