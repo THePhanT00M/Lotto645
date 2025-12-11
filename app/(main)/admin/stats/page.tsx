@@ -186,7 +186,7 @@ export default function AdminStatsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-5 max-w-5xl space-y-6 animate-pulse">
+      <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6 animate-pulse">
         <div className="space-y-2">
           <Skeleton className="h-7 w-64 bg-gray-200 dark:bg-[#272727]" />
           <Skeleton className="h-6 w-80 bg-gray-200 dark:bg-[#272727]" />
@@ -232,9 +232,9 @@ export default function AdminStatsPage() {
   }
 
   return (
-    <div className="container mx-auto p-5 max-w-5xl space-y-6">
-      {/* 페이지 제목 */}
-      <div className="space-y-2">
+    <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
+      {/* 헤더 섹션 */}
+      <div className="flex flex-col space-y-2">
         <h1 className="text-2xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           관리자 통계 대시보드

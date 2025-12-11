@@ -189,7 +189,7 @@ export default function HistoryPage() {
     <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
       {/* 헤더 섹션 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
+        <div className="flex flex-col space-y-2">
           <h1 className="text-2xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
             <History className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             나의 추첨 기록
