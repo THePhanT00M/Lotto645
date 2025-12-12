@@ -330,7 +330,7 @@ export default function WinningNumbersPage() {
 
           {/* 우측 리스트 패널 */}
           <div className="lg:col-span-2">
-            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[600px] flex flex-col relative">
+            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[650px] flex flex-col relative">
               <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10">
                 <Skeleton className="h-6 w-24 bg-gray-200 dark:bg-[#272727]" />
                 <Skeleton className="h-8 w-24 bg-gray-200 dark:bg-[#272727]" />
@@ -366,7 +366,12 @@ export default function WinningNumbersPage() {
         {currentDraw && (
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-8">
-              <Button variant="outline" onClick={goToPreviousDraw} disabled={currentDraw.drawNo <= 1} className="bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-gray-100 dark:hover:bg-[#333] h-10 px-3">
+              <Button
+                variant="outline"
+                onClick={goToPreviousDraw}
+                disabled={currentDraw.drawNo <= 1}
+                className="bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-gray-100 dark:hover:bg-[#333] text-gray-900 hover:text-gray-900 dark:text-gray-100 dark:hover:text-white h-10 px-3"
+              >
                 <ChevronLeft className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">이전 회차</span>
               </Button>
@@ -377,7 +382,12 @@ export default function WinningNumbersPage() {
                   {currentDraw.date}
                 </div>
               </div>
-              <Button variant="outline" onClick={goToNextDraw} disabled={currentDraw.drawNo >= latestDrawNo} className="bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-gray-100 dark:hover:bg-[#333] h-10 px-3">
+              <Button
+                variant="outline"
+                onClick={goToNextDraw}
+                disabled={currentDraw.drawNo >= latestDrawNo}
+                className="bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-gray-100 dark:hover:bg-[#333] text-gray-900 hover:text-gray-900 dark:text-gray-100 dark:hover:text-white h-10 px-3"
+              >
                 <span className="hidden sm:inline">다음 회차</span>
                 <ChevronRight className="w-4 h-4 sm:ml-2" />
               </Button>
@@ -457,7 +467,7 @@ export default function WinningNumbersPage() {
 
         {/* 우측: 리스트 (양방향 무한 스크롤) */}
         <div className="lg:col-span-2">
-          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] flex flex-col h-[600px] relative">
+          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] flex flex-col h-[650px] relative">
             <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10 sticky top-0">
               <h3 className="font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">회차별 목록</h3>
               <Button
@@ -466,7 +476,6 @@ export default function WinningNumbersPage() {
                 onClick={() => jumpToDraw(latestDrawNo)}
                 className="h-8 text-xs text-[#606060] hover:text-blue-600"
               >
-                <ArrowUp className="w-3 h-3 mr-1"/> 맨 위로 (최신)
               </Button>
             </div>
 
