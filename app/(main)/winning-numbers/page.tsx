@@ -13,7 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 const ITEMS_PER_PAGE = 20
 
 export default function WinningNumbersPage() {
-  // --- 상태 관리 ---
+  // --- State Management ---
   const [latestDrawNo, setLatestDrawNo] = useState<number>(0)
   const [draws, setDraws] = useState<WinningLottoNumbers[]>([])
 
@@ -27,7 +27,7 @@ export default function WinningNumbersPage() {
   const [searchValue, setSearchValue] = useState("")
   const [currentDraw, setCurrentDraw] = useState<WinningLottoNumbers | null>(null)
 
-  // [수정] 스크롤 대상 회차 상태 추가
+  // Scroll target state
   const [targetScrollNo, setTargetScrollNo] = useState<number | null>(null)
 
   // --- Refs ---
@@ -39,7 +39,7 @@ export default function WinningNumbersPage() {
   const prevScrollTopRef = useRef<number>(0)
   const isPrependActionRef = useRef(false)
 
-  // --- 1. 초기 로드 ---
+  // --- 1. Initial Load ---
   useEffect(() => {
     const fetchLatestInfo = async () => {
       try {
@@ -64,7 +64,7 @@ export default function WinningNumbersPage() {
     fetchLatestInfo()
   }, [])
 
-  // --- 2. 데이터 가져오기 ---
+  // --- 2. Fetch Data ---
   const fetchDraws = useCallback(async (baseDrawNo: number, mode: "initial" | "older" | "newer") => {
     if (mode === "older") setIsLoadingOlder(true)
     if (mode === "newer") setIsLoadingNewer(true)
@@ -127,7 +127,7 @@ export default function WinningNumbersPage() {
     }
   }, [latestDrawNo])
 
-  // --- 3. 스크롤 위치 보정 ---
+  // --- 3. Scroll Restoration ---
   useLayoutEffect(() => {
     if (isPrependActionRef.current && listContainerRef.current) {
       const currentScrollHeight = listContainerRef.current.scrollHeight
@@ -137,19 +137,18 @@ export default function WinningNumbersPage() {
     }
   }, [draws])
 
-  // --- [수정] 3-1. 점프 시 타겟 회차 중앙 정렬 (즉시) ---
+  // --- 3-1. Jump Scroll ---
   useLayoutEffect(() => {
     if (targetScrollNo !== null) {
       const element = itemRefs.current.get(targetScrollNo)
       if (element) {
-        // 'auto' behavior는 브라우저 기본 동작으로 즉시 이동합니다.
         element.scrollIntoView({ block: "center", behavior: "auto" })
-        setTargetScrollNo(null) // 이동 후 상태 초기화
+        setTargetScrollNo(null)
       }
     }
   }, [draws, targetScrollNo])
 
-  // --- 4. 무한 스크롤 옵저버 ---
+  // --- 4. Infinite Scroll Observer ---
   useEffect(() => {
     const container = listContainerRef.current
     if (!container) return
@@ -172,7 +171,7 @@ export default function WinningNumbersPage() {
     return () => observer.disconnect()
   }, [draws, hasMoreOlder, hasMoreNewer, isLoadingOlder, isLoadingNewer, fetchDraws])
 
-  // --- 5. 네비게이션 및 검색 ---
+  // --- 5. Navigation & Search ---
   const jumpToDraw = async (targetNo: number) => {
     if (targetNo < 1 || targetNo > latestDrawNo) {
       alert("존재하지 않는 회차입니다.")
@@ -182,7 +181,7 @@ export default function WinningNumbersPage() {
     const startCursor = Math.min(latestDrawNo, targetNo + offset)
 
     setIsLoadingOlder(true)
-    setDraws([]) // 리스트 초기화
+    setDraws([])
 
     try {
       const { data } = await supabase
@@ -202,7 +201,6 @@ export default function WinningNumbersPage() {
         const targetDrawData = newDraws.find(d => d.drawNo === targetNo)
         if (targetDrawData) {
           setCurrentDraw(targetDrawData)
-          // [수정] 스크롤 애니메이션 함수 대신 상태 설정 -> useLayoutEffect에서 즉시 처리
           setTargetScrollNo(targetNo)
         }
       }
@@ -231,17 +229,33 @@ export default function WinningNumbersPage() {
     if (currentDraw && currentDraw.drawNo > 1) jumpToDraw(currentDraw.drawNo - 1)
   }
 
-  // 리스트 아이템 스켈레톤
+  // --- Style Helpers for Active State ---
+  // Returns styling based on whether the current draw is within the given range
+  const getButtonStyle = (start: number, end: number) => {
+    const isActive = currentDraw && currentDraw.drawNo >= end && currentDraw.drawNo <= start
+    if (isActive) {
+      return "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800 ring-1 ring-blue-500/20"
+    }
+    return "text-[#606060] dark:text-[#aaaaaa] bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-blue-50 dark:hover:bg-[#333] hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800"
+  }
+
+  const getLatestButtonStyle = () => {
+    const isActive = currentDraw && currentDraw.drawNo === latestDrawNo
+    if (isActive) {
+      return "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800 ring-1 ring-blue-500/20 font-bold"
+    }
+    return "text-[#606060] dark:text-[#aaaaaa] bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-blue-50 dark:hover:bg-[#333] hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 font-bold"
+  }
+
+  // Skeleton UI
   const ListSkeleton = () => (
     <div className="space-y-2">
       {[1, 2, 3, 4, 5, 6, 7].map((i) => (
         <div key={i} className="p-3 rounded-lg border border-[#e5e5e5] dark:border-[#3f3f3f] bg-white dark:bg-[#272727] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* 좌측: 회차 및 날짜 */}
           <div className="flex items-center gap-4 min-w-[120px]">
             <Skeleton className="h-7 w-16 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
             <Skeleton className="h-4 w-20 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
           </div>
-          {/* 우측: 공 리스트 */}
           <div className="flex flex-wrap items-center gap-1.5 justify-end">
             {[...Array(6)].map((_, j) => (
               <Skeleton key={j} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-[#3f3f3f]" />
@@ -254,11 +268,10 @@ export default function WinningNumbersPage() {
     </div>
   )
 
-  // 전체 페이지 초기 로딩 스켈레톤
   if (isInitialLoading) {
     return (
       <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
-        {/* 헤더 */}
+        {/* Header Skeleton */}
         <div className="flex flex-col space-y-2">
           <div className="flex items-center gap-2">
             <Skeleton className="w-6 h-6 rounded-full bg-gray-200 dark:bg-[#272727]" />
@@ -267,12 +280,11 @@ export default function WinningNumbersPage() {
           <Skeleton className="h-4 w-64 bg-gray-200 dark:bg-[#272727]" />
         </div>
 
-        {/* 메인 당첨 번호 카드 */}
+        {/* Main Card Skeleton */}
         <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 sm:p-8 border border-[#e5e5e5] dark:border-[#3f3f3f] shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5 dark:opacity-10 pointer-events-none">
             <Trophy className="w-32 h-32 text-gray-400" />
           </div>
-
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-8">
               <Skeleton className="h-10 w-24 rounded-md bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
@@ -282,7 +294,6 @@ export default function WinningNumbersPage() {
               </div>
               <Skeleton className="h-10 w-24 rounded-md bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
             </div>
-
             <div className="flex flex-col items-center">
               <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 max-w-2xl">
                 {[...Array(6)].map((_, i) => (
@@ -297,11 +308,9 @@ export default function WinningNumbersPage() {
           </div>
         </div>
 
-        {/* 하단 그리드 */}
+        {/* Bottom Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 좌측 패널 */}
           <div className="lg:col-span-1 space-y-4">
-            {/* 검색 카드 */}
             <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="flex items-center gap-2 mb-3">
                 <Skeleton className="w-4 h-4 rounded-full bg-gray-200 dark:bg-[#272727]" />
@@ -312,8 +321,6 @@ export default function WinningNumbersPage() {
                 <Skeleton className="h-10 w-16 rounded-md bg-blue-600/20" />
               </div>
             </div>
-
-            {/* 빠른 이동 카드 */}
             <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="flex items-center gap-2 mb-3">
                 <Skeleton className="w-4 h-4 rounded-full bg-gray-200 dark:bg-[#272727]" />
@@ -327,8 +334,6 @@ export default function WinningNumbersPage() {
               </div>
             </div>
           </div>
-
-          {/* 우측 리스트 패널 */}
           <div className="lg:col-span-2">
             <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[650px] flex flex-col relative">
               <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10">
@@ -357,7 +362,7 @@ export default function WinningNumbersPage() {
         </p>
       </div>
 
-      {/* 메인 당첨 번호 카드 */}
+      {/* Main Winning Number Card */}
       <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 sm:p-8 border border-[#e5e5e5] dark:border-[#3f3f3f] shadow-sm relative overflow-hidden transition-all">
         <div className="absolute top-0 right-0 p-4 opacity-5 dark:opacity-10 pointer-events-none">
           <Trophy className="w-32 h-32" />
@@ -393,12 +398,11 @@ export default function WinningNumbersPage() {
               </Button>
             </div>
             <div className="flex flex-col items-center">
-              {/* 수정된 부분: 보너스 태그 제거 및 공 스타일 변경 */}
               <div className="flex w-full max-w-md justify-center gap-3">
                 {currentDraw.numbers.map((number) => (
                   <div
                     key={number}
-                    className="w-full max-w-11 aspect-square rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-sm shadow-sm"
+                    className="w-full max-w-10 aspect-square rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-sm shadow-sm"
                     style={{ backgroundColor: getBallColor(number) }}
                   >
                     {number}
@@ -408,7 +412,7 @@ export default function WinningNumbersPage() {
                   <span className="text-[#606060] dark:text-[#aaaaaa] text-lg font-medium">+</span>
                 </div>
                 <div
-                  className="w-full max-w-11 aspect-square rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-sm shadow-sm"
+                  className="w-full max-w-10 aspect-square rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-sm shadow-sm"
                   style={{ backgroundColor: getBallColor(currentDraw.bonusNo) }}
                 >
                   {currentDraw.bonusNo}
@@ -420,7 +424,7 @@ export default function WinningNumbersPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 좌측: 검색 패널 */}
+        {/* Left Panel: Search & Quick Navigation */}
         <div className="lg:col-span-1 space-y-4">
           <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <h3 className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] mb-3 flex items-center gap-2">
@@ -449,32 +453,66 @@ export default function WinningNumbersPage() {
               <ListFilter className="w-4 h-4" /> 빠른 이동
             </h3>
             <div className="grid grid-cols-3 gap-2">
+              {/* Latest Draw Button */}
               <button
                 onClick={() => jumpToDraw(latestDrawNo)}
-                className="col-span-3 px-2 py-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all"
+                className={`col-span-3 px-2 py-2 text-xs transition-all rounded ${getLatestButtonStyle()}`}
               >
                 최신 회차 ({latestDrawNo}회)
               </button>
-              {/* 내림차순 구간 버튼 생성 */}
-              {Array.from({ length: Math.ceil(latestDrawNo / 100) }).map((_, idx) => {
-                const end = Math.min(latestDrawNo, latestDrawNo - idx * 100)
-                const start = Math.max(1, end - 99)
-                if (end < 1 || idx > 14) return null
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleQuickNavigation(end)}
-                    className="px-1 py-2 text-xs font-medium text-[#606060] dark:text-[#aaaaaa] bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f] rounded hover:bg-blue-50 dark:hover:bg-[#333] hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 transition-all"
-                  >
-                    {end}-{start}
-                  </button>
-                )
-              })}
+
+              {/* Range Buttons Logic */}
+              {(() => {
+                if (latestDrawNo <= 0) return null
+                const buttons = []
+
+                // 1. Partial Range (Remainder above the nearest 100)
+                // e.g., if latest is 1203, base is 1200. Range: 1202 - 1201 (since 1203 is 'latest')
+                // But wait, user said: "1202 - 1201" comes after "1203".
+                // We start from `latestDrawNo - 1` down to `base + 1`.
+
+                // Calculate the base 100s. e.g. 1203 -> 1200. 1200 -> 1100.
+                // Using (latest - 1) to handle the exact 100 case correctly (e.g. 1200 belongs to 1101-1200 range)
+                const baseOfLatest = Math.floor((latestDrawNo - 1) / 100) * 100
+                const partialStart = latestDrawNo - 1
+                const partialEnd = baseOfLatest + 1
+
+                if (partialStart >= partialEnd) {
+                  buttons.push(
+                    <button
+                      key={`partial-${partialStart}`}
+                      onClick={() => handleQuickNavigation(partialStart)}
+                      className={`px-1 py-2 text-xs font-medium transition-all rounded ${getButtonStyle(partialStart, partialEnd)}`}
+                    >
+                      {partialStart}-{partialEnd}
+                    </button>
+                  )
+                }
+
+                // 2. Full 100-Unit Ranges
+                // Start from the base (e.g., 1200, 1100...) down to 100
+                // Each range is `i` down to `i - 99`.
+                for (let i = baseOfLatest; i >= 100; i -= 100) {
+                  const start = i
+                  const end = i - 99
+                  buttons.push(
+                    <button
+                      key={start}
+                      onClick={() => handleQuickNavigation(start)}
+                      className={`px-1 py-2 text-xs font-medium transition-all rounded ${getButtonStyle(start, end)}`}
+                    >
+                      {start}-{end}
+                    </button>
+                  )
+                }
+
+                return buttons
+              })()}
             </div>
           </div>
         </div>
 
-        {/* 우측: 리스트 (양방향 무한 스크롤) */}
+        {/* Right Panel: List */}
         <div className="lg:col-span-2">
           <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] flex flex-col h-[650px] relative">
             <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10 sticky top-0">
@@ -506,7 +544,6 @@ export default function WinningNumbersPage() {
                     ref={(el) => { if (el) itemRefs.current.set(draw.drawNo, el) }}
                     onClick={() => {
                       setCurrentDraw(draw)
-                      // 클릭 시 중앙 정렬을 원하지 않으므로 스크롤 로직 제외 (단순 선택만)
                     }}
                     id={`draw-${draw.drawNo}`}
                     className={`group p-3 rounded-lg border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
