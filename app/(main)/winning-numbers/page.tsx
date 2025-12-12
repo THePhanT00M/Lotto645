@@ -273,14 +273,14 @@ export default function WinningNumbersPage() {
     return "text-[#606060] dark:text-[#aaaaaa] bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-blue-50 dark:hover:bg-[#333] hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 font-bold"
   }
 
-  // 리스트 아이템 스켈레톤
+  // 리스트 아이템 스켈레톤 (실제 리스트 아이템과 동일한 높이와 패딩)
   const ListSkeleton = () => (
     <div className="space-y-2">
       {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-        <div key={i} className="p-3 rounded-lg border border-[#e5e5e5] dark:border-[#3f3f3f] bg-white dark:bg-[#272727] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div key={i} className="p-3 rounded-lg border border-[#e5e5e5] dark:border-[#3f3f3f] bg-white dark:bg-[#272727] flex flex-col sm:flex-row sm:items-center justify-between gap-3 h-[92px] sm:h-[62px]">
           <div className="flex items-center gap-4 min-w-[120px]">
-            <Skeleton className="h-7 w-16 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
-            <Skeleton className="h-4 w-20 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
+            <Skeleton className="h-7 w-20 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
+            <Skeleton className="h-4 w-24 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
           </div>
           <div className="flex flex-wrap items-center gap-1.5 justify-end">
             {[...Array(6)].map((_, j) => (
@@ -298,70 +298,82 @@ export default function WinningNumbersPage() {
     return (
       <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
         <div className="flex flex-col space-y-2">
+          {/* Header Title Skeleton */}
           <div className="flex items-center gap-2">
-            <Skeleton className="w-6 h-6 rounded-full bg-gray-200 dark:bg-[#272727]" />
+            <Skeleton className="w-6 h-6 rounded-md bg-gray-200 dark:bg-[#272727]" />
             <Skeleton className="h-8 w-48 bg-gray-200 dark:bg-[#272727]" />
           </div>
-          <Skeleton className="h-4 w-64 bg-gray-200 dark:bg-[#272727]" />
+          <Skeleton className="h-5 w-64 bg-gray-200 dark:bg-[#272727]" />
         </div>
-        {/* Main Card Skeleton */}
+
+        {/* Main Card Skeleton - 실제 카드와 동일한 높이 및 패딩 구조 */}
         <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 sm:p-8 border border-[#e5e5e5] dark:border-[#3f3f3f] shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5 dark:opacity-10 pointer-events-none">
             <Trophy className="w-32 h-32 text-gray-400" />
           </div>
           <div className="relative z-10">
-            <div className="flex justify-between items-center mb-8">
+            {/* Header Row: Button - Title - Button */}
+            <div className="flex justify-between items-center mb-8 h-10">
               <Skeleton className="h-10 w-24 rounded-md bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
-              <div className="flex flex-col items-center gap-2">
-                <Skeleton className="h-9 w-32 bg-gray-200 dark:bg-[#272727]" />
-                <Skeleton className="h-6 w-28 rounded-full bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
+              <div className="flex flex-col items-center gap-1">
+                <Skeleton className="h-9 w-24 bg-gray-200 dark:bg-[#272727]" /> {/* Draw No */}
+                <Skeleton className="h-6 w-32 rounded-full bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" /> {/* Date Badge */}
               </div>
               <Skeleton className="h-10 w-24 rounded-md bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
             </div>
+
+            {/* Balls Row */}
             <div className="flex flex-col items-center">
-              <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 max-w-2xl">
+              <div className="flex w-full max-w-md justify-center gap-3">
                 {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-gray-200 dark:bg-[#272727]" />
+                  <Skeleton key={i} className="w-11 h-11 rounded-full bg-gray-200 dark:bg-[#272727]" />
                 ))}
-                <div className="flex items-center justify-center w-6 sm:w-10">
-                  <span className="text-[#606060] dark:text-[#aaaaaa] text-xl sm:text-2xl font-light">+</span>
+                <div className="flex items-center justify-center">
+                  <span className="text-[#606060] dark:text-[#aaaaaa] text-lg font-medium">+</span>
                 </div>
-                <Skeleton className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="w-11 h-11 rounded-full bg-gray-200 dark:bg-[#272727]" />
               </div>
             </div>
           </div>
         </div>
+
         {/* Bottom Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column: Search & Quick Move */}
           <div className="lg:col-span-1 space-y-4">
+            {/* Search Panel Skeleton */}
             <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="flex items-center gap-2 mb-3">
-                <Skeleton className="w-4 h-4 rounded-full bg-gray-200 dark:bg-[#272727]" />
-                <Skeleton className="h-5 w-24 bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="w-4 h-4 rounded bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="h-5 w-20 bg-gray-200 dark:bg-[#272727]" />
               </div>
               <div className="flex gap-2">
                 <Skeleton className="flex-1 h-10 rounded-lg bg-white dark:bg-[#272727] border border-[#d1d1d1] dark:border-[#3f3f3f]" />
                 <Skeleton className="h-10 w-16 rounded-md bg-blue-600/20" />
               </div>
             </div>
+
+            {/* Quick Move Panel Skeleton */}
             <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="flex items-center gap-2 mb-3">
-                <Skeleton className="w-4 h-4 rounded-full bg-gray-200 dark:bg-[#272727]" />
-                <Skeleton className="h-5 w-24 bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="w-4 h-4 rounded bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="h-5 w-20 bg-gray-200 dark:bg-[#272727]" />
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <Skeleton className="col-span-3 h-8 rounded bg-blue-50 dark:bg-blue-900/20" />
-                {[...Array(12)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 rounded bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
+                <Skeleton className="col-span-3 h-8.5 rounded bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
+                {[...Array(9)].map((_, i) => (
+                  <Skeleton key={i} className="h-9 rounded bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
                 ))}
               </div>
             </div>
           </div>
+
+          {/* Right Column: List */}
           <div className="lg:col-span-2">
             <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[650px] flex flex-col relative">
-              <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10">
+              <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10 h-[69px]">
                 <Skeleton className="h-6 w-24 bg-gray-200 dark:bg-[#272727]" />
-                <Skeleton className="h-8 w-24 bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="h-8 w-20 bg-gray-200 dark:bg-[#272727]" />
               </div>
               <div className="flex-1 p-2 overflow-hidden">
                 <ListSkeleton />
@@ -393,7 +405,7 @@ export default function WinningNumbersPage() {
 
         {currentDraw && (
           <div className="relative z-10">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex justify-between items-center mb-8 h-10">
               <Button
                 variant="outline"
                 onClick={goToPreviousDraw}
@@ -403,8 +415,8 @@ export default function WinningNumbersPage() {
                 <ChevronLeft className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">이전 회차</span>
               </Button>
-              <div className="flex flex-col items-center">
-                <span className="text-3xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] tracking-tight mb-1">{currentDraw.drawNo}회</span>
+              <div className="flex flex-col items-center justify-center">
+                <span className="text-3xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] tracking-tight mb-1 leading-none">{currentDraw.drawNo}회</span>
                 <div className="flex items-center text-sm text-[#606060] dark:text-[#aaaaaa] bg-white dark:bg-[#272727] px-3 py-1 rounded-full border border-[#e5e5e5] dark:border-[#3f3f3f]">
                   <Calendar className="w-3.5 h-3.5 mr-1.5" />
                   {currentDraw.date}
@@ -426,7 +438,7 @@ export default function WinningNumbersPage() {
                 {currentDraw.numbers.map((number) => (
                   <div
                     key={number}
-                    className="w-full max-w-11 aspect-square rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-sm shadow-sm"
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-base shadow-sm"
                     style={{ backgroundColor: getBallColor(number) }}
                   >
                     {number}
@@ -436,7 +448,7 @@ export default function WinningNumbersPage() {
                   <span className="text-[#606060] dark:text-[#aaaaaa] text-lg font-medium">+</span>
                 </div>
                 <div
-                  className="w-full max-w-11 aspect-square rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-sm shadow-sm"
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-base shadow-sm"
                   style={{ backgroundColor: getBallColor(currentDraw.bonusNo) }}
                 >
                   {currentDraw.bonusNo}
@@ -531,7 +543,7 @@ export default function WinningNumbersPage() {
         {/* 우측: 리스트 (양방향 무한 스크롤) */}
         <div className="lg:col-span-2">
           <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] flex flex-col h-[650px] relative">
-            <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10 sticky top-0">
+            <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10 sticky top-0 h-[69px]">
               <h3 className="font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">회차별 목록</h3>
               <Button
                 variant="ghost"
@@ -563,7 +575,7 @@ export default function WinningNumbersPage() {
                       // 클릭 시에는 스크롤 없이 선택만 함
                     }}
                     id={`draw-${draw.drawNo}`}
-                    className={`group p-3 rounded-lg border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                    className={`group p-3 rounded-lg border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 h-[92px] sm:h-[62px] ${
                       isSelected
                         ? "bg-blue-50 dark:bg-[#1e2a3b] border-blue-200 dark:border-blue-800 ring-1 ring-blue-500/20"
                         : "bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:border-blue-300"
