@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Search, Trophy, Calendar, Hash, ListFilter }
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getBallColor } from "@/utils/lotto-utils"
-import { useIsMobile } from "@/hooks/use-mobile" // 훅 이름 확인 (use-mobile.ts 파일 내용 기반)
+import { useIsMobile } from "@/hooks/use-mobile"
 import { supabase } from "@/lib/supabaseClient"
 import type { WinningLottoNumbers } from "@/types/lotto"
 
@@ -194,15 +194,49 @@ export default function WinningNumbersPage() {
           </div>
         </div>
 
-        {/* 리스트 스켈레톤 */}
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <Skeleton className="h-10 flex-1 bg-gray-200 dark:bg-[#272727] rounded-md" />
-            <Skeleton className="h-10 w-24 bg-gray-200 dark:bg-[#272727] rounded-md" />
+        {/* 하단 그리드 스켈레톤 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1 space-y-4">
+            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+              <Skeleton className="h-5 w-24 mb-3 bg-gray-200 dark:bg-[#272727]" />
+              <div className="flex gap-2">
+                <Skeleton className="h-10 flex-1 bg-gray-200 dark:bg-[#272727] rounded-lg" />
+                <Skeleton className="h-10 w-16 bg-gray-200 dark:bg-[#272727] rounded-md" />
+              </div>
+            </div>
+            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+              <Skeleton className="h-5 w-24 mb-3 bg-gray-200 dark:bg-[#272727]" />
+              <div className="grid grid-cols-3 gap-2">
+                {[...Array(9)].map((_, i) => (
+                  <Skeleton key={i} className="h-8 bg-gray-200 dark:bg-[#272727] rounded-md" />
+                ))}
+              </div>
+            </div>
           </div>
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-20 w-full bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-lg border border-[#e5e5e5] dark:border-[#3f3f3f]" />
-          ))}
+
+          <div className="lg:col-span-2">
+            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[600px] flex flex-col">
+              <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center">
+                <Skeleton className="h-6 w-32 bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="h-6 w-16 bg-gray-200 dark:bg-[#272727] rounded-md" />
+              </div>
+              <div className="p-2 space-y-2 flex-1 overflow-hidden">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="p-3 flex items-center justify-between gap-3 border border-transparent">
+                    <div className="space-y-1">
+                      <Skeleton className="h-6 w-16 bg-gray-200 dark:bg-[#272727]" />
+                      <Skeleton className="h-3 w-24 bg-gray-200 dark:bg-[#272727]" />
+                    </div>
+                    <div className="flex gap-1.5">
+                      {[...Array(7)].map((_, j) => (
+                        <Skeleton key={j} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-[#272727]" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -236,7 +270,8 @@ export default function WinningNumbersPage() {
                 variant="outline"
                 onClick={goToPreviousDraw}
                 disabled={currentDrawIndex >= winningNumbers.length - 1}
-                className="bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-gray-100 dark:hover:bg-[#333] text-[#0f0f0f] dark:text-[#f1f1f1] h-10 px-3 sm:px-4"
+                // [수정] hover:text-[#0f0f0f] 및 dark:hover:text-[#f1f1f1] 추가하여 호버 시 텍스트 색상 고정
+                className="bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-gray-100 hover:text-[#0f0f0f] dark:hover:bg-[#333] dark:hover:text-[#f1f1f1] text-[#0f0f0f] dark:text-[#f1f1f1] h-10 px-3 sm:px-4"
               >
                 <ChevronLeft className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">이전 회차</span>
@@ -258,7 +293,8 @@ export default function WinningNumbersPage() {
                 variant="outline"
                 onClick={goToNextDraw}
                 disabled={currentDrawIndex <= 0}
-                className="bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-gray-100 dark:hover:bg-[#333] text-[#0f0f0f] dark:text-[#f1f1f1] h-10 px-3 sm:px-4"
+                // [수정] hover:text-[#0f0f0f] 및 dark:hover:text-[#f1f1f1] 추가하여 호버 시 텍스트 색상 고정
+                className="bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-gray-100 hover:text-[#0f0f0f] dark:hover:bg-[#333] dark:hover:text-[#f1f1f1] text-[#0f0f0f] dark:text-[#f1f1f1] h-10 px-3 sm:px-4"
               >
                 <span className="hidden sm:inline">다음 회차</span>
                 <ChevronRight className="w-4 h-4 sm:ml-2" />
@@ -327,7 +363,8 @@ export default function WinningNumbersPage() {
             <h3 className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] mb-3 flex items-center gap-2">
               <ListFilter className="w-4 h-4" /> 빠른 이동
             </h3>
-            <div className="grid grid-cols-4 gap-2">
+            {/* [유지] grid-cols-3 사용 및 truncate 제거로 버튼 텍스트 잘림 방지 */}
+            <div className="grid grid-cols-3 gap-2">
               {[...Array(8)].map((_, idx) => {
                 const pageNum = idx + 1
                 const startIdx = (pageNum - 1) * 100
