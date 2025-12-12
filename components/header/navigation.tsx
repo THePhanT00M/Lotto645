@@ -6,8 +6,8 @@ import { Search, Bell, ChevronDown, X } from "lucide-react"
 import Logo from "./logo"
 
 const navigationItems = [
-  { href: "/winning-numbers", label: "당첨번호" },
   { href: "/history", label: "추첨기록" },
+  { href: "/winning-numbers", label: "당첨번호" },
   { href: "/faq", label: "FAQ" },
 ]
 
