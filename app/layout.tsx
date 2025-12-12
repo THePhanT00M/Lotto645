@@ -1,3 +1,4 @@
+// app/layout.tsx
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
@@ -6,6 +7,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 import { Suspense } from "react"
+import SplashScreen from "@/components/splash-screen" // 1. 스플래시 스크린 import
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -24,14 +26,15 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({
-  children,
-}: Readonly<{
+                                     children,
+                                   }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-    <body className={`${inter.className} min-h-screen flex flex-col bg-white dark:bg-dark`}>
-    <Suspense fallback={<div>Loading...</div>}>
+    <body className={`${inter.className} min-h-screen flex flex-col bg-white dark:bg-black`}>
+    {/* 2. 로딩 중일 때 스플래시 스크린 표시 */}
+    <Suspense fallback={<SplashScreen />}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         {children}
         <Analytics />

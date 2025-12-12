@@ -282,7 +282,7 @@ export default function WinningNumbersPage() {
             <Skeleton className="h-7 w-20 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
             <Skeleton className="h-4 w-24 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
           </div>
-          <div className="flex flex-wrap items-center gap-1.5 justify-end">
+          <div className="flex flex-wrap items-center gap-1.5 justify-center sm:justify-end">
             {[...Array(6)].map((_, j) => (
               <Skeleton key={j} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-[#3f3f3f]" />
             ))}
@@ -587,7 +587,7 @@ export default function WinningNumbersPage() {
                       </span>
                       <span className="text-xs text-[#606060] dark:text-[#aaaaaa]">{draw.date}</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-1.5 justify-end">
+                    <div className="flex flex-wrap items-center gap-1.5 justify-center sm:justify-end">
                       {draw.numbers.map((num) => (
                         <div key={num} className="w-8 h-8 rounded-full flex items-center justify-center text-black font-bold text-xs shadow-sm" style={{ backgroundColor: getBallColor(num) }}>{num}</div>
                       ))}
