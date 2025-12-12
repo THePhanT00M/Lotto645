@@ -438,7 +438,7 @@ export default function WinningNumbersPage() {
                 {currentDraw.numbers.map((number) => (
                   <div
                     key={number}
-                    className="w-11 h-11 rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-base shadow-sm"
+                    className="w-full max-w-11 aspect-square rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-sm shadow-sm"
                     style={{ backgroundColor: getBallColor(number) }}
                   >
                     {number}
@@ -448,7 +448,7 @@ export default function WinningNumbersPage() {
                   <span className="text-[#606060] dark:text-[#aaaaaa] text-lg font-medium">+</span>
                 </div>
                 <div
-                  className="w-11 h-11 rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-base shadow-sm"
+                  className="w-full max-w-11 aspect-square rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-sm shadow-sm"
                   style={{ backgroundColor: getBallColor(currentDraw.bonusNo) }}
                 >
                   {currentDraw.bonusNo}
