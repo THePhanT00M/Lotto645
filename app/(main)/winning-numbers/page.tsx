@@ -226,10 +226,10 @@ export default function WinningNumbersPage() {
     if (currentDraw && currentDraw.drawNo > 1) jumpToDraw(currentDraw.drawNo - 1)
   }
 
-  // [수정] 실제 리스트 아이템과 동일한 구조의 스켈레톤
+  // 리스트 아이템 스켈레톤
   const ListSkeleton = () => (
     <div className="space-y-2">
-      {[1, 2, 3].map((i) => (
+      {[1, 2, 3, 4, 5, 6, 7].map((i) => (
         <div key={i} className="p-3 rounded-lg border border-[#e5e5e5] dark:border-[#3f3f3f] bg-white dark:bg-[#272727] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* 좌측: 회차 및 날짜 */}
           <div className="flex items-center gap-4 min-w-[120px]">
@@ -249,49 +249,88 @@ export default function WinningNumbersPage() {
     </div>
   )
 
-  // [수정] 전체 페이지 초기 로딩 스켈레톤 (실제 레이아웃과 일치)
+  // 전체 페이지 초기 로딩 스켈레톤 (실제 레이아웃과 동일하게 구성)
   if (isInitialLoading) {
     return (
-      <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6 animate-pulse">
+      <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
         {/* 헤더 */}
         <div className="flex flex-col space-y-2">
-          <Skeleton className="h-8 w-48 bg-gray-200 dark:bg-[#272727]" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="w-6 h-6 rounded-full bg-gray-200 dark:bg-[#272727]" />
+            <Skeleton className="h-8 w-48 bg-gray-200 dark:bg-[#272727]" />
+          </div>
           <Skeleton className="h-4 w-64 bg-gray-200 dark:bg-[#272727]" />
         </div>
 
         {/* 메인 당첨 번호 카드 */}
-        <div className="h-[300px] w-full bg-gray-200 dark:bg-[#272727] rounded-xl p-8 flex flex-col items-center justify-center space-y-6 opacity-50">
-          <div className="w-full flex justify-between items-center px-4 max-w-3xl">
-            <Skeleton className="h-10 w-24 rounded-lg bg-gray-300 dark:bg-[#3f3f3f]" />
-            <div className="flex flex-col items-center gap-2">
-              <Skeleton className="h-10 w-32 bg-gray-300 dark:bg-[#3f3f3f]" />
-              <Skeleton className="h-6 w-24 rounded-full bg-gray-300 dark:bg-[#3f3f3f]" />
-            </div>
-            <Skeleton className="h-10 w-24 rounded-lg bg-gray-300 dark:bg-[#3f3f3f]" />
+        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 sm:p-8 border border-[#e5e5e5] dark:border-[#3f3f3f] shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-5 dark:opacity-10 pointer-events-none">
+            <Trophy className="w-32 h-32 text-gray-400" />
           </div>
-          <div className="flex gap-2 sm:gap-4">
-            {[...Array(7)].map((_, i) => (
-              <Skeleton key={i} className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-gray-300 dark:bg-[#3f3f3f]" />
-            ))}
+
+          <div className="relative z-10">
+            <div className="flex justify-between items-center mb-8">
+              <Skeleton className="h-10 w-24 rounded-md bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
+              <div className="flex flex-col items-center gap-2">
+                <Skeleton className="h-9 w-32 bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="h-6 w-28 rounded-full bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
+              </div>
+              <Skeleton className="h-10 w-24 rounded-md bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
+            </div>
+
+            <div className="flex flex-col items-center">
+              <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 max-w-2xl">
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-gray-200 dark:bg-[#272727]" />
+                ))}
+                <div className="flex items-center justify-center w-6 sm:w-10">
+                  <span className="text-[#606060] dark:text-[#aaaaaa] text-xl sm:text-2xl font-light">+</span>
+                </div>
+                <Skeleton className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-gray-200 dark:bg-[#272727]" />
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* 하단 그리드 (검색/필터 + 리스트) */}
+        {/* 하단 그리드 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 좌측 패널 (검색 + 빠른이동) */}
+          {/* 좌측 패널 */}
           <div className="lg:col-span-1 space-y-4">
-            <Skeleton className="h-32 w-full bg-gray-200 dark:bg-[#272727] rounded-xl" />
-            <Skeleton className="h-48 w-full bg-gray-200 dark:bg-[#272727] rounded-xl" />
+            {/* 검색 카드 */}
+            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+              <div className="flex items-center gap-2 mb-3">
+                <Skeleton className="w-4 h-4 rounded-full bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="h-5 w-24 bg-gray-200 dark:bg-[#272727]" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="flex-1 h-10 rounded-lg bg-white dark:bg-[#272727] border border-[#d1d1d1] dark:border-[#3f3f3f]" />
+                <Skeleton className="h-10 w-16 rounded-md bg-blue-600/20" />
+              </div>
+            </div>
+
+            {/* 빠른 이동 카드 */}
+            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+              <div className="flex items-center gap-2 mb-3">
+                <Skeleton className="w-4 h-4 rounded-full bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="h-5 w-24 bg-gray-200 dark:bg-[#272727]" />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Skeleton className="col-span-3 h-8 rounded bg-blue-50 dark:bg-blue-900/20" />
+                {[...Array(12)].map((_, i) => (
+                  <Skeleton key={i} className="h-8 rounded bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* 우측 리스트 패널 */}
           <div className="lg:col-span-2">
-            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[600px] flex flex-col">
-              <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl">
-                <Skeleton className="h-6 w-24 bg-gray-200 dark:bg-[#3f3f3f]" />
-                <Skeleton className="h-8 w-20 bg-gray-200 dark:bg-[#3f3f3f]" />
+            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[600px] flex flex-col relative">
+              <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10">
+                <Skeleton className="h-6 w-24 bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="h-8 w-24 bg-gray-200 dark:bg-[#272727]" />
               </div>
-              <div className="flex-1 p-2">
+              <div className="flex-1 p-2 overflow-hidden">
                 <ListSkeleton />
               </div>
             </div>
@@ -430,9 +469,11 @@ export default function WinningNumbersPage() {
               className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar"
               ref={listContainerRef}
             >
-              <div ref={topTriggerRef}>
-                {isLoadingNewer && <ListSkeleton />}
-              </div>
+              {hasMoreNewer && (
+                <div ref={topTriggerRef}>
+                  {isLoadingNewer && <ListSkeleton />}
+                </div>
+              )}
 
               {draws.map((draw) => {
                 const isSelected = currentDraw?.drawNo === draw.drawNo
