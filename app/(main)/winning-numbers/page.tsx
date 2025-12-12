@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { getBallColor } from "@/utils/lotto-utils"
 import { supabase } from "@/lib/supabaseClient"
 import type { WinningLottoNumbers } from "@/types/lotto"
-import { useIsMobile } from "@/hooks/use-mobile"
 
 const ITEMS_PER_PAGE = 20
 
@@ -100,6 +99,7 @@ export default function WinningNumbersPage() {
           if (sortedNewer.length > 0) {
             isPrependActionRef.current = true
             if (listContainerRef.current) {
+              // 현재 스크롤 높이와 위치 저장 (스켈레톤이 포함된 상태일 수 있음)
               prevScrollHeightRef.current = listContainerRef.current.scrollHeight
               prevScrollTopRef.current = listContainerRef.current.scrollTop
             }
@@ -130,6 +130,7 @@ export default function WinningNumbersPage() {
   // --- 3. 스크롤 위치 보정 (무한 스크롤 시) ---
   useLayoutEffect(() => {
     if (isPrependActionRef.current && listContainerRef.current) {
+      // 새로운 데이터가 추가되어 높이가 변했을 때, 이전 보고 있던 위치를 유지하도록 스크롤 조정
       const currentScrollHeight = listContainerRef.current.scrollHeight
       const heightDifference = currentScrollHeight - prevScrollHeightRef.current
       listContainerRef.current.scrollTop = prevScrollTopRef.current + heightDifference
@@ -137,30 +138,25 @@ export default function WinningNumbersPage() {
     }
   }, [draws])
 
-  // --- [수정] 3-1. 점프 시 타겟 회차 중앙 정렬 (컨테이너 내부 스크롤만 이동) ---
+  // --- 3-1. 점프 시 타겟 회차 중앙 정렬 ---
   useLayoutEffect(() => {
     if (targetScrollNo !== null && listContainerRef.current) {
       const element = itemRefs.current.get(targetScrollNo)
 
       if (element) {
-        // scrollIntoView는 전체 페이지를 스크롤할 수 있으므로 scrollTop을 직접 계산하여 설정
         const container = listContainerRef.current
-
-        // 요소의 위치 계산 (컨테이너 내 상대 위치)
         const elementTop = element.offsetTop
         const elementHeight = element.clientHeight
         const containerHeight = container.clientHeight
 
-        // 중앙 정렬을 위한 스크롤 위치 계산
         const newScrollTop = elementTop - (containerHeight / 2) + (elementHeight / 2)
 
-        // 부드러운 스크롤 적용 (원한다면 'auto'로 변경하여 즉시 이동 가능)
         container.scrollTo({
           top: newScrollTop,
           behavior: "smooth"
         })
 
-        setTargetScrollNo(null) // 이동 후 상태 초기화
+        setTargetScrollNo(null)
       }
     }
   }, [draws, targetScrollNo])
@@ -173,9 +169,11 @@ export default function WinningNumbersPage() {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (!entry.isIntersecting) return
+        // 상단 트리거 감지 시 최신 데이터 로드
         if (entry.target === topTriggerRef.current && !isLoadingNewer && hasMoreNewer && draws.length > 0) {
           fetchDraws(draws[0].drawNo, "newer")
         }
+        // 하단 트리거 감지 시 과거 데이터 로드
         if (entry.target === bottomTriggerRef.current && !isLoadingOlder && hasMoreOlder && draws.length > 0) {
           fetchDraws(draws[draws.length - 1].drawNo - 1, "older")
         }
@@ -195,7 +193,6 @@ export default function WinningNumbersPage() {
       return
     }
 
-    // 1. 이미 리스트에 있는 경우, Fetch 하지 않고 이동만 수행
     const existingDraw = draws.find(d => d.drawNo === targetNo)
     if (existingDraw) {
       setCurrentDraw(existingDraw)
@@ -203,12 +200,11 @@ export default function WinningNumbersPage() {
       return
     }
 
-    // 2. 리스트에 없는 경우, 데이터 새로 불러오기
     const offset = Math.floor(ITEMS_PER_PAGE / 2)
     const startCursor = Math.min(latestDrawNo, targetNo + offset)
 
     setIsLoadingOlder(true)
-    setDraws([]) // 리스트 초기화
+    setDraws([])
 
     try {
       const { data } = await supabase
@@ -276,7 +272,7 @@ export default function WinningNumbersPage() {
   // 리스트 아이템 스켈레톤 (실제 리스트 아이템과 동일한 높이와 패딩)
   const ListSkeleton = () => (
     <div className="space-y-2">
-      {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
         <div key={i} className="p-3 rounded-lg border border-[#e5e5e5] dark:border-[#3f3f3f] bg-white dark:bg-[#272727] flex flex-col sm:flex-row sm:items-center justify-between gap-3 h-[92px] sm:h-[62px]">
           <div className="flex items-center gap-4 min-w-[120px]">
             <Skeleton className="h-7 w-20 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
@@ -434,7 +430,6 @@ export default function WinningNumbersPage() {
             </div>
             <div className="flex flex-col items-center">
               <div className="flex w-full max-w-md justify-center gap-3">
-                {/* [수정] 보너스 태그 제거 및 공 스타일 history 페이지 스타일로 통일 */}
                 {currentDraw.numbers.map((number) => (
                   <div
                     key={number}
@@ -460,8 +455,9 @@ export default function WinningNumbersPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 좌측: 검색 패널 */}
+        {/* 좌측: 검색 및 빠른 이동 패널 */}
         <div className="lg:col-span-1 space-y-4">
+          {/* 검색 패널 */}
           <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <h3 className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] mb-3 flex items-center gap-2">
               <Search className="w-4 h-4" /> 회차 검색
@@ -484,12 +480,12 @@ export default function WinningNumbersPage() {
             </div>
           </div>
 
+          {/* 빠른 이동 패널 */}
           <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <h3 className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] mb-3 flex items-center gap-2">
               <ListFilter className="w-4 h-4" /> 빠른 이동
             </h3>
             <div className="grid grid-cols-3 gap-2">
-              {/* 최신 회차 버튼 (항상 최상단) */}
               <button
                 onClick={() => jumpToDraw(latestDrawNo)}
                 className={`col-span-3 px-2 py-2 text-xs transition-all rounded ${getLatestButtonStyle()}`}
@@ -497,11 +493,9 @@ export default function WinningNumbersPage() {
                 최신 회차 ({latestDrawNo}회)
               </button>
 
-              {/* 자투리 구간 및 100단위 구간 버튼 생성 로직 */}
               {(() => {
                 if (latestDrawNo <= 0) return null
                 const buttons = []
-
                 const baseOfLatest = Math.floor((latestDrawNo - 1) / 100) * 100
                 const partialStart = latestDrawNo - 1
                 const partialEnd = baseOfLatest + 1
@@ -531,9 +525,6 @@ export default function WinningNumbersPage() {
                     </button>
                   )
                 }
-
-                // 100 미만 구간은 위의 루프(i >= 100)에서 처리됨 (i=100 -> start=100, end=1)
-
                 return buttons
               })()}
             </div>
@@ -542,6 +533,7 @@ export default function WinningNumbersPage() {
 
         {/* 우측: 리스트 (양방향 무한 스크롤) */}
         <div className="lg:col-span-2">
+          {/* !overflow-anchor-none: 중요! 자동 스크롤 보정 해제 */}
           <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] flex flex-col h-[650px] relative">
             <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10 sticky top-0 h-[69px]">
               <h3 className="font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">회차별 목록</h3>
@@ -551,13 +543,16 @@ export default function WinningNumbersPage() {
                 onClick={() => jumpToDraw(latestDrawNo)}
                 className="h-8 text-xs text-[#606060] hover:text-blue-600"
               >
+                <ArrowUp className="w-4 h-4 mr-1" />
+                맨 위로
               </Button>
             </div>
 
             <div
-              className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar"
+              className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar !overflow-anchor-none"
               ref={listContainerRef}
             >
+              {/* 상단 로딩 트리거 (스피너 대신 스켈레톤 사용) */}
               {hasMoreNewer && (
                 <div ref={topTriggerRef}>
                   {isLoadingNewer && <ListSkeleton />}
@@ -570,10 +565,7 @@ export default function WinningNumbersPage() {
                   <div
                     key={draw.drawNo}
                     ref={(el) => { if (el) itemRefs.current.set(draw.drawNo, el) }}
-                    onClick={() => {
-                      setCurrentDraw(draw)
-                      // 클릭 시에는 스크롤 없이 선택만 함
-                    }}
+                    onClick={() => setCurrentDraw(draw)}
                     id={`draw-${draw.drawNo}`}
                     className={`group p-3 rounded-lg border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 h-[92px] sm:h-[62px] ${
                       isSelected
@@ -598,6 +590,7 @@ export default function WinningNumbersPage() {
                 )
               })}
 
+              {/* 하단 로딩 트리거 */}
               <div ref={bottomTriggerRef}>
                 {isLoadingOlder && <ListSkeleton />}
                 {!hasMoreOlder && draws.length > 0 && (
