@@ -294,7 +294,7 @@ export default function WinningNumbersPage() {
     </div>
   )
 
-  if (isInitialLoading) {
+  if (1) {
     return (
       <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
         <div className="flex flex-col space-y-2">
@@ -313,11 +313,11 @@ export default function WinningNumbersPage() {
           </div>
           <div className="relative z-10">
             {/* Header Row: Button - Title - Button */}
-            <div className="flex justify-between items-center mb-8 h-10">
+            <div className="flex justify-between items-center mb-8">
               <Skeleton className="h-10 w-24 rounded-md bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
-              <div className="flex flex-col items-center gap-1">
-                <Skeleton className="h-9 w-24 bg-gray-200 dark:bg-[#272727]" /> {/* Draw No */}
-                <Skeleton className="h-6 w-32 rounded-full bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" /> {/* Date Badge */}
+              <div className="flex flex-col items-center justify-center">
+                <Skeleton className="h-9 w-24 bg-gray-200 dark:bg-[#272727] mb-2" /> {/* Draw No */}
+                <Skeleton className="h-8 w-32 px-3 py-1 rounded-full bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" /> {/* Date Badge */}
               </div>
               <Skeleton className="h-10 w-24 rounded-md bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f]" />
             </div>
@@ -326,12 +326,12 @@ export default function WinningNumbersPage() {
             <div className="flex flex-col items-center">
               <div className="flex w-full max-w-md justify-center gap-3">
                 {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="w-11 h-11 rounded-full bg-gray-200 dark:bg-[#272727]" />
+                  <Skeleton key={i} className="w-full max-w-11 aspect-square rounded-full bg-gray-200 dark:bg-[#272727]" />
                 ))}
                 <div className="flex items-center justify-center">
                   <span className="text-[#606060] dark:text-[#aaaaaa] text-lg font-medium">+</span>
                 </div>
-                <Skeleton className="w-11 h-11 rounded-full bg-gray-200 dark:bg-[#272727]" />
+                <Skeleton className="w-full max-w-11 aspect-square rounded-full bg-gray-200 dark:bg-[#272727]" />
               </div>
             </div>
           </div>
@@ -405,7 +405,7 @@ export default function WinningNumbersPage() {
 
         {currentDraw && (
           <div className="relative z-10">
-            <div className="flex justify-between items-center mb-8 h-10">
+            <div className="flex justify-between items-center mb-8">
               <Button
                 variant="outline"
                 onClick={goToPreviousDraw}
@@ -416,7 +416,7 @@ export default function WinningNumbersPage() {
                 <span className="hidden sm:inline">이전 회차</span>
               </Button>
               <div className="flex flex-col items-center justify-center">
-                <span className="text-3xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] tracking-tight mb-1 leading-none">{currentDraw.drawNo}회</span>
+                <span className="text-3xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] tracking-tight mb-2 leading-none">{currentDraw.drawNo}회</span>
                 <div className="flex items-center text-sm text-[#606060] dark:text-[#aaaaaa] bg-white dark:bg-[#272727] px-3 py-1 rounded-full border border-[#e5e5e5] dark:border-[#3f3f3f]">
                   <Calendar className="w-3.5 h-3.5 mr-1.5" />
                   {currentDraw.date}
