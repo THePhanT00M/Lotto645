@@ -294,7 +294,7 @@ export default function WinningNumbersPage() {
     </div>
   )
 
-  if (1) {
+  if (isInitialLoading) {
     return (
       <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
         <div className="flex flex-col space-y-2">
