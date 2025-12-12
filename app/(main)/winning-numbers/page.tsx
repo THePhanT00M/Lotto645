@@ -226,25 +226,76 @@ export default function WinningNumbersPage() {
     if (currentDraw && currentDraw.drawNo > 1) jumpToDraw(currentDraw.drawNo - 1)
   }
 
+  // [수정] 실제 리스트 아이템과 동일한 구조의 스켈레톤
   const ListSkeleton = () => (
-    <div className="space-y-2 p-2">
-      {[1, 2].map((i) => (
-        <div key={i} className="p-3 rounded-lg border border-[#e5e5e5] dark:border-[#3f3f3f] bg-white dark:bg-[#272727] flex justify-between items-center">
-          <Skeleton className="h-5 w-16 bg-gray-200 dark:bg-[#3f3f3f]" />
-          <Skeleton className="h-3 w-24 bg-gray-200 dark:bg-[#3f3f3f]" />
+    <div className="space-y-2">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="p-3 rounded-lg border border-[#e5e5e5] dark:border-[#3f3f3f] bg-white dark:bg-[#272727] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* 좌측: 회차 및 날짜 */}
+          <div className="flex items-center gap-4 min-w-[120px]">
+            <Skeleton className="h-7 w-16 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
+            <Skeleton className="h-4 w-20 bg-gray-200 dark:bg-[#3f3f3f] rounded-md" />
+          </div>
+          {/* 우측: 공 리스트 */}
+          <div className="flex flex-wrap items-center gap-1.5 justify-end">
+            {[...Array(6)].map((_, j) => (
+              <Skeleton key={j} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-[#3f3f3f]" />
+            ))}
+            <span className="text-[#a0a0a0] mx-1 font-light">+</span>
+            <Skeleton className="w-8 h-8 rounded-full bg-gray-200 dark:bg-[#3f3f3f]" />
+          </div>
         </div>
       ))}
     </div>
   )
 
+  // [수정] 전체 페이지 초기 로딩 스켈레톤 (실제 레이아웃과 일치)
   if (isInitialLoading) {
     return (
       <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6 animate-pulse">
-        <Skeleton className="h-8 w-48 bg-gray-200 dark:bg-[#272727] mb-2" />
-        <Skeleton className="h-[300px] w-full bg-gray-200 dark:bg-[#272727] rounded-xl" />
+        {/* 헤더 */}
+        <div className="flex flex-col space-y-2">
+          <Skeleton className="h-8 w-48 bg-gray-200 dark:bg-[#272727]" />
+          <Skeleton className="h-4 w-64 bg-gray-200 dark:bg-[#272727]" />
+        </div>
+
+        {/* 메인 당첨 번호 카드 */}
+        <div className="h-[300px] w-full bg-gray-200 dark:bg-[#272727] rounded-xl p-8 flex flex-col items-center justify-center space-y-6 opacity-50">
+          <div className="w-full flex justify-between items-center px-4 max-w-3xl">
+            <Skeleton className="h-10 w-24 rounded-lg bg-gray-300 dark:bg-[#3f3f3f]" />
+            <div className="flex flex-col items-center gap-2">
+              <Skeleton className="h-10 w-32 bg-gray-300 dark:bg-[#3f3f3f]" />
+              <Skeleton className="h-6 w-24 rounded-full bg-gray-300 dark:bg-[#3f3f3f]" />
+            </div>
+            <Skeleton className="h-10 w-24 rounded-lg bg-gray-300 dark:bg-[#3f3f3f]" />
+          </div>
+          <div className="flex gap-2 sm:gap-4">
+            {[...Array(7)].map((_, i) => (
+              <Skeleton key={i} className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-gray-300 dark:bg-[#3f3f3f]" />
+            ))}
+          </div>
+        </div>
+
+        {/* 하단 그리드 (검색/필터 + 리스트) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-64 col-span-1 bg-gray-200 dark:bg-[#272727] rounded-xl" />
-          <Skeleton className="h-64 col-span-2 bg-gray-200 dark:bg-[#272727] rounded-xl" />
+          {/* 좌측 패널 (검색 + 빠른이동) */}
+          <div className="lg:col-span-1 space-y-4">
+            <Skeleton className="h-32 w-full bg-gray-200 dark:bg-[#272727] rounded-xl" />
+            <Skeleton className="h-48 w-full bg-gray-200 dark:bg-[#272727] rounded-xl" />
+          </div>
+
+          {/* 우측 리스트 패널 */}
+          <div className="lg:col-span-2">
+            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[600px] flex flex-col">
+              <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl">
+                <Skeleton className="h-6 w-24 bg-gray-200 dark:bg-[#3f3f3f]" />
+                <Skeleton className="h-8 w-20 bg-gray-200 dark:bg-[#3f3f3f]" />
+              </div>
+              <div className="flex-1 p-2">
+                <ListSkeleton />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -379,7 +430,7 @@ export default function WinningNumbersPage() {
               className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar"
               ref={listContainerRef}
             >
-              <div ref={topTriggerRef} className="py-2">
+              <div ref={topTriggerRef}>
                 {isLoadingNewer && <ListSkeleton />}
               </div>
 
@@ -417,7 +468,7 @@ export default function WinningNumbersPage() {
                 )
               })}
 
-              <div ref={bottomTriggerRef} className="py-2">
+              <div ref={bottomTriggerRef}>
                 {isLoadingOlder && <ListSkeleton />}
                 {!hasMoreOlder && draws.length > 0 && (
                   <div className="text-center py-4 text-xs text-[#606060]">모든 데이터를 불러왔습니다.</div>
