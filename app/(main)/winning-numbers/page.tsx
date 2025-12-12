@@ -27,6 +27,9 @@ export default function WinningNumbersPage() {
   const [searchValue, setSearchValue] = useState("")
   const [currentDraw, setCurrentDraw] = useState<WinningLottoNumbers | null>(null)
 
+  // [수정] 스크롤 대상 회차 상태 추가
+  const [targetScrollNo, setTargetScrollNo] = useState<number | null>(null)
+
   // --- Refs ---
   const listContainerRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map())
@@ -134,6 +137,18 @@ export default function WinningNumbersPage() {
     }
   }, [draws])
 
+  // --- [수정] 3-1. 점프 시 타겟 회차 중앙 정렬 (즉시) ---
+  useLayoutEffect(() => {
+    if (targetScrollNo !== null) {
+      const element = itemRefs.current.get(targetScrollNo)
+      if (element) {
+        // 'auto' behavior는 브라우저 기본 동작으로 즉시 이동합니다.
+        element.scrollIntoView({ block: "center", behavior: "auto" })
+        setTargetScrollNo(null) // 이동 후 상태 초기화
+      }
+    }
+  }, [draws, targetScrollNo])
+
   // --- 4. 무한 스크롤 옵저버 ---
   useEffect(() => {
     const container = listContainerRef.current
@@ -157,17 +172,7 @@ export default function WinningNumbersPage() {
     return () => observer.disconnect()
   }, [draws, hasMoreOlder, hasMoreNewer, isLoadingOlder, isLoadingNewer, fetchDraws])
 
-  // --- 5. 유틸리티 함수: 스크롤 이동 ---
-  const scrollToDraw = (drawNo: number) => {
-    setTimeout(() => {
-      const element = itemRefs.current.get(drawNo)
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" })
-      }
-    }, 200)
-  }
-
-  // --- 6. 네비게이션 및 검색 ---
+  // --- 5. 네비게이션 및 검색 ---
   const jumpToDraw = async (targetNo: number) => {
     if (targetNo < 1 || targetNo > latestDrawNo) {
       alert("존재하지 않는 회차입니다.")
@@ -177,7 +182,7 @@ export default function WinningNumbersPage() {
     const startCursor = Math.min(latestDrawNo, targetNo + offset)
 
     setIsLoadingOlder(true)
-    setDraws([]) // 리스트 초기화로 깜빡임 방지 및 스크롤 재계산 유도
+    setDraws([]) // 리스트 초기화
 
     try {
       const { data } = await supabase
@@ -197,8 +202,8 @@ export default function WinningNumbersPage() {
         const targetDrawData = newDraws.find(d => d.drawNo === targetNo)
         if (targetDrawData) {
           setCurrentDraw(targetDrawData)
-          // scrollToDraw 함수 재사용
-          scrollToDraw(targetNo)
+          // [수정] 스크롤 애니메이션 함수 대신 상태 설정 -> useLayoutEffect에서 즉시 처리
+          setTargetScrollNo(targetNo)
         }
       }
     } finally {
@@ -249,7 +254,7 @@ export default function WinningNumbersPage() {
     </div>
   )
 
-  // 전체 페이지 초기 로딩 스켈레톤 (실제 레이아웃과 동일하게 구성)
+  // 전체 페이지 초기 로딩 스켈레톤
   if (isInitialLoading) {
     return (
       <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
@@ -483,7 +488,7 @@ export default function WinningNumbersPage() {
                     ref={(el) => { if (el) itemRefs.current.set(draw.drawNo, el) }}
                     onClick={() => {
                       setCurrentDraw(draw)
-                      scrollToDraw(draw.drawNo)
+                      // 클릭 시 중앙 정렬을 원하지 않으므로 스크롤 로직 제외 (단순 선택만)
                     }}
                     id={`draw-${draw.drawNo}`}
                     className={`group p-3 rounded-lg border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
