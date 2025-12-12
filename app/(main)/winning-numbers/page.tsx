@@ -393,16 +393,25 @@ export default function WinningNumbersPage() {
               </Button>
             </div>
             <div className="flex flex-col items-center">
-              <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 max-w-2xl">
+              {/* 수정된 부분: 보너스 태그 제거 및 공 스타일 변경 */}
+              <div className="flex w-full max-w-md justify-center gap-3">
                 {currentDraw.numbers.map((number) => (
-                  <div key={number} className="w-10 h-10 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-black font-bold text-sm sm:text-xl shadow-md transform transition-transform hover:scale-110 duration-200" style={{ backgroundColor: getBallColor(number) }}>
+                  <div
+                    key={number}
+                    className="w-full max-w-11 aspect-square rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-sm shadow-sm"
+                    style={{ backgroundColor: getBallColor(number) }}
+                  >
                     {number}
                   </div>
                 ))}
-                <div className="flex items-center justify-center w-6 sm:w-10"><span className="text-[#606060] dark:text-[#aaaaaa] text-xl sm:text-2xl font-light">+</span></div>
-                <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-black font-bold text-sm sm:text-xl shadow-md relative" style={{ backgroundColor: getBallColor(currentDraw.bonusNo) }}>
+                <div className="flex items-center justify-center">
+                  <span className="text-[#606060] dark:text-[#aaaaaa] text-lg font-medium">+</span>
+                </div>
+                <div
+                  className="w-full max-w-11 aspect-square rounded-full flex items-center justify-center text-[#0f0f0f] font-bold text-sm shadow-sm"
+                  style={{ backgroundColor: getBallColor(currentDraw.bonusNo) }}
+                >
                   {currentDraw.bonusNo}
-                  <div className="absolute -top-1 -right-1 sm:top-0 sm:right-0 bg-[#0f0f0f] dark:bg-[#f1f1f1] text-white dark:text-black text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-tighter border border-white dark:border-black">Bonus</div>
                 </div>
               </div>
             </div>
