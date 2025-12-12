@@ -2,45 +2,50 @@
 
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { ChevronLeft, ChevronRight, Search } from "lucide-react"
+import { ChevronLeft, ChevronRight, Search, Trophy, Calendar, Hash, ListFilter } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { getBallColor } from "@/utils/lotto-utils"
-import { useMobile } from "@/hooks/use-mobile"
+import { useIsMobile } from "@/hooks/use-mobile" // 훅 이름 확인 (use-mobile.ts 파일 내용 기반)
 import { supabase } from "@/lib/supabaseClient"
 import type { WinningLottoNumbers } from "@/types/lotto"
 
 export default function WinningNumbersPage() {
   const [currentDrawIndex, setCurrentDrawIndex] = useState(0)
-  const [visibleDraws, setVisibleDraws] = useState<any[]>([])
+  const [visibleDraws, setVisibleDraws] = useState<WinningLottoNumbers[]>([])
   const [visibleRange, setVisibleRange] = useState({ start: 0, end: 50 })
   const [searchValue, setSearchValue] = useState("")
   const [pendingScrollIndex, setPendingScrollIndex] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-
   const [winningNumbers, setWinningNumbers] = useState<WinningLottoNumbers[]>([])
 
   const selectedDrawRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const isMobile = useMobile()
+  const isMobile = useIsMobile()
 
-  const reversedWinningNumbers = winningNumbers
-  const currentDraw = reversedWinningNumbers[currentDrawIndex]
+  // 데이터는 내림차순(최신순)으로 정렬되어 있다고 가정
+  const currentDraw = winningNumbers[currentDrawIndex]
 
   useEffect(() => {
     const fetchWinningNumbers = async () => {
       setIsLoading(true)
-      const { data, error } = await supabase
-        .from("winning_numbers")
-        .select("*")
-        .order("drawNo", { ascending: false }) // 최신 회차가 먼저 오도록 내림차순 정렬
+      try {
+        const { data, error } = await supabase
+          .from("winning_numbers")
+          .select("*")
+          .order("drawNo", { ascending: false }) // 최신 회차가 먼저 오도록
 
-      if (error) {
-        console.error("Error fetching winning numbers:", error)
-        setWinningNumbers([]) // 에러 발생 시 빈 배열로 설정
-      } else if (data) {
-        setWinningNumbers(data as WinningLottoNumbers[])
+        if (error) {
+          console.error("Error fetching winning numbers:", error)
+          setWinningNumbers([])
+        } else if (data) {
+          setWinningNumbers(data as WinningLottoNumbers[])
+        }
+      } catch (err) {
+        console.error("Unexpected error:", err)
+      } finally {
+        setIsLoading(false)
       }
-      setIsLoading(false)
     }
 
     fetchWinningNumbers()
@@ -48,111 +53,82 @@ export default function WinningNumbersPage() {
 
   useEffect(() => {
     if (winningNumbers.length > 0) {
-      // Initialize data
       setCurrentDrawIndex(0)
       updateVisibleDraws(0, 0, 50)
     }
   }, [winningNumbers])
 
-  // Handle pending scroll after visible draws update
+  // 선택된 회차로 스크롤 이동
   useEffect(() => {
     if (pendingScrollIndex !== null) {
-      // Use multiple timeouts with increasing delays to ensure scrolling works
       const scrollToSelectedDraw = () => {
         if (selectedDrawRef.current && scrollContainerRef.current) {
-          // On mobile, scroll the container instead of using scrollIntoView
           if (isMobile) {
-            // Calculate the position to scroll to
             const containerRect = scrollContainerRef.current.getBoundingClientRect()
             const selectedRect = selectedDrawRef.current.getBoundingClientRect()
             const relativeTop = selectedRect.top - containerRect.top
-
-            // Scroll the container to position the selected item at the top with some padding
             scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollTop + relativeTop - 20
           } else {
-            // On desktop, use scrollIntoView
             selectedDrawRef.current.scrollIntoView({
               behavior: "smooth",
               block: "center",
             })
           }
-
-          // Clear the pending scroll
           setPendingScrollIndex(null)
         }
       }
 
-      // Try scrolling after different delays to ensure it works
-      // Use longer delays on mobile
-      const delays = isMobile ? [300, 600, 900] : [100, 300, 500]
+      const delays = isMobile ? [300, 600, 900] : [100, 300]
       const timeouts = delays.map((delay) => setTimeout(scrollToSelectedDraw, delay))
 
-      return () => {
-        // Clean up timeouts
-        timeouts.forEach((timeout) => clearTimeout(timeout))
-      }
+      return () => timeouts.forEach((timeout) => clearTimeout(timeout))
     }
   }, [pendingScrollIndex, visibleDraws, isMobile])
 
-  // Update visible draws when currentDrawIndex changes
+  // 인덱스 변경 시 리스트 업데이트
   useEffect(() => {
-    // [수정] 데이터가 로드된 후에만 실행
-    if (reversedWinningNumbers.length === 0) return
+    if (winningNumbers.length === 0) return
 
-    // Ensure the selected draw is in the visible range
     if (currentDrawIndex < visibleRange.start || currentDrawIndex >= visibleRange.end) {
-      // Calculate new visible range centered around the current draw
       const newStart = Math.max(0, currentDrawIndex - 25)
-      const newEnd = Math.min(reversedWinningNumbers.length, newStart + 50)
+      const newEnd = Math.min(winningNumbers.length, newStart + 50)
       updateVisibleDraws(currentDrawIndex, newStart, newEnd)
     }
-
-    // Set pending scroll to ensure we scroll after render
     setPendingScrollIndex(currentDrawIndex)
-  }, [currentDrawIndex, reversedWinningNumbers.length]) // [수정] reversedWinningNumbers.length 추가
+  }, [currentDrawIndex, winningNumbers.length])
 
-  // Handle scroll events to load more draws
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (!scrollContainerRef.current) return
-
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
     const scrollPosition = scrollTop + clientHeight
 
-    // Load more draws when scrolling down
-    if (scrollPosition > scrollHeight - 200 && visibleRange.end < reversedWinningNumbers.length) {
-      const newEnd = Math.min(reversedWinningNumbers.length, visibleRange.end + 20)
+    if (scrollPosition > scrollHeight - 200 && visibleRange.end < winningNumbers.length) {
+      const newEnd = Math.min(winningNumbers.length, visibleRange.end + 20)
       updateVisibleDraws(currentDrawIndex, visibleRange.start, newEnd)
     }
 
-    // Load more draws when scrolling up
     if (scrollTop < 200 && visibleRange.start > 0) {
       const newStart = Math.max(0, visibleRange.start - 20)
       updateVisibleDraws(currentDrawIndex, newStart, visibleRange.end)
     }
   }
 
-  // Update visible draws
   const updateVisibleDraws = (currentIdx: number, start: number, end: number) => {
-    // Ensure current draw is visible
     let newStart = start
     let newEnd = end
 
     if (currentIdx < start) {
       newStart = Math.max(0, currentIdx - 10)
     } else if (currentIdx >= end) {
-      newEnd = Math.min(reversedWinningNumbers.length, currentIdx + 10)
+      newEnd = Math.min(winningNumbers.length, currentIdx + 10)
     }
 
-    // Update visible range
     setVisibleRange({ start: newStart, end: newEnd })
-
-    // Update visible draws
-    setVisibleDraws(reversedWinningNumbers.slice(newStart, newEnd))
+    setVisibleDraws(winningNumbers.slice(newStart, newEnd))
   }
 
-  // Handle navigation
   const goToPreviousDraw = () => {
-    if (currentDrawIndex < reversedWinningNumbers.length - 1) {
+    if (currentDrawIndex < winningNumbers.length - 1) {
       setCurrentDrawIndex(currentDrawIndex + 1)
     }
   }
@@ -163,33 +139,26 @@ export default function WinningNumbersPage() {
     }
   }
 
-  // Jump to specific draw
   const jumpToDraw = (drawNo: number) => {
-    const index = reversedWinningNumbers.findIndex((draw) => draw.drawNo === drawNo)
+    const index = winningNumbers.findIndex((draw) => draw.drawNo === drawNo)
     if (index !== -1) {
       setCurrentDrawIndex(index)
     }
   }
 
-  // Handle quick navigation
   const handleQuickNavigation = (startIdx: number) => {
     setCurrentDrawIndex(startIdx)
-    // Force a refresh of visible draws
     const newStart = Math.max(0, startIdx - 25)
-    const newEnd = Math.min(reversedWinningNumbers.length, newStart + 50)
+    const newEnd = Math.min(winningNumbers.length, newStart + 50)
     updateVisibleDraws(startIdx, newStart, newEnd)
-    // Set pending scroll
     setPendingScrollIndex(startIdx)
   }
 
-  // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow numbers
     const value = e.target.value.replace(/[^0-9]/g, "")
     setSearchValue(value)
   }
 
-  // Handle search
   const handleSearch = () => {
     const drawNo = Number.parseInt(searchValue)
     if (!isNaN(drawNo) && drawNo > 0) {
@@ -198,174 +167,241 @@ export default function WinningNumbersPage() {
     }
   }
 
+  // --- 로딩 스켈레톤 뷰 ---
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-6 max-w-5xl">
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="w-16 h-16 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-500">당첨번호를 불러오는 중...</p>
+      <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6 animate-pulse">
+        {/* 헤더 스켈레톤 */}
+        <div className="flex flex-col space-y-2">
+          <Skeleton className="h-8 w-48 bg-gray-200 dark:bg-[#272727]" />
+          <Skeleton className="h-5 w-64 bg-gray-200 dark:bg-[#272727]" />
+        </div>
+
+        {/* 메인 카드 스켈레톤 */}
+        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-6 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+          <div className="flex justify-between items-center mb-6">
+            <Skeleton className="h-9 w-24 bg-gray-200 dark:bg-[#272727] rounded-md" />
+            <div className="flex flex-col items-center gap-1">
+              <Skeleton className="h-8 w-32 bg-gray-200 dark:bg-[#272727]" />
+              <Skeleton className="h-4 w-24 bg-gray-200 dark:bg-[#272727]" />
+            </div>
+            <Skeleton className="h-9 w-24 bg-gray-200 dark:bg-[#272727] rounded-md" />
+          </div>
+          <div className="flex justify-center gap-2 sm:gap-4 py-4">
+            {[...Array(7)].map((_, i) => (
+              <Skeleton key={i} className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gray-200 dark:bg-[#272727]" />
+            ))}
+          </div>
+        </div>
+
+        {/* 리스트 스켈레톤 */}
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <Skeleton className="h-10 flex-1 bg-gray-200 dark:bg-[#272727] rounded-md" />
+            <Skeleton className="h-10 w-24 bg-gray-200 dark:bg-[#272727] rounded-md" />
+          </div>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-20 w-full bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-lg border border-[#e5e5e5] dark:border-[#3f3f3f]" />
+          ))}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center">
-          <h1 className="text-2xl font-bold">역대 당첨번호</h1>
-        </div>
+    <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
+      {/* 헤더 섹션 */}
+      <div className="flex flex-col space-y-2">
+        <h1 className="text-2xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
+          <Trophy className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          역대 당첨번호
+        </h1>
+        <p className="text-[#606060] dark:text-[#aaaaaa] text-sm">
+          역대 로또 당첨 번호를 확인하고 분석해보세요.
+        </p>
       </div>
 
-      {/* Historical Winning Numbers Slider */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      {/* 메인 당첨 번호 카드 (슬라이더) */}
+      <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 sm:p-8 border border-[#e5e5e5] dark:border-[#3f3f3f] shadow-sm relative overflow-hidden">
+        {/* 장식용 배경 요소 */}
+        <div className="absolute top-0 right-0 p-4 opacity-5 dark:opacity-10 pointer-events-none">
+          <Trophy className="w-32 h-32" />
+        </div>
+
         {currentDraw && (
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-4">
+          <div className="relative z-10">
+            {/* 네비게이션 및 회차 정보 */}
+            <div className="flex justify-between items-center mb-8">
               <Button
                 variant="outline"
-                size="sm"
                 onClick={goToPreviousDraw}
-                disabled={currentDrawIndex >= reversedWinningNumbers.length - 1}
-                className="px-2 py-1 h-8"
+                disabled={currentDrawIndex >= winningNumbers.length - 1}
+                className="bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-gray-100 dark:hover:bg-[#333] text-[#0f0f0f] dark:text-[#f1f1f1] h-10 px-3 sm:px-4"
               >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                이전 회차
+                <ChevronLeft className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">이전 회차</span>
               </Button>
-              <div className="text-center">
-                <div className="font-medium text-lg">{currentDraw.drawNo}회</div>
-                <div className="text-sm text-gray-500">{currentDraw.date}</div>
+
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl sm:text-3xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] tracking-tight">
+                    {currentDraw.drawNo}회
+                  </span>
+                </div>
+                <div className="flex items-center text-sm text-[#606060] dark:text-[#aaaaaa] bg-white dark:bg-[#272727] px-3 py-1 rounded-full border border-[#e5e5e5] dark:border-[#3f3f3f]">
+                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                  {currentDraw.date}
+                </div>
               </div>
+
               <Button
                 variant="outline"
-                size="sm"
                 onClick={goToNextDraw}
                 disabled={currentDrawIndex <= 0}
-                className="px-2 py-1 h-8 bg-transparent"
+                className="bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:bg-gray-100 dark:hover:bg-[#333] text-[#0f0f0f] dark:text-[#f1f1f1] h-10 px-3 sm:px-4"
               >
-                다음 회차
-                <ChevronRight className="w-4 h-4 ml-1" />
+                <span className="hidden sm:inline">다음 회차</span>
+                <ChevronRight className="w-4 h-4 sm:ml-2" />
               </Button>
             </div>
 
-            <div className="flex items-center justify-center mb-4 py-2">
-              <div className="grid grid-cols-8 gap-1 xs:gap-2 sm:gap-3 md:gap-4 w-full max-w-md">
-                {currentDraw.numbers.map((number: number) => (
+            {/* 번호 볼 표시 */}
+            <div className="flex flex-col items-center">
+              <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 max-w-2xl">
+                {currentDraw.numbers.map((number) => (
                   <div
                     key={number}
-                    className="w-full aspect-square rounded-full flex items-center justify-center text-black font-bold text-xs xs:text-sm sm:text-base shadow-md"
+                    className="w-10 h-10 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-black font-bold text-sm sm:text-xl shadow-md transform transition-transform hover:scale-110 duration-200"
                     style={{ backgroundColor: getBallColor(number) }}
                   >
                     {number}
                   </div>
                 ))}
-                <div className="flex items-center justify-center">
-                  <span className="text-gray-500 text-sm xs:text-base md:text-lg font-medium">+</span>
+                <div className="flex items-center justify-center w-6 sm:w-10">
+                  <span className="text-[#606060] dark:text-[#aaaaaa] text-xl sm:text-2xl font-light">+</span>
                 </div>
-                <div
-                  className="w-full aspect-square rounded-full flex items-center justify-center text-black font-bold text-xs xs:text-sm sm:text-base shadow-md relative"
-                  style={{ backgroundColor: getBallColor(currentDraw.bonusNo) }}
-                >
-                  {currentDraw.bonusNo}
+                <div className="flex flex-col items-center gap-1">
+                  <div
+                    className="w-10 h-10 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-black font-bold text-sm sm:text-xl shadow-md relative"
+                    style={{ backgroundColor: getBallColor(currentDraw.bonusNo) }}
+                  >
+                    {currentDraw.bonusNo}
+                    <div className="absolute -top-1 -right-1 sm:top-0 sm:right-0 bg-[#0f0f0f] dark:bg-[#f1f1f1] text-white dark:text-black text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-tighter border border-white dark:border-black">
+                      Bonus
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
+      </div>
 
-        {/* Quick Navigation */}
-        <div className="border-t pt-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">빠른 이동</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-1 text-center">
-            {[...Array(10)].map((_, idx) => {
-              const pageNum = idx + 1
-              const startIdx = (pageNum - 1) * 100
-              const endIdx = Math.min(startIdx + 99, reversedWinningNumbers.length - 1)
+      {/* 검색 및 빠른 이동 섹션 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 검색 */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+            <h3 className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] mb-3 flex items-center gap-2">
+              <Search className="w-4 h-4" /> 회차 검색
+            </h3>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="예: 1000"
+                  className="w-full h-10 pl-9 pr-3 bg-white dark:bg-[#272727] border border-[#d1d1d1] dark:border-[#3f3f3f] rounded-lg text-sm text-[#0f0f0f] dark:text-[#f1f1f1] placeholder-[#a0a0a0] dark:placeholder-[#606060] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  value={searchValue}
+                  onChange={handleSearchChange}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                />
+                <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#a0a0a0] dark:text-[#606060]" />
+              </div>
+              <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700 text-white h-10">
+                검색
+              </Button>
+            </div>
+          </div>
 
-              if (startIdx >= reversedWinningNumbers.length) return null
+          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+            <h3 className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] mb-3 flex items-center gap-2">
+              <ListFilter className="w-4 h-4" /> 빠른 이동
+            </h3>
+            <div className="grid grid-cols-4 gap-2">
+              {[...Array(8)].map((_, idx) => {
+                const pageNum = idx + 1
+                const startIdx = (pageNum - 1) * 100
+                const endIdx = Math.min(startIdx + 99, winningNumbers.length - 1)
+                if (startIdx >= winningNumbers.length) return null
 
-              return (
-                <Button
-                  key={idx}
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-[10px] xs:text-xs px-1 sm:px-2 bg-transparent"
-                  onClick={() => handleQuickNavigation(startIdx)}
-                >
-                  <span className="block truncate">
-                    {reversedWinningNumbers[startIdx]?.drawNo || "?"}&nbsp;-&nbsp;
-                    {reversedWinningNumbers[endIdx]?.drawNo || "?"}
-                  </span>
-                </Button>
-              )
-            })}
+                const rangeLabel = `${winningNumbers[startIdx]?.drawNo || "?"}~${winningNumbers[endIdx]?.drawNo || "?"}`
+
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleQuickNavigation(startIdx)}
+                    className="px-1 py-2 text-xs font-medium text-[#606060] dark:text-[#aaaaaa] bg-white dark:bg-[#272727] border border-[#e5e5e5] dark:border-[#3f3f3f] rounded hover:bg-blue-50 dark:hover:bg-[#333] hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 transition-all"
+                  >
+                    {rangeLabel}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Search for specific draw */}
-        <div className="mt-4 mb-4 flex items-center">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="회차 번호 입력"
-              className="w-full h-9 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchValue}
-              onChange={handleSearchChange}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSearch()
-                }
-              }}
-            />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-          <Button variant="outline" size="sm" className="ml-2 whitespace-nowrap bg-transparent" onClick={handleSearch}>
-            회차 검색
-          </Button>
-        </div>
+        {/* 리스트 */}
+        <div className="lg:col-span-2">
+          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] flex flex-col h-full max-h-[600px]">
+            <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center">
+              <h3 className="font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">전체 당첨번호 목록</h3>
+              <span className="text-xs text-[#606060] dark:text-[#aaaaaa] bg-white dark:bg-[#272727] px-2 py-1 rounded border border-[#e5e5e5] dark:border-[#3f3f3f]">
+                총 {winningNumbers.length}회
+              </span>
+            </div>
 
-        {/* All Draws List (Scrollable) */}
-        <div className="mt-6 border-t pt-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">전체 당첨번호 목록</h3>
-          <div
-            className="max-h-[500px] overflow-y-auto pr-2 custom-scrollbar"
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-          >
-            <div className="space-y-2">
+            <div
+              className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar"
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+            >
               {visibleDraws.map((draw, idx) => {
                 const actualIdx = idx + visibleRange.start
+                const isSelected = actualIdx === currentDrawIndex
+
                 return (
                   <div
                     key={draw.drawNo}
-                    ref={actualIdx === currentDrawIndex ? selectedDrawRef : null}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      actualIdx === currentDrawIndex
-                        ? "bg-blue-50 border border-blue-200"
-                        : "bg-gray-50 hover:bg-gray-100"
-                    }`}
+                    ref={isSelected ? selectedDrawRef : null}
                     onClick={() => setCurrentDrawIndex(actualIdx)}
+                    className={`group p-3 rounded-lg border cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      isSelected
+                        ? "bg-blue-50 dark:bg-[#1e2a3b] border-blue-200 dark:border-blue-800 ring-1 ring-blue-500/20"
+                        : "bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] hover:border-blue-300 dark:hover:border-blue-700"
+                    }`}
                   >
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="font-medium">{draw.drawNo}회</div>
-                      <div className="text-sm text-gray-500">{draw.date}</div>
+                    <div className="flex items-center justify-between sm:justify-start gap-4 min-w-[140px]">
+                      <div className="flex flex-col">
+                        <span className={`text-lg font-bold ${isSelected ? "text-blue-600 dark:text-blue-400" : "text-[#0f0f0f] dark:text-[#f1f1f1]"}`}>
+                          {draw.drawNo}회
+                        </span>
+                        <span className="text-xs text-[#606060] dark:text-[#aaaaaa]">{draw.date}</span>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {draw.numbers.map((number: number) => (
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {draw.numbers.map((num: number) => (
                         <div
-                          key={number}
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-black font-bold text-xs shadow-sm"
-                          style={{ backgroundColor: getBallColor(number) }}
+                          key={num}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-black font-bold text-xs shadow-sm"
+                          style={{ backgroundColor: getBallColor(num) }}
                         >
-                          {number}
+                          {num}
                         </div>
                       ))}
-                      <div className="flex items-center">
-                        <span className="text-gray-500 mx-0.5">+</span>
-                      </div>
+                      <span className="text-[#a0a0a0] dark:text-[#606060] mx-1 text-lg font-light">+</span>
                       <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-black font-bold text-xs shadow-sm"
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-black font-bold text-xs shadow-sm"
                         style={{ backgroundColor: getBallColor(draw.bonusNo) }}
                       >
                         {draw.bonusNo}
@@ -374,23 +410,15 @@ export default function WinningNumbersPage() {
                   </div>
                 )
               })}
-              {visibleRange.end < reversedWinningNumbers.length && (
-                <div className="py-4 text-center text-gray-500 text-sm">스크롤하여 더 많은 당첨번호 보기</div>
+
+              {visibleRange.end < winningNumbers.length && (
+                <div className="py-4 text-center text-[#606060] dark:text-[#aaaaaa] text-sm animate-pulse">
+                  아래로 스크롤하여 더 보기...
+                </div>
               )}
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Disclaimer */}
-      <div className="bg-white rounded-xl p-4 text-sm text-gray-500 mt-8">
-        <p>
-          * 이 데이터는 실제 로또 당첨번호를 기반으로 합니다. 정확한 당첨번호는 공식 로또 사이트에서 확인하시기
-          바랍니다.
-        </p>
-        <p className="mt-1">
-          * 로또 번호는 매 회차마다 무작위로 추첨되며, 과거의 당첨번호가 미래 당첨 확률에 영향을 미치지 않습니다.
-        </p>
       </div>
     </div>
   )
