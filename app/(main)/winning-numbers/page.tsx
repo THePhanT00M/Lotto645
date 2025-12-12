@@ -369,7 +369,6 @@ export default function WinningNumbersPage() {
             <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[650px] flex flex-col relative">
               <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10 h-[69px]">
                 <Skeleton className="h-6 w-24 bg-gray-200 dark:bg-[#272727]" />
-                <Skeleton className="h-8 w-20 bg-gray-200 dark:bg-[#272727]" />
               </div>
               <div className="flex-1 p-2 overflow-hidden">
                 <ListSkeleton />
@@ -537,15 +536,6 @@ export default function WinningNumbersPage() {
           <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] flex flex-col h-[650px] relative">
             <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10 sticky top-0 h-[69px]">
               <h3 className="font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">회차별 목록</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => jumpToDraw(latestDrawNo)}
-                className="h-8 text-xs text-[#606060] hover:text-blue-600"
-              >
-                <ArrowUp className="w-4 h-4 mr-1" />
-                맨 위로
-              </Button>
             </div>
 
             <div
