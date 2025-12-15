@@ -117,7 +117,7 @@ export default function Home() {
                   <span className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] block mb-1">로또 추첨기</span>
                   <p className="leading-relaxed">물리적 추첨 방식을 시뮬레이션하여 완전히 랜덤한 번호를 생성합니다.</p>
                 </div>
-                <div className="border-t border-gray-100 dark:border-gray-800 pt-2">
+                <div className="border-t border-[#e5e5e5] dark:border-[#3f3f3f] pt-3">
                   <span className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] block mb-1">수동 추첨기</span>
                   <p className="leading-relaxed">원하는 번호를 직접 선택하거나, 특정 번호를 고정/제외하고 나머지를 자동 생성할 수 있습니다.</p>
                 </div>
