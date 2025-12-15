@@ -130,7 +130,7 @@ export default function HistoryPage() {
       // 기본 미당첨 (유튜브 기본 Gray 칩 스타일)
       let rankResult = {
         rank: "미당첨",
-        color: "text-[#606060] bg-[#f9f9f9] border-[#e5e5e5] dark:text-[#aaaaaa] dark:bg-[#272727] dark:border-[#3f3f3f]"
+        color: "text-[#606060] bg-gray-100 border-[#e5e5e5] dark:text-[#aaaaaa] dark:bg-[#272727] dark:border-[#3f3f3f]"
       }
 
       // 등수별 색상 (파스텔 톤 배경 + 진한 텍스트로 가독성 확보)
@@ -168,7 +168,7 @@ export default function HistoryPage() {
 
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-lg p-6 space-y-4 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+            <div key={i} className="bg-gray-100 dark:bg-[#1e1e1e] rounded-lg p-6 space-y-4 border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="flex justify-between">
                 <Skeleton className="h-6 w-32 bg-gray-200 dark:bg-[#272727]" />
                 <Skeleton className="h-6 w-20 bg-gray-200 dark:bg-[#272727]" />
@@ -229,7 +229,7 @@ export default function HistoryPage() {
 
       {/* 통계 요약 카드 (유튜브 카드 스타일 적용) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+        <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="flex items-center gap-2 mb-2 text-[#606060] dark:text-[#aaaaaa]">
             <History className="w-4 h-4" />
             <span className="font-medium">총 저장된 기록</span>
@@ -240,7 +240,7 @@ export default function HistoryPage() {
           </div>
         </div>
 
-        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+        <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="flex items-center gap-2 mb-2 text-[#606060] dark:text-[#aaaaaa]">
             <Trophy className="w-4 h-4" />
             <span className="font-medium">당첨된 기록 (5등 이상)</span>
@@ -259,7 +259,7 @@ export default function HistoryPage() {
       {/* 기록 목록 */}
       <div className="space-y-4">
         {history.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-dashed border-[#e5e5e5] dark:border-[#3f3f3f]">
+          <div className="flex flex-col items-center justify-center py-16 bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-dashed border-[#e5e5e5] dark:border-[#3f3f3f]">
             <History className="w-12 h-12 text-[#cccccc] dark:text-[#3f3f3f] mb-4" />
             <p className="text-lg font-medium text-[#606060] dark:text-[#aaaaaa]">저장된 추첨 기록이 없습니다.</p>
             <p className="text-sm text-[#909090] dark:text-[#606060] mt-1">번호를 추첨 하고 기록을 남겨보세요.</p>
@@ -271,7 +271,7 @@ export default function HistoryPage() {
             return (
               <div
                 key={item.id}
-                className="relative bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f] transition-colors"
+                className="relative bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f] transition-colors"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 md:pr-0">
 

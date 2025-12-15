@@ -136,7 +136,7 @@ export default function AdminStatsPage() {
       case "3등": return "text-[#0f0f0f] bg-[#dff0d8] border-[#d6e9c6] dark:text-[#f1f1f1] dark:bg-[#1e3a1e] dark:border-[#2b542c]";
       case "4등": return "text-[#0f0f0f] bg-[#d9edf7] border-[#bce8f1] dark:text-[#f1f1f1] dark:bg-[#103046] dark:border-[#1a4a6e]";
       case "5등": return "text-[#0f0f0f] bg-[#f3e5f5] border-[#e1bee7] dark:text-[#f1f1f1] dark:bg-[#341b3a] dark:border-[#5c2b66]";
-      default: return "text-[#606060] bg-[#f9f9f9] border-[#e5e5e5] dark:text-[#aaaaaa] dark:bg-[#272727] dark:border-[#3f3f3f]";
+      default: return "text-[#606060] bg-gray-100 border-[#e5e5e5] dark:text-[#aaaaaa] dark:bg-[#272727] dark:border-[#3f3f3f]";
     }
   }
 
@@ -191,7 +191,7 @@ export default function AdminStatsPage() {
           <Skeleton className="h-7 w-64 bg-gray-200 dark:bg-[#272727]" />
           <Skeleton className="h-6 w-80 bg-gray-200 dark:bg-[#272727]" />
         </div>
-        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-lg p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+        <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-lg p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="flex items-center gap-2 mb-4">
             <Skeleton className="w-5 h-5 rounded-full bg-gray-200 dark:bg-[#272727]" />
             <Skeleton className="h-6 w-56 bg-gray-200 dark:bg-[#272727]" />
@@ -223,7 +223,7 @@ export default function AdminStatsPage() {
           <p className="text-[#606060] dark:text-[#aaaaaa] mt-2 text-center">
             통계 데이터를 불러오는 중 오류가 발생했습니다.
           </p>
-          <code className="mt-4 p-2 bg-[#f9f9f9] dark:bg-[#272727] rounded text-sm text-[#cc0000] dark:text-[#ff9999] w-full text-center">
+          <code className="mt-4 p-2 bg-gray-100 dark:bg-[#272727] rounded text-sm text-[#cc0000] dark:text-[#ff9999] w-full text-center">
             {error}
           </code>
         </div>
@@ -246,7 +246,7 @@ export default function AdminStatsPage() {
 
       {/* 최신 회차 당첨 번호 섹션 */}
       {latestDraw && (
-        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+        <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="flex items-center gap-2 mb-4">
             <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <h2 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">최신 회차 당첨 번호</h2>
@@ -288,7 +288,7 @@ export default function AdminStatsPage() {
 
       {/* 상단 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
+        <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="p-5">
             <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <Target className="w-4 h-4" />총 추첨 횟수 ({latestDraw?.drawNo}회)
@@ -297,7 +297,7 @@ export default function AdminStatsPage() {
           </div>
         </div>
 
-        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
+        <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="p-5">
             <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <Award className="w-4 h-4" />
@@ -308,7 +308,7 @@ export default function AdminStatsPage() {
           </div>
         </div>
 
-        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
+        <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="p-5">
             <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
@@ -321,7 +321,7 @@ export default function AdminStatsPage() {
           </div>
         </div>
 
-        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
+        <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
           <div className="p-5">
             <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
@@ -360,7 +360,7 @@ export default function AdminStatsPage() {
 
         {/* "등수별 통계" 탭 패널 */}
         <TabsContent value="ranks" className="space-y-4">
-          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
+          <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <div className="p-5">
               <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">당첨 등수별 분포</h3>
               <p className="text-sm text-[#606060] dark:text-[#aaaaaa] mt-1">
@@ -388,7 +388,7 @@ export default function AdminStatsPage() {
 
         {/* "일치 개수" 탭 패널 */}
         <TabsContent value="matches" className="space-y-4">
-          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
+          <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <div className="p-5">
               <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">번호 일치 개수 분포</h3>
               <p className="text-sm text-[#606060] dark:text-[#aaaaaa] mt-1">
@@ -426,7 +426,7 @@ export default function AdminStatsPage() {
         {/* "AI vs 일반" 탭 패널 */}
         <TabsContent value="comparison" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
+            <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="p-5">
                 <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -456,7 +456,7 @@ export default function AdminStatsPage() {
               </div>
             </div>
 
-            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
+            <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="p-5">
                 <h3 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
                   <Target className="w-5 h-5 text-purple-600 dark:text-purple-400" />

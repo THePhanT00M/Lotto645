@@ -50,7 +50,7 @@ export default function FAQPage() {
         {/* 1. 서비스 이용 탭 */}
         <TabsContent value="service" className="space-y-4">
           {/* 카드 배경: 라이트 모드 #f9f9f9, 다크 모드 #1e1e1e */}
-          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+          <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <div className="flex items-center gap-2 mb-4">
               <ShieldQuestion className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <h2 className="text-lg font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">기본 이용 안내</h2>
@@ -89,7 +89,7 @@ export default function FAQPage() {
 
         {/* 2. 추첨 및 분석 기능 탭 */}
         <TabsContent value="features" className="space-y-4">
-          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+          <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <div className="flex items-center gap-2 mb-4">
               <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               <h2 className="text-lg font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">AI 및 추첨 알고리즘</h2>
@@ -133,7 +133,7 @@ export default function FAQPage() {
 
         {/* 3. 데이터 및 저장 탭 */}
         <TabsContent value="data" className="space-y-4">
-          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+          <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <div className="flex items-center gap-2 mb-4">
               <Save className="w-5 h-5 text-green-600 dark:text-green-400" />
               <h2 className="text-lg font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">데이터 관리</h2>
