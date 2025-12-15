@@ -303,7 +303,7 @@ export default function WinningNumbersPage() {
         </div>
 
         {/* Main Card Skeleton - 실제 카드와 동일한 높이 및 패딩 구조 */}
-        <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 sm:p-8 border border-[#e5e5e5] dark:border-[#3f3f3f] shadow-sm relative overflow-hidden">
+        <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 sm:p-8 border border-[#e5e5e5] dark:border-[#3f3f3f] shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-5 dark:opacity-10 pointer-events-none">
             <Trophy className="w-32 h-32 text-gray-400" />
           </div>
@@ -338,7 +338,7 @@ export default function WinningNumbersPage() {
           {/* Left Column: Search & Quick Move */}
           <div className="lg:col-span-1 space-y-4">
             {/* Search Panel Skeleton */}
-            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+            <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="flex items-center gap-2 mb-3">
                 <Skeleton className="w-4 h-4 rounded bg-gray-200 dark:bg-[#272727]" />
                 <Skeleton className="h-5 w-20 bg-gray-200 dark:bg-[#272727]" />
@@ -350,7 +350,7 @@ export default function WinningNumbersPage() {
             </div>
 
             {/* Quick Move Panel Skeleton */}
-            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+            <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
               <div className="flex items-center gap-2 mb-3">
                 <Skeleton className="w-4 h-4 rounded bg-gray-200 dark:bg-[#272727]" />
                 <Skeleton className="h-5 w-20 bg-gray-200 dark:bg-[#272727]" />
@@ -366,8 +366,8 @@ export default function WinningNumbersPage() {
 
           {/* Right Column: List */}
           <div className="lg:col-span-2">
-            <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[650px] flex flex-col relative">
-              <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10 h-[69px]">
+            <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] h-[650px] flex flex-col relative">
+              <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-gray-100 dark:bg-[#1e1e1e] rounded-t-xl z-10 h-[69px]">
                 <Skeleton className="h-6 w-24 bg-gray-200 dark:bg-[#272727]" />
               </div>
               <div className="flex-1 p-2 overflow-hidden">
@@ -393,7 +393,7 @@ export default function WinningNumbersPage() {
       </div>
 
       {/* 메인 당첨 번호 카드 */}
-      <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 sm:p-8 border border-[#e5e5e5] dark:border-[#3f3f3f] shadow-sm relative overflow-hidden transition-all">
+      <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 sm:p-8 border border-[#e5e5e5] dark:border-[#3f3f3f] shadow-sm relative overflow-hidden transition-all">
         <div className="absolute top-0 right-0 p-4 opacity-5 dark:opacity-10 pointer-events-none">
           <Trophy className="w-32 h-32" />
         </div>
@@ -457,7 +457,7 @@ export default function WinningNumbersPage() {
         {/* 좌측: 검색 및 빠른 이동 패널 */}
         <div className="lg:col-span-1 space-y-4">
           {/* 검색 패널 */}
-          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+          <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <h3 className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] mb-3 flex items-center gap-2">
               <Search className="w-4 h-4" /> 회차 검색
             </h3>
@@ -480,7 +480,7 @@ export default function WinningNumbersPage() {
           </div>
 
           {/* 빠른 이동 패널 */}
-          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+          <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
             <h3 className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] mb-3 flex items-center gap-2">
               <ListFilter className="w-4 h-4" /> 빠른 이동
             </h3>
@@ -533,8 +533,8 @@ export default function WinningNumbersPage() {
         {/* 우측: 리스트 (양방향 무한 스크롤) */}
         <div className="lg:col-span-2">
           {/* !overflow-anchor-none: 중요! 자동 스크롤 보정 해제 */}
-          <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] flex flex-col h-[650px] relative">
-            <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-t-xl z-10 sticky top-0 h-[69px]">
+          <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] flex flex-col h-[650px] relative">
+            <div className="p-4 border-b border-[#e5e5e5] dark:border-[#3f3f3f] flex justify-between items-center bg-gray-100 dark:bg-[#1e1e1e] rounded-t-xl z-10 sticky top-0 h-[69px]">
               <h3 className="font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">회차별 목록</h3>
             </div>
 

@@ -57,7 +57,7 @@ export default function UpdateDrawPage() {
       </div>
 
       {/* 메인 컨텐츠 카드 */}
-      <div className="bg-[#f9f9f9] dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
+      <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
 
         {/* 업데이트 버튼 */}
         <Button
