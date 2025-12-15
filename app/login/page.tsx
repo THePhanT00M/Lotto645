@@ -15,23 +15,27 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#f0f2f5] dark:bg-[#0f0f0f] font-sans p-4 transition-colors duration-200">
-      <div className="w-full max-w-[448px] bg-white dark:bg-[#1f1f1f] rounded-xl shadow-md dark:shadow-none p-8 sm:p-12 space-y-8 transition-colors duration-200">
+      {/* Card Container에 relative 추가하여 내부 절대 위치 기준점 설정 */}
+      <div className="relative w-full max-w-[448px] bg-white dark:bg-[#1f1f1f] rounded-xl shadow-md dark:shadow-none p-8 sm:p-12 space-y-8 transition-colors duration-200">
 
+        {/* 뒤로 가기 버튼: 카드 왼쪽 상단 모서리에 고정 */}
+        {currentView === "forgot" && (
+          <Button
+            variant="ghost"
+            onClick={() => setCurrentView("login")}
+            className="absolute left-4 top-4 p-2 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground cursor-pointer"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+        )}
+
+        {/* Header Section */}
         <div className="text-center space-y-4">
           <div className="flex justify-center mb-6">
             <Logo variant="auth" className="scale-110" />
           </div>
 
-          <div className="space-y-2 relative">
-            {currentView === "forgot" && (
-              <Button
-                variant="ghost"
-                onClick={() => setCurrentView("login")}
-                className="absolute left-0 top-0 -ml-2 p-2 h-auto text-muted-foreground hover:bg-transparent hover:text-foreground cursor-pointer"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            )}
+          <div className="space-y-2">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
               {currentView === "login" ? "로그인" : "비밀번호 재설정"}
             </h2>
@@ -43,6 +47,7 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* Form Section */}
         <div className="space-y-6">
           <div className="space-y-5">
             <div className="space-y-2">
