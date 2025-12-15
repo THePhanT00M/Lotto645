@@ -5,6 +5,7 @@ import type { WinningLottoNumbers } from "@/types/lotto" // 타입 import
 import { supabase } from "@/lib/supabaseClient" // Supabase 클라이언트 import
 import AdvancedAnalysis from "./lotto-analysis/advanced-analysis"
 import { Skeleton } from "@/components/ui/skeleton" // 로딩 스켈레톤 추가
+import { AlertTriangle, Info } from "lucide-react" // 아이콘 추가
 
 interface LottoAnalysisProps {
   numbers: number[]
@@ -249,9 +250,10 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
   }
 
   return (
-    <div className="rounded-xl p-4 sm:p-6 bg-gray-100 dark:bg-[rgb(26,26,26)] ">
-      <div className="mb-5">
-        <p className="text-xl font-semibold text-black dark:text-white flex items-center gap-2 mb-0">번호 분석 결과</p>
+    <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f] space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <h2 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">번호 분석 결과</h2>
       </div>
 
       {/* --- [기존] 스켈레톤 UI --- */}
@@ -366,14 +368,19 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         />
       )}
 
-      <div className="bg-white dark:bg-[rgb(38,38,38)] rounded-lg p-4 mt-6 text-sm text-gray-700 dark:text-gray-200">
-        <p>
-          * 이 분석은 과거 {winningNumbers.length}회의 실제 로또 당첨번호를 기반으로 합니다. 통계 데이터는 참고용으로만
-          사용하시기 바랍니다.
-        </p>
-        <p className="mt-1">
-          * 로또 번호는 매 회차마다 무작위로 추첨되며, 과거의 통계가 미래 당첨 확률에 영향을 미치지 않습니다.
-        </p>
+      {/* [수정] 안내 문구 강조 및 스타일 개선 */}
+      <div className="mt-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
+          <p className="font-semibold text-amber-900 dark:text-amber-100">분석 유의사항</p>
+          <p className="opacity-90">
+            이 분석은 과거 <span className="font-medium">{winningNumbers.length}회</span>의 실제 로또 당첨번호를 기반으로 합니다.
+            통계 데이터는 참고용으로만 사용하시기 바랍니다.
+          </p>
+          <p className="opacity-90">
+            로또 번호는 매 회차마다 무작위로 추첨되며, <span className="font-medium">과거의 통계가 미래 당첨 확률에 영향을 미치지 않습니다.</span>
+          </p>
+        </div>
       </div>
     </div>
   )
