@@ -5,7 +5,6 @@ import {
   Brain,
   Play,
   Square,
-  RotateCcw,
   Activity,
   Cpu,
   CheckCircle2,
@@ -21,8 +20,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -66,7 +63,7 @@ function LearningPageSkeleton() {
           <Skeleton key={i} className="h-32 rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
         ))}
       </div>
-      <Skeleton className="h-24 w-full rounded-xl bg-gray-200 dark:bg-[#272727]" />
+      <Skeleton className="h-24 rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
       <div className="grid grid-cols-1 md:grid-cols-7 gap-6 w-full">
         <div className="col-span-1 md:col-span-2 w-full">
           <Skeleton className="h-[520px] rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
