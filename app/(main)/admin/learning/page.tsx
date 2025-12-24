@@ -46,31 +46,35 @@ interface TrainingLog {
   epoch: number
   loss: number
   accuracy: number
+  timestamp: string
 }
 
 function LearningPageSkeleton() {
   return (
     <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6 animate-pulse w-full">
-      {/* 1. 헤더 영역 스켈레톤: 고정 너비를 제거하고 유동적인 max-width 적용 */}
+      {/* 1. 헤더 영역 스켈레톤 */}
       <div className="flex flex-col space-y-2">
         <Skeleton className="h-8 w-full max-w-[200px] bg-gray-200 dark:bg-[#272727]" />
         <Skeleton className="h-4 w-full max-w-[450px] bg-gray-200 dark:bg-[#272727]" />
       </div>
 
-      {/* 2. 상단 통계 카드 영역: 실제 렌더링 그리드와 동일하게 설정 */}
+      {/* 2. 상단 통계 카드 영역 스켈레톤 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
         {[...Array(4)].map((_, i) => (
           <Skeleton key={i} className="h-32 rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
         ))}
       </div>
 
-      {/* 3. 메인 학습 섹션: 실제 카드 높이 h-[500px] 반영 */}
+      {/* 3. 학습 제어 영역 스켈레톤 */}
+      <Skeleton className="h-24 w-full rounded-xl bg-gray-200 dark:bg-[#272727]" />
+
+      {/* 4. 메인 학습 섹션 스켈레톤 (레이아웃 수정 반영: 2:5 비율) */}
       <div className="grid grid-cols-1 md:grid-cols-7 gap-6 w-full">
-        <div className="col-span-1 md:col-span-3 w-full">
-          <Skeleton className="h-[500px] rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
+        <div className="col-span-1 md:col-span-2 w-full">
+          <Skeleton className="h-[520px] rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
         </div>
-        <div className="col-span-1 md:col-span-4 w-full">
-          <Skeleton className="h-[500px] rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
+        <div className="col-span-1 md:col-span-5 w-full">
+          <Skeleton className="h-[520px] rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
         </div>
       </div>
     </div>
@@ -258,6 +262,9 @@ export default function DeepLearningPage() {
             const loss = logs?.loss || 0
             const acc = logs?.acc || 0
 
+            const now = new Date()
+            const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+
             setCurrentEpoch(epoch + 1)
             setCurrentLoss(loss)
             setCurrentAcc(acc)
@@ -265,7 +272,8 @@ export default function DeepLearningPage() {
             setLogs(prev => [...prev.slice(-49), {
               epoch: epoch + 1,
               loss: loss,
-              accuracy: acc
+              accuracy: acc,
+              timestamp: timestamp
             }])
             await tf.nextFrame()
           }
@@ -341,6 +349,32 @@ export default function DeepLearningPage() {
         </div>
       </div>
 
+      {/* 학습 제어 영역 (Full-width) */}
+      <Card className="bg-gray-100 dark:bg-[#1e1e1e] border-gray-200 dark:border-[#3f3f3f] w-full shadow-sm">
+        <CardContent className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-left w-full">
+            <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg shrink-0">
+              <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">모델 학습 제어</h3>
+              <p className="text-xs text-[#606060] dark:text-[#aaaaaa]">설정된 파라미터를 기반으로 AI 엔진을 구동하여 패턴을 분석합니다.</p>
+            </div>
+          </div>
+          <div className="w-full sm:w-auto">
+            {status === "training" || status === "loading_data" ? (
+              <Button variant="destructive" onClick={() => stopTrainingRef.current = true} disabled={status === "loading_data"} className="w-full sm:min-w-[140px] h-11 bg-red-600 hover:bg-red-700 text-white shadow-sm">
+                <Square className="mr-2 h-4 w-4 fill-current" /> 학습 중지
+              </Button>
+            ) : (
+              <Button onClick={handleStartTraining} className="w-full sm:min-w-[140px] h-11 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-sm">
+                <Play className="mr-2 h-4 w-4 fill-current" /> 학습 시작
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {status === 'completed' && (
         <Alert className="bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 w-full">
           <Trophy className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -366,18 +400,20 @@ export default function DeepLearningPage() {
         </Alert>
       )}
 
+      {/* 메인 학습 섹션 (2:5 비율로 조정됨) */}
       <div className="grid grid-cols-1 md:grid-cols-7 gap-6 w-full">
-        <div className="col-span-1 md:col-span-3 space-y-6 w-full">
-          <Card className="flex flex-col h-[500px] bg-gray-100 dark:bg-[#1e1e1e] border-gray-200 dark:border-[#3f3f3f] w-full">
+        {/* 학습 파라미터 설정 (md:col-span-2 로 축소) */}
+        <div className="col-span-1 md:col-span-2 space-y-6 w-full">
+          <Card className="flex flex-col h-full bg-gray-100 dark:bg-[#1e1e1e] border-gray-200 dark:border-[#3f3f3f] w-full">
             <CardHeader className="py-4 border-b border-gray-200 dark:border-[#3f3f3f]">
               <CardTitle className="text-base flex items-center gap-2 text-[#0f0f0f] dark:text-[#f1f1f1]">
                 <Settings2 className="w-5 h-5" />
-                학습 파라미터 설정
+                학습 설정
               </CardTitle>
             </CardHeader>
-            <div className="p-5 flex-1 space-y-6">
+            <div className="p-5 space-y-6">
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#0f0f0f] dark:text-[#f1f1f1]">최대 반복 횟수 (Epochs)</Label>
+                <Label className="text-sm font-medium text-[#0f0f0f] dark:text-[#f1f1f1]">반복 횟수 (Epochs)</Label>
                 <Select value={String(totalEpochs)} onValueChange={(val) => setTotalEpochs(Number(val))} disabled={status === "training" || status === "loading_data"}>
                   <SelectTrigger className="w-full bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f]">
                     <SelectValue placeholder="Epoch 선택" />
@@ -391,10 +427,10 @@ export default function DeepLearningPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#0f0f0f] dark:text-[#f1f1f1]">배치 크기 (Batch Size)</Label>
+                <Label className="text-sm font-medium text-[#0f0f0f] dark:text-[#f1f1f1]">배치 크기</Label>
                 <Select value={String(batchSize)} onValueChange={(val) => setBatchSize(Number(val))} disabled={status === "training" || status === "loading_data"}>
                   <SelectTrigger className="w-full bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f]">
-                    <SelectValue placeholder="Batch Size 선택" />
+                    <SelectValue placeholder="Batch 선택" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="16">16</SelectItem>
@@ -405,10 +441,10 @@ export default function DeepLearningPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-[#0f0f0f] dark:text-[#f1f1f1]">학습률 (Learning Rate)</Label>
+                <Label className="text-sm font-medium text-[#0f0f0f] dark:text-[#f1f1f1]">학습률</Label>
                 <Select value={String(learningRate)} onValueChange={(val) => setLearningRate(Number(val))} disabled={status === "training" || status === "loading_data"}>
                   <SelectTrigger className="w-full bg-white dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f]">
-                    <SelectValue placeholder="Learning Rate 선택" />
+                    <SelectValue placeholder="LR 선택" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0.01">0.01</SelectItem>
@@ -417,24 +453,13 @@ export default function DeepLearningPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Separator className="bg-[#e5e5e5] dark:bg-[#3f3f3f]" />
-              <div className="flex flex-col gap-3 pt-2">
-                {status === "training" || status === "loading_data" ? (
-                  <Button variant="destructive" onClick={() => stopTrainingRef.current = true} disabled={status === "loading_data"} className="w-full bg-red-600 hover:bg-red-700 text-white">
-                    <Square className="mr-2 h-4 w-4 fill-current" /> 학습 중지
-                  </Button>
-                ) : (
-                  <Button onClick={handleStartTraining} className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-sm">
-                    <Play className="mr-2 h-4 w-4 fill-current" /> 학습 시작
-                  </Button>
-                )}
-              </div>
             </div>
           </Card>
         </div>
 
-        <div className="col-span-1 md:col-span-4 w-full">
-          <Card className="flex flex-col h-[500px] bg-gray-100 dark:bg-[#1e1e1e] border-gray-200 dark:border-[#3f3f3f] w-full">
+        {/* 시스템 로그 (md:col-span-5 로 확대) */}
+        <div className="col-span-1 md:col-span-5 w-full">
+          <Card className="flex flex-col h-[520px] bg-gray-100 dark:bg-[#1e1e1e] border-gray-200 dark:border-[#3f3f3f] w-full">
             <CardHeader className="py-4 border-b border-gray-200 dark:border-[#3f3f3f]">
               <CardTitle className="text-base flex items-center gap-2 text-[#0f0f0f] dark:text-[#f1f1f1]">
                 <Terminal className="w-4 h-4" /> 시스템 로그
@@ -451,8 +476,9 @@ export default function DeepLearningPage() {
                   <div className="text-gray-500 italic">로그 대기 중...</div>
                 )}
                 {logs.map((log, index) => (
-                  <div key={index} className="flex gap-2 break-all hover:bg-white/5">
-                    <span className="text-gray-500 shrink-0">[Epoch {log.epoch}]</span>
+                  <div key={index} className="flex gap-2 break-all hover:bg-white/5 items-center">
+                    <span className="text-gray-500 shrink-0 text-[10px] md:text-xs">[{log.timestamp}]</span>
+                    <span className="text-blue-400 shrink-0">[Epoch {log.epoch}]</span>
                     <span className="text-green-400">Loss: {log.loss.toFixed(6)} | Acc: {log.accuracy.toFixed(4)}</span>
                   </div>
                 ))}
