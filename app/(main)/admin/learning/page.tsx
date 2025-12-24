@@ -12,9 +12,7 @@ import {
   Terminal,
   Settings2,
   Lightbulb,
-  Trophy,
   Target,
-  TrendingDown,
   Zap
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -30,7 +28,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import * as tf from "@tensorflow/tfjs"
 import "@tensorflow/tfjs-backend-webgpu"
 import { supabase } from "@/lib/supabaseClient"
