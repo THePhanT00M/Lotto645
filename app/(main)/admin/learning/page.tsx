@@ -63,7 +63,7 @@ function LearningPageSkeleton() {
           <Skeleton key={i} className="h-32 rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
         ))}
       </div>
-      <Skeleton className="h-24 rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
+      <Skeleton className="h-24 w-full rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
       <div className="grid grid-cols-1 md:grid-cols-7 gap-6 w-full">
         <div className="col-span-1 md:col-span-2 w-full">
           <Skeleton className="h-[520px] rounded-xl bg-gray-200 dark:bg-[#272727] w-full" />
@@ -120,7 +120,7 @@ export default function DeepLearningPage() {
         setBackendName(currentBackend)
         addLog({ type: "system", message: `가속기 설정 완료: ${currentBackend.toUpperCase()}` })
 
-        addLog({ type: "system", message: "CNN-LSTM 하이브리드 모델 로딩 중..." })
+        addLog({ type: "system", message: "Transformer 하이브리드 모델 로딩 중..." })
         const summary: string[] = []
         createModel(learningRate).summary(undefined, undefined, (line) => summary.push(line))
         setModelSummary(summary)
@@ -144,6 +144,12 @@ export default function DeepLearningPage() {
     }
   }, [logs, isMobile])
 
+  /**
+   * [알고리즘 수정: Transformer-Lite + Dense Feature 하이브리드 모델]
+   * 1. x1 (시퀀스): Dense 및 Dot 레이어를 이용한 Self-Attention 메커니즘 구현 (번호 간 상관관계 분석)
+   * 2. x2 (통계 피처): Flatten 및 Dense 레이어를 통한 특징 추출
+   * 3. 하이브리드 결합: Attention 결과와 통계 특징을 병합하여 최종 당첨 번호 확률 예측
+   */
   const createModel = (lr: number) => {
     const WINDOW_SIZE = 50
     const NUM_NUMBERS = 45
@@ -152,11 +158,33 @@ export default function DeepLearningPage() {
     const numberInput = tf.input({ shape: [WINDOW_SIZE, NUM_NUMBERS], name: 'number_sequence' })
     const featureInput = tf.input({ shape: [WINDOW_SIZE, NUM_FEATURES], name: 'stat_features' })
 
-    let x1 = tf.layers.conv1d({ filters: 64, kernelSize: 3, activation: 'relu', padding: 'same' }).apply(numberInput) as tf.SymbolicTensor
-    x1 = tf.layers.lstm({ units: 128, returnSequences: false }).apply(x1) as tf.SymbolicTensor
+    // --- Branch 1: Self-Attention (Transformer-Lite) 구현 ---
+    const dModel = 64
+    // Q, K, V 생성을 위한 선형 사영
+    const query = tf.layers.dense({ units: dModel }).apply(numberInput) as tf.SymbolicTensor
+    const key = tf.layers.dense({ units: dModel }).apply(numberInput) as tf.SymbolicTensor
+    const value = tf.layers.dense({ units: dModel }).apply(numberInput) as tf.SymbolicTensor
 
-    let x2 = tf.layers.lstm({ units: 64, returnSequences: false }).apply(featureInput) as tf.SymbolicTensor
+    // Attention Scores (Scaled Dot-Product Attention 모사)
+    // [Batch, WINDOW_SIZE, dModel] x [Batch, WINDOW_SIZE, dModel] -> [Batch, WINDOW_SIZE, WINDOW_SIZE]
+    const score = tf.layers.dot({ axes: 2 }).apply([query, key]) as tf.SymbolicTensor
+    const attentionWeights = tf.layers.activation({ activation: 'softmax' }).apply(score) as tf.SymbolicTensor
 
+    // Context Vector 계산
+    // [Batch, WINDOW_SIZE, WINDOW_SIZE] x [Batch, WINDOW_SIZE, dModel] -> [Batch, WINDOW_SIZE, dModel]
+    let attentionOutput = tf.layers.dot({ axes: [2, 1] }).apply([attentionWeights, value]) as tf.SymbolicTensor
+
+    // Residual Connection & Layer Normalization
+    const resProjected = tf.layers.dense({ units: dModel }).apply(numberInput) as tf.SymbolicTensor
+    let x1 = tf.layers.add().apply([resProjected, attentionOutput]) as tf.SymbolicTensor
+    x1 = tf.layers.layerNormalization().apply(x1) as tf.SymbolicTensor
+    x1 = tf.layers.globalAveragePooling1d().apply(x1) as tf.SymbolicTensor
+
+    // --- Branch 2: Dense Feature 레이어 ---
+    let x2 = tf.layers.flatten().apply(featureInput) as tf.SymbolicTensor
+    x2 = tf.layers.dense({ units: 64, activation: 'relu' }).apply(x2) as tf.SymbolicTensor
+
+    // --- 하이브리드 결합 ---
     const combined = tf.layers.concatenate().apply([x1, x2]) as tf.SymbolicTensor
     let output = tf.layers.dense({ units: 256, activation: 'relu' }).apply(combined) as tf.SymbolicTensor
     output = tf.layers.dropout({ rate: 0.3 }).apply(output) as tf.SymbolicTensor
@@ -252,7 +280,7 @@ export default function DeepLearningPage() {
       tensorsRef.current = null
     }
 
-    setLogs(prev => prev.filter(l => l.type === "system")) // 기존 시스템 로그는 유지
+    setLogs(prev => prev.filter(l => l.type === "system"))
     stopTrainingRef.current = false
 
     const tensorData = await fetchAndProcessData()
@@ -399,31 +427,6 @@ export default function DeepLearningPage() {
         </CardContent>
       </Card>
 
-      {status === 'completed' && (
-        <Alert className="bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 w-full">
-          <Trophy className="h-5 w-5 text-green-600 dark:text-green-400" />
-          <AlertTitle className="ml-2 text-green-800 dark:text-green-400 font-bold text-lg">
-            학습이 성공적으로 완료되었습니다!
-          </AlertTitle>
-          <AlertDescription className="ml-2 mt-2 text-green-700 dark:text-green-300">
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-10">
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4" />
-                <span>최종 정확도: <strong>{(currentAcc! * 100).toFixed(2)}%</strong></span>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingDown className="w-4 h-4" />
-                <span>최종 손실값: <strong>{currentLoss?.toFixed(6)}</strong></span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Brain className="w-4 h-4" />
-                <span>사용된 데이터: <strong>{dataCount - 50} 세트</strong></span>
-              </div>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-7 gap-6 w-full">
         {/* 학습 설정 */}
         <div className="col-span-1 md:col-span-2 space-y-6 w-full">
@@ -499,7 +502,7 @@ export default function DeepLearningPage() {
                     {log.type === "system" ? (
                       <span className="text-yellow-400 shrink-0 font-bold">[SYSTEM]</span>
                     ) : (
-                      <span className="text-blue-400 shrink-0 font-bold">[EPOCH {log.epoch}]</span>
+                      <span className="text-blue-400 shrink-0 font-bold">[Epochs {log.epoch}]</span>
                     )}
                     <span className={log.type === "system" ? "text-white" : "text-green-400"}>
                       {log.type === "system" ? (
