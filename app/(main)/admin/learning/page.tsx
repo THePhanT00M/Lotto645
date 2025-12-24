@@ -543,7 +543,7 @@ export default function DeepLearningPage() {
                 </div>
                 <div className="mt-auto pt-2 text-xs text-[#606060] dark:text-[#aaaaaa] leading-relaxed">
                   <span className="font-bold text-[10px] bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded mr-2 inline-block">TIP</span>
-                  횟수가 많을수록 정확해지지만, 과적합이 발생할 수 있습니다. 처음엔 100회로 시작해보세요.
+                  최대 반복 횟수가 너무 많으면 과적합이 발생할 수 있고, 너무 적으면 학습 부족으로 정확도가 낮아집니다. 보통 100회로 시작하는 것이 권장됩니다.
                 </div>
               </div>
             </div>
@@ -557,7 +557,7 @@ export default function DeepLearningPage() {
                 </div>
                 <div className="mt-auto pt-2 text-xs text-[#606060] dark:text-[#aaaaaa] leading-relaxed">
                   <span className="font-bold text-[10px] bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded mr-2 inline-block">TIP</span>
-                  배치가 작으면 학습은 세밀해지나 속도가 느려집니다. 32 또는 64가 적당합니다.
+                  배치 크기가 크면 정밀도가 낮아지거나 메모리 부족이 발생할 수 있고, 너무 작으면 학습 효율이 떨어져 시간이 길어집니다. 32 또는 64가 권장값입니다.
                 </div>
               </div>
             </div>
@@ -571,7 +571,7 @@ export default function DeepLearningPage() {
                 </div>
                 <div className="mt-auto pt-2 text-xs text-[#606060] dark:text-[#aaaaaa] leading-relaxed">
                   <span className="font-bold text-[10px] bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-1.5 py-0.5 rounded mr-2 inline-block">TIP</span>
-                  0.001이 가장 권장되는 기본값입니다.
+                  학습률이 너무 크면 오버슈팅(overshooting) 현상이 발생하여 최적값을 찾지 못할 수 있고, 너무 작으면 학습 시간이 길어집니다. 0.001이 권장값입니다.
                 </div>
               </div>
             </div>
