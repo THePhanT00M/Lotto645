@@ -503,19 +503,34 @@ export default function DeepLearningPage() {
               <div className="flex items-center gap-2 font-semibold text-[#0f0f0f] dark:text-[#f1f1f1]">
                 <Target className="w-4 h-4 text-blue-500" /> 최대 반복 횟수 (Epochs)
               </div>
-              <p className="text-sm text-[#606060] dark:text-[#aaaaaa] leading-relaxed">전체 데이터를 몇 번 반복해서 학습할지 결정합니다.</p>
+              <p className="text-sm text-[#606060] dark:text-[#aaaaaa] leading-relaxed">
+                전체 데이터를 몇 번 반복해서 학습할지 결정합니다.
+                <br /><br />
+                <span className="font-bold text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">TIP</span>
+                &nbsp;횟수가 많을수록 정확해지지만, 너무 많으면 과적합(Overfitting)이 발생할 수 있습니다. 처음엔 100회로 시작해보세요.
+              </p>
             </div>
             <div className="space-y-2 p-4 bg-gray-50 dark:bg-[#272727] rounded-lg">
               <div className="flex items-center gap-2 font-semibold text-[#0f0f0f] dark:text-[#f1f1f1]">
                 <Settings2 className="w-4 h-4 text-purple-500" /> 배치 크기 (Batch Size)
               </div>
-              <p className="text-sm text-[#606060] dark:text-[#aaaaaa] leading-relaxed">한 번의 연산에 사용할 데이터 묶음의 크기입니다.</p>
+              <p className="text-sm text-[#606060] dark:text-[#aaaaaa] leading-relaxed">
+                한 번의 연산에 사용할 데이터 묶음의 크기입니다.
+                <br /><br />
+                <span className="font-bold text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded">TIP</span>
+                &nbsp;배치가 작으면 학습은 세밀해지나 속도가 느려지고, 크면 학습 속도는 빠르나 메모리 사용량이 늘어납니다.
+              </p>
             </div>
             <div className="space-y-2 p-4 bg-gray-50 dark:bg-[#272727] rounded-lg">
               <div className="flex items-center gap-2 font-semibold text-[#0f0f0f] dark:text-[#f1f1f1]">
                 <Zap className="w-4 h-4 text-yellow-500" /> 학습률 (Learning Rate)
               </div>
-              <p className="text-sm text-[#606060] dark:text-[#aaaaaa] leading-relaxed">모델이 오차를 줄여나가는 보폭의 크기입니다.</p>
+              <p className="text-sm text-[#606060] dark:text-[#aaaaaa] leading-relaxed">
+                모델이 오차를 줄여나가는 보폭의 크기입니다.
+                <br /><br />
+                <span className="font-bold text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded">TIP</span>
+                &nbsp;학습률이 너무 크면 발산하여 최적값을 찾지 못할 수 있고, 너무 작으면 학습 시간이 매우 길어집니다. 0.001이 권장값입니다.
+              </p>
             </div>
           </CardContent>
         </Card>
