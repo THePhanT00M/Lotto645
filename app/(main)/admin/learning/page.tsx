@@ -230,7 +230,7 @@ export default function DeepLearningPage() {
   }
 
   const processData = (draws: WinningLottoNumbers[]) => {
-    const WINDOW_SIZE = 50
+    const WINDOW_SIZE = 100
     const x1Data = []
     const x2Data = []
     const yData = []
