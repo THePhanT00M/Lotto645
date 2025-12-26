@@ -13,7 +13,8 @@ import {
   Settings2,
   Lightbulb,
   Target,
-  Zap
+  Zap,
+  Save
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -28,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import * as tf from "@tensorflow/tfjs"
 import "@tensorflow/tfjs-backend-webgpu"
 import { supabase } from "@/lib/supabaseClient"
@@ -86,13 +88,25 @@ export default function DeepLearningPage() {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [modelSummary, setModelSummary] = useState<string[]>([])
   const [dataCount, setDataCount] = useState(0)
+  const [latestDrawNo, setLatestDrawNo] = useState<number>(0)
+  const [modelVersion, setModelVersion] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
+
   const tensorsRef = useRef<{ x1: tf.Tensor, x2: tf.Tensor, y: tf.Tensor } | null>(null)
+  const trainedModelRef = useRef<tf.LayersModel | null>(null)
   const stopTrainingRef = useRef(false)
   const logsEndRef = useRef<HTMLDivElement>(null)
 
   const getTimestamp = () => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+  }
+
+  const generateVersion = () => {
+    const now = new Date();
+    const datePart = now.toISOString().slice(2, 10).replace(/-/g, ""); // YYMMDD
+    const timePart = String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
+    return `V${datePart}-${timePart}`;
   }
 
   const addLog = (entry: Omit<LogEntry, "timestamp">) => {
@@ -104,6 +118,7 @@ export default function DeepLearningPage() {
     const initTensorFlow = async () => {
       try {
         addLog({ type: "system", message: "딥러닝 시스템 부팅 프로세스 시작..." })
+        setModelVersion(generateVersion())
         await new Promise(r => setTimeout(r, 600))
 
         addLog({ type: "system", message: "TensorFlow.js 엔진 초기화 중..." })
@@ -157,21 +172,15 @@ export default function DeepLearningPage() {
 
     // --- Branch 1: Self-Attention (Transformer-Lite) 구현 ---
     const dModel = 64
-    // Q, K, V 생성을 위한 선형 사영
     const query = tf.layers.dense({ units: dModel }).apply(numberInput) as tf.SymbolicTensor
     const key = tf.layers.dense({ units: dModel }).apply(numberInput) as tf.SymbolicTensor
     const value = tf.layers.dense({ units: dModel }).apply(numberInput) as tf.SymbolicTensor
 
-    // Attention Scores (Scaled Dot-Product Attention 모사)
-    // [Batch, WINDOW_SIZE, dModel] x [Batch, WINDOW_SIZE, dModel] -> [Batch, WINDOW_SIZE, WINDOW_SIZE]
     const score = tf.layers.dot({ axes: 2 }).apply([query, key]) as tf.SymbolicTensor
     const attentionWeights = tf.layers.activation({ activation: 'softmax' }).apply(score) as tf.SymbolicTensor
 
-    // Context Vector 계산
-    // [Batch, WINDOW_SIZE, WINDOW_SIZE] x [Batch, WINDOW_SIZE, dModel] -> [Batch, WINDOW_SIZE, dModel]
     let attentionOutput = tf.layers.dot({ axes: [2, 1] }).apply([attentionWeights, value]) as tf.SymbolicTensor
 
-    // Residual Connection & Layer Normalization
     const resProjected = tf.layers.dense({ units: dModel }).apply(numberInput) as tf.SymbolicTensor
     let x1 = tf.layers.add().apply([resProjected, attentionOutput]) as tf.SymbolicTensor
     x1 = tf.layers.layerNormalization().apply(x1) as tf.SymbolicTensor
@@ -207,6 +216,7 @@ export default function DeepLearningPage() {
 
       const draws = data as WinningLottoNumbers[]
       setDataCount(draws.length)
+      setLatestDrawNo(draws[draws.length - 1].drawNo)
       addLog({ type: "system", message: `데이터 로드 완료: ${draws.length}개의 회차 분석 중...` })
       return processData(draws)
     } catch (err) {
@@ -279,6 +289,7 @@ export default function DeepLearningPage() {
 
     setLogs(prev => prev.filter(l => l.type === "system"))
     stopTrainingRef.current = false
+    setModelVersion(generateVersion())
 
     const tensorData = await fetchAndProcessData()
     if (!tensorData) return
@@ -289,6 +300,7 @@ export default function DeepLearningPage() {
 
     try {
       const model = createModel(learningRate)
+      trainedModelRef.current = model
       const { x1, x2, y } = tensorData
 
       await model.fit([x1, x2], y, {
@@ -334,6 +346,64 @@ export default function DeepLearningPage() {
     }
   }
 
+  const handleSaveModel = async () => {
+    if (!trainedModelRef.current || status !== "completed") return
+    setIsSaving(true)
+    addLog({ type: "system", message: "모델 아키텍처 및 가중치 추출 중..." })
+
+    try {
+      let modelTopology: any = null
+      let weightsDataStr: string = ""
+
+      await trainedModelRef.current.save(tf.io.withSaveHandler(async (artifacts) => {
+        modelTopology = artifacts.modelTopology
+        if (artifacts.weightData) {
+          const weightData = artifacts.weightData;
+          let combinedUint8: Uint8Array;
+
+          if (weightData instanceof ArrayBuffer) {
+            combinedUint8 = new Uint8Array(weightData);
+          } else {
+            // ArrayBuffer[] 인 경우 통합 처리
+            const totalLength = weightData.reduce((acc, buf) => acc + buf.byteLength, 0);
+            combinedUint8 = new Uint8Array(totalLength);
+            let offset = 0;
+            weightData.forEach((buf) => {
+              combinedUint8.set(new Uint8Array(buf), offset);
+              offset += buf.byteLength;
+            });
+          }
+
+          let binary = ""
+          for (let i = 0; i < combinedUint8.byteLength; i++) {
+            binary += String.fromCharCode(combinedUint8[i])
+          }
+          weightsDataStr = btoa(binary)
+        }
+        return { modelArtifactsInfo: { dateSaved: new Date(), modelTopologyType: "JSON" } }
+      }))
+
+      const { error } = await supabase
+        .from("lotto_models")
+        .insert({
+          draw_no: latestDrawNo,
+          version: modelVersion,
+          model_topology: modelTopology,
+          weights_data: weightsDataStr,
+          loss: currentLoss,
+          accuracy: currentAcc
+        })
+
+      if (error) throw error
+      addLog({ type: "system", message: `성공: 모델 ${modelVersion}이 서버에 저장되었습니다.` })
+    } catch (err) {
+      console.error(err)
+      addLog({ type: "system", message: "오류: 서버 저장에 실패했습니다." })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   if (status === "initializing" && logs.length === 0) return <LearningPageSkeleton />
 
   return (
@@ -350,7 +420,6 @@ export default function DeepLearningPage() {
         </div>
       </div>
 
-      {/* 통계 카드 섹션 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
         <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl border border-[#e5e5e5] dark:border-[#3f3f3f] p-5 w-full">
           <div className="text-sm font-medium text-[#606060] dark:text-[#aaaaaa] flex items-center justify-between mb-2">
@@ -410,13 +479,22 @@ export default function DeepLearningPage() {
               <p className="text-xs text-[#606060] dark:text-[#aaaaaa]">설정된 파라미터를 기반으로 AI 엔진을 구동하여 패턴을 분석합니다.</p>
             </div>
           </div>
-          <div className="w-full sm:w-auto">
+          <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+            {status === "completed" && (
+              <Button
+                onClick={handleSaveModel}
+                disabled={isSaving}
+                className="w-full sm:min-w-[140px] h-11 bg-green-600 hover:bg-green-700 text-white shadow-sm"
+              >
+                <Save className="mr-2 h-4 w-4" /> {isSaving ? "저장 중..." : "서버에 저장"}
+              </Button>
+            )}
             {status === "training" || status === "loading_data" ? (
               <Button variant="destructive" onClick={() => stopTrainingRef.current = true} disabled={status === "loading_data"} className="w-full sm:min-w-[140px] h-11 bg-red-600 hover:bg-red-700 text-white shadow-sm">
                 <Square className="mr-2 h-4 w-4 fill-current" /> 학습 중지
               </Button>
             ) : (
-              <Button onClick={handleStartTraining} disabled={status === "initializing"} className="w-full sm:min-w-[140px] h-11 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-sm">
+              <Button onClick={handleStartTraining} disabled={status === "initializing" || isSaving} className="w-full sm:min-w-[140px] h-11 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-sm">
                 <Play className="mr-2 h-4 w-4 fill-current" /> 학습 시작
               </Button>
             )}
@@ -425,7 +503,6 @@ export default function DeepLearningPage() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-7 gap-6 w-full">
-        {/* 학습 설정 */}
         <div className="col-span-1 md:col-span-2 space-y-6 w-full">
           <Card className="flex flex-col h-full bg-gray-100 dark:bg-[#1e1e1e] border-gray-200 dark:border-[#3f3f3f] w-full">
             <CardHeader className="py-4 border-b border-gray-200 dark:border-[#3f3f3f]">
@@ -435,6 +512,14 @@ export default function DeepLearningPage() {
               </CardTitle>
             </CardHeader>
             <div className="p-5 space-y-6">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-[#0f0f0f] dark:text-[#f1f1f1]">모델 버전</Label>
+                <Input
+                  value={modelVersion}
+                  readOnly
+                  className="bg-gray-50 dark:bg-[#272727] border-[#e5e5e5] dark:border-[#3f3f3f] text-xs font-mono"
+                />
+              </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-[#0f0f0f] dark:text-[#f1f1f1]">반복 횟수 (Epochs)</Label>
                 <Select value={String(totalEpochs)} onValueChange={(val) => setTotalEpochs(Number(val))} disabled={status === "training" || status === "loading_data" || status === "initializing"}>
@@ -481,7 +566,6 @@ export default function DeepLearningPage() {
           </Card>
         </div>
 
-        {/* 시스템 로그 (터미널 스타일) */}
         <div className="col-span-1 md:col-span-5 w-full">
           <Card className="flex flex-col h-[520px] bg-gray-100 dark:bg-[#1e1e1e] border-gray-200 dark:border-[#3f3f3f] w-full">
             <CardHeader className="py-4 border-b border-gray-200 dark:border-[#3f3f3f]">
@@ -521,7 +605,6 @@ export default function DeepLearningPage() {
         </div>
       </div>
 
-      {/* 도움말 섹션 */}
       <div className="mt-8 w-full">
         <Card className="bg-white dark:bg-[#1e1e1e] border-[#e5e5e5] dark:border-[#3f3f3f] w-full">
           <CardHeader>
