@@ -102,7 +102,7 @@ export default function PredictionPage() {
         .order("drawNo", { ascending: false })
         .limit(100)
 
-      if (dataError || !recentDraws || recentDraws.length < 100) {
+      if (dataError || !recentDraws || recentDraws.length < 50) {
         throw new Error("과거 데이터(최소 50회차)가 부족합니다.")
       }
 
