@@ -347,61 +347,7 @@ export default function DeepLearningPage() {
   }
 
   const handleSaveModel = async () => {
-    if (!trainedModelRef.current || status !== "completed") return
-    setIsSaving(true)
-    addLog({ type: "system", message: "모델 아키텍처 및 가중치 추출 중..." })
 
-    try {
-      let modelTopology: any = null
-      let weightsDataStr: string = ""
-
-      await trainedModelRef.current.save(tf.io.withSaveHandler(async (artifacts) => {
-        modelTopology = artifacts.modelTopology
-        if (artifacts.weightData) {
-          const weightData = artifacts.weightData;
-          let combinedUint8: Uint8Array;
-
-          if (weightData instanceof ArrayBuffer) {
-            combinedUint8 = new Uint8Array(weightData);
-          } else {
-            // ArrayBuffer[] 인 경우 통합 처리
-            const totalLength = weightData.reduce((acc, buf) => acc + buf.byteLength, 0);
-            combinedUint8 = new Uint8Array(totalLength);
-            let offset = 0;
-            weightData.forEach((buf) => {
-              combinedUint8.set(new Uint8Array(buf), offset);
-              offset += buf.byteLength;
-            });
-          }
-
-          let binary = ""
-          for (let i = 0; i < combinedUint8.byteLength; i++) {
-            binary += String.fromCharCode(combinedUint8[i])
-          }
-          weightsDataStr = btoa(binary)
-        }
-        return { modelArtifactsInfo: { dateSaved: new Date(), modelTopologyType: "JSON" } }
-      }))
-
-      const { error } = await supabase
-        .from("lotto_models")
-        .insert({
-          draw_no: latestDrawNo,
-          version: modelVersion,
-          model_topology: modelTopology,
-          weights_data: weightsDataStr,
-          loss: currentLoss,
-          accuracy: currentAcc
-        })
-
-      if (error) throw error
-      addLog({ type: "system", message: `성공: 모델 ${modelVersion}이 서버에 저장되었습니다.` })
-    } catch (err) {
-      console.error(err)
-      addLog({ type: "system", message: "오류: 서버 저장에 실패했습니다." })
-    } finally {
-      setIsSaving(false)
-    }
   }
 
   if (status === "initializing" && logs.length === 0) return <LearningPageSkeleton />
@@ -527,6 +473,7 @@ export default function DeepLearningPage() {
                     <SelectValue placeholder="Epoch 선택" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="1">1 Epochs</SelectItem>
                     <SelectItem value="50">50 Epochs</SelectItem>
                     <SelectItem value="100">100 Epochs</SelectItem>
                     <SelectItem value="500">500 Epochs</SelectItem>
