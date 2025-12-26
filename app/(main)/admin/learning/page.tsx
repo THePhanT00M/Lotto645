@@ -35,6 +35,7 @@ import "@tensorflow/tfjs-backend-webgpu"
 import { supabase } from "@/lib/supabaseClient"
 import { WinningLottoNumbers } from "@/types/lotto"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useToast } from "@/hooks/use-toast" // Toast 알림 추가
 
 /**
  * 로그 데이터 타입 정의 (시스템 로그와 학습 로그를 통합 관리)
@@ -77,6 +78,7 @@ function LearningPageSkeleton() {
 
 export default function DeepLearningPage() {
   const isMobile = useIsMobile()
+  const { toast } = useToast()
   const [status, setStatus] = useState<TrainingStatus>("initializing")
   const [backendName, setBackendName] = useState<string>("unknown")
   const [totalEpochs, setTotalEpochs] = useState(100)
@@ -347,7 +349,75 @@ export default function DeepLearningPage() {
   }
 
   const handleSaveModel = async () => {
+    if (!trainedModelRef.current) return
+    setIsSaving(true)
+    addLog({ type: "system", message: "모델 저장 시퀀스 시작..." })
 
+    try {
+      // 1. 커스텀 저장 핸들러 정의 (메모리 상의 모델을 객체로 변환)
+      await trainedModelRef.current.save(
+        tf.io.withSaveHandler(async (artifacts) => {
+          let weightDataStr = null;
+
+          // 2. 가중치(Binary)가 있다면 Base64 문자열로 인코딩
+          if (artifacts.weightData) {
+            // @ts-ignore
+            const buffer = new Uint8Array(artifacts.weightData);
+            let binary = '';
+            for (let i = 0; i < buffer.byteLength; i++) {
+              binary += String.fromCharCode(buffer[i]);
+            }
+            weightDataStr = window.btoa(binary);
+          }
+
+          // 3. 저장할 데이터 객체 구성
+          const modelData = {
+            ...artifacts,
+            weightData: weightDataStr // 인코딩된 가중치 교체
+          }
+
+          // 4. Supabase DB에 Insert
+          const { error } = await supabase
+            .from('lotto_models')
+            .insert({
+              version: modelVersion,
+              epochs: totalEpochs,
+              batch_size: batchSize,
+              loss: currentLoss,
+              accuracy: currentAcc,
+              model_artifacts: modelData // JSONB 컬럼에 저장
+            });
+
+          if (error) {
+            console.error("Supabase Insert Error:", error)
+            throw new Error(error.message)
+          }
+
+          return {
+            modelArtifactsInfo: {
+              dateSaved: new Date(),
+              modelTopologyType: 'JSON',
+            },
+          };
+        })
+      );
+
+      addLog({ type: "system", message: `모델(${modelVersion})이 서버에 안전하게 저장되었습니다.` })
+      toast({
+        title: "저장 완료",
+        description: `모델 ${modelVersion} 버전이 데이터베이스에 저장되었습니다.`,
+      })
+    } catch (err) {
+      console.error("Save Model Error:", err)
+      addLog({ type: "system", message: "모델 저장 중 오류가 발생했습니다." })
+      toast({
+        variant: "destructive",
+        title: "저장 실패",
+        description: "모델을 데이터베이스에 저장하는 중 오류가 발생했습니다.",
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   if (status === "initializing" && logs.length === 0) return <LearningPageSkeleton />
