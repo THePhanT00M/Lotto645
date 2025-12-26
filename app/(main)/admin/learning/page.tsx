@@ -165,7 +165,7 @@ export default function DeepLearningPage() {
    * 3. 하이브리드 결합: Attention 결과와 통계 특징을 병합하여 최종 당첨 번호 확률 예측
    */
   const createModel = (lr: number) => {
-    const WINDOW_SIZE = 50
+    const WINDOW_SIZE = 100
     const NUM_NUMBERS = 45
     const NUM_FEATURES = 5
 
