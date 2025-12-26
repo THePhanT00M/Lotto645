@@ -587,7 +587,7 @@ export default function DeepLearningPage() {
           <Card className="flex flex-col h-[520px] bg-gray-100 dark:bg-[#1e1e1e] border-gray-200 dark:border-[#3f3f3f] w-full">
             <CardHeader className="py-4 border-b border-gray-200 dark:border-[#3f3f3f]">
               <CardTitle className="text-base flex items-center gap-2 text-[#0f0f0f] dark:text-[#f1f1f1]">
-                <Terminal className="w-4 h-4" /> 시스템 터미널 로그
+                <Terminal className="w-4 h-4" /> 시스템 로그
               </CardTitle>
             </CardHeader>
             <ScrollArea className="flex-1 p-4 bg-black/95 rounded-b-xl text-green-400 font-mono text-xs md:text-sm">
