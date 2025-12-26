@@ -460,6 +460,7 @@ export default function DeepLearningPage() {
                     <SelectItem value="32">32</SelectItem>
                     <SelectItem value="64">64</SelectItem>
                     <SelectItem value="128">128</SelectItem>
+                    <SelectItem value="256">256</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
