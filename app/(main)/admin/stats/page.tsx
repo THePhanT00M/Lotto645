@@ -399,8 +399,8 @@ export default function AdminStatsPage() {
               <div className="space-y-3">
                 {matchCountStats.map((stat) => (
                   <div key={stat.count} className="flex items-center gap-4">
-                    <div className="w-20 text-sm font-medium text-[#606060] dark:text-[#aaaaaa]">{stat.count}개 일치</div>
-                    <div className="flex-1 bg-[#e5e5e5] dark:bg-[#3f3f3f] rounded-full h-8 relative overflow-hidden">
+                    <div className="w-16 text-sm font-medium text-[#606060] dark:text-[#aaaaaa]">{stat.count}개 일치</div>
+                    <div className="flex-1 bg-[#e5e5e5] dark:bg-[#3f3f3f] rounded-full h-7 relative overflow-hidden">
                       <div
                         className="bg-gradient-to-r from-purple-500 to-blue-500 h-full rounded-full flex items-center justify-end pr-3 transition-all duration-500"
                         style={{ width: `${Math.max(Number(stat.percentage), 0)}%` }}
