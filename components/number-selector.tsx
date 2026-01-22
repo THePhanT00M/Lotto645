@@ -407,7 +407,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
             <Button
               onClick={() => generateRandomNumbers(6 - fixedNumbers.length)}
               disabled={fixedNumbers.length >= 6}
-              className="h-10 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white"
+              className="h-10 text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
