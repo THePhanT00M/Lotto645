@@ -12,15 +12,15 @@ export default function LottoCanvas({ availableBalls, isAnimating }: LottoCanvas
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
   const particlesRef = useRef<
-    Array<{
-      x: number
-      y: number
-      radius: number
-      number: number
-      vx: number
-      vy: number
-      color: string
-    }>
+      Array<{
+        x: number
+        y: number
+        radius: number
+        number: number
+        vx: number
+        vy: number
+        color: string
+      }>
   >([])
 
   // Animation loop for balls in the machine
@@ -93,7 +93,7 @@ export default function LottoCanvas({ availableBalls, isAnimating }: LottoCanvas
 
         // Boundary collision detection (circular boundary)
         const distanceFromCenter = Math.sqrt(
-          Math.pow(particle.x - canvas.width / 2, 2) + Math.pow(particle.y - canvas.height / 2, 2),
+            Math.pow(particle.x - canvas.width / 2, 2) + Math.pow(particle.y - canvas.height / 2, 2),
         )
         const maxDistance = canvas.width / 2 - particle.radius - 5
 
@@ -118,6 +118,14 @@ export default function LottoCanvas({ availableBalls, isAnimating }: LottoCanvas
           // and to make movement more dynamic
           particle.vx += (Math.random() - 0.5) * 0.8
           particle.vy += (Math.random() - 0.5) * 0.8
+
+          // 속도가 무한정 빨라지는 것을 방지하기 위해 최대 속도 제한 추가
+          const currentSpeed = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy)
+          const MAX_SPEED = 8 // 원하는 최대 속도로 조정 가능
+          if (currentSpeed > MAX_SPEED) {
+            particle.vx = (particle.vx / currentSpeed) * MAX_SPEED
+            particle.vy = (particle.vy / currentSpeed) * MAX_SPEED
+          }
         }
 
         // Draw ball

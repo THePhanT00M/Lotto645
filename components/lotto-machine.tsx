@@ -37,11 +37,11 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
     const fetchTargetDrawNo = async () => {
       try {
         const { data, error } = await supabase
-          .from("winning_numbers")
-          .select("drawNo")
-          .order("drawNo", { ascending: false })
-          .limit(1)
-          .single()
+            .from("winning_numbers")
+            .select("drawNo")
+            .order("drawNo", { ascending: false })
+            .limit(1)
+            .single()
 
         if (data) {
           setTargetDrawNo(data.drawNo + 1) // 다음 회차 = 최신 회차 + 1
@@ -222,45 +222,47 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
 
   // 11. JSX 렌더링
   return (
-    <div className="flex flex-col items-center w-full">
-      {/* 11-1. 로또 머신 캔버스 */}
-      <div className="relative w-full aspect-square max-w-md mb-6 bg-white rounded-full overflow-hidden border-4 border-gray-200 shadow-lg">
-        <LottoCanvas availableBalls={availableBalls} isAnimating={isAnimating} />
+      <div className="flex flex-col items-center w-full">
+        {/* 11-1. 로또 머신 캔버스 */}
+        <div className="relative w-full aspect-square max-w-md mb-6 bg-white rounded-full overflow-hidden border-4 border-gray-200 shadow-lg">
+          <LottoCanvas availableBalls={availableBalls} isAnimating={isAnimating} />
 
-        {/* 11-2. 공이 뽑힐 때 나오는 애니메이션용 공 (Framer Motion) */}
-        <motion.div
-          initial={{ y: 0, opacity: 0, scale: 0.5 }}
-          animate={isDrawing ? { y: -100, opacity: 1, scale: 1 } : { y: 0, opacity: 0, scale: 0.5 }}
-          transition={{ duration: 0.5 }}
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
-        >
-          {isDrawing && <LottoBall number={balls[balls.length - 1] || 0} />}
-        </motion.div>
-      </div>
+          {/* 11-2. 공이 뽑힐 때 나오는 애니메이션용 공 (Framer Motion) */}
+          <motion.div
+              initial={{ y: 0, opacity: 0, scale: 0.5 }}
+              animate={isDrawing ? { y: -100, opacity: 1, scale: 1 } : { y: 0, opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.5 }}
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
+          >
+            {isDrawing && <LottoBall number={balls[balls.length - 1] || 0} />}
+          </motion.div>
+        </div>
 
-      {/* 11-3. 컨트롤 버튼 (뽑기, 한번에 뽑기, 다시 뽑기) */}
-      <LottoControls
-        balls={balls}
-        isDrawing={isDrawing}
-        isComplete={isComplete}
-        isDrawingAll={isDrawingAll}
-        onDrawBall={drawBall}
-        onDrawAllBalls={drawAllBalls}
-        onReset={resetMachine}
-      />
+        {/* 11-3. 컨트롤 버튼 (뽑기, 한번에 뽑기, 다시 뽑기) */}
+        <LottoControls
+            balls={balls}
+            isDrawing={isDrawing}
+            isComplete={isComplete}
+            isDrawingAll={isDrawingAll}
+            onDrawBall={drawBall}
+            onDrawAllBalls={drawAllBalls}
+            onReset={resetMachine}
+        />
 
-      {/* 11-4. 추첨 완료 시 결과 표시 영역 */}
-      <div className="w-full mt-6 space-y-6">
-        {/* 11-4-1. 축하 메시지 (완료 시 표시) */}
-        {showCongrats && (
-          <div>
-            <LottoCongratulation show={showCongrats} className="w-full max-w-none" />
-          </div>
+        {/* 11-4. 추첨 중 혹은 완료 시 결과 표시 영역 노출 조건 추가 */}
+        {(isDrawing || isDrawingAll || isComplete || balls.length > 0) && (
+            <div className="w-full mt-6 space-y-6">
+              {/* 11-4-1. 축하 메시지 (완료 시 표시) */}
+              {showCongrats && (
+                  <div>
+                    <LottoCongratulation show={showCongrats} className="w-full max-w-none" />
+                  </div>
+              )}
+
+              {/* 11-4-2. 추첨된 번호 표시 (Ref를 연결하여 스크롤 대상으로 지정) */}
+              <LottoNumberDisplay ref={resultsRef} numbers={balls} isSaved={isSaved} />
+            </div>
         )}
-
-        {/* 11-4-2. 추첨된 번호 표시 (Ref를 연결하여 스크롤 대상으로 지정) */}
-        <LottoNumberDisplay ref={resultsRef} numbers={balls} isSaved={isSaved} />
       </div>
-    </div>
   )
 }
