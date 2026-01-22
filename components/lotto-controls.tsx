@@ -54,13 +54,10 @@ export default function LottoControls({
                 onClick={onReset}
                 variant="ghost"
                 className="
-            /* 라이트 모드: 연한 회색 배경 */
-            bg-gray-100 hover:bg-gray-200 text-gray-900
-            /* 다크 모드: 흰색 반투명 배경 */
+            bg-gray-200 hover:bg-gray-300 text-gray-900
             dark:bg-white/10 dark:hover:bg-white/20 dark:text-gray-100
-            /* 공통 스타일 */
-            rounded-full px-6 transition-colors duration-200
-          "
+              rounded-full px-6 transition-colors duration-200
+            "
             >
               <RefreshCcw className={`w-4 h-4 mr-2 ${isDrawing || isDrawingAll ? "animate-spin" : ""}`} />
               다시 뽑기
