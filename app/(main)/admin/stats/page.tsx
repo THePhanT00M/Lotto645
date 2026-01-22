@@ -32,8 +32,7 @@ export default function AdminStatsPage() {
 
     const fetchData = async () => {
       try {
-        const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
-        const response = await fetch(`${BASE_URL}/api/stats`);
+        const response = await fetch('/api/stats')
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`)
