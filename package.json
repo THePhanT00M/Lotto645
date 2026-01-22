@@ -7,7 +7,7 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "build:mobile": "mv app/api ./api_backup && IS_CAPACITOR=true next build && mv ./api_backup app/api"
+    "build:mobile": "NEXT_PUBLIC_IS_APP=true mv app/api ./api_backup && next build && mv ./api_backup app/api"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",

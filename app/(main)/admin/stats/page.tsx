@@ -5,6 +5,7 @@ import type { LottoResult, WinningLottoNumbers } from "@/types/lotto"
 import { BarChart3, TrendingUp, Award, Target, Sparkles, Calendar, AlertTriangle } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import { getApiUrl } from "@/lib/api-config";
 
 interface AnalysisResult {
   result: LottoResult
@@ -32,8 +33,7 @@ export default function AdminStatsPage() {
 
     const fetchData = async () => {
       try {
-        const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
-        const response = await fetch(`${BASE_URL}/api/stats`);
+        const response = await fetch(getApiUrl("/api/stats"));
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`)
