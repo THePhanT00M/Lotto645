@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "build:mobile": "mv app/api ./api_backup && IS_CAPACITOR=true next build && mv ./api_backup app/api"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",
