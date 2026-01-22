@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { saveLottoResult } from "@/utils/lotto-storage"
 import AINumberDisplay from "@/components/lotto-analysis/ai-number-display"
 import { useToast } from "@/hooks/use-toast"
+import {getApiUrl} from "@/lib/api-config";
 
 // --- 1단계: 타입 및 헬퍼 함수 (상위 컴포넌트에서 Props로 받음) ---
 type Grade = "하" | "중하" | "보통" | "중" | "중상" | "상" | "최상"
@@ -202,7 +203,7 @@ export default function AIRecommendation({
 
     // 4-4. [수정] 서버 DB에 자동으로 저장 (통계 수집용)
     try {
-      const response = await fetch("/api/log-draw", {
+      const response = await fetch(getApiUrl("/api/log-draw"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

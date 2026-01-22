@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle, AlertTriangle, DatabaseZap, RefreshCw } from "lucide-react"
+import {getApiUrl} from "@/lib/api-config";
 
 export default function UpdateDrawPage() {
   const [status, setStatus] = useState("업데이트 대기 중...")
@@ -18,7 +19,7 @@ export default function UpdateDrawPage() {
     setResultData(null)
 
     try {
-      const response = await fetch("/api/update-draw")
+      const response = await fetch(getApiUrl("/api/update-draw"))
       const result = await response.json()
 
       if (response.ok && result.success) {

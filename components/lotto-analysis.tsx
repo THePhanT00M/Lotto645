@@ -5,7 +5,8 @@ import type { WinningLottoNumbers } from "@/types/lotto" // 타입 import
 import { supabase } from "@/lib/supabaseClient" // Supabase 클라이언트 import
 import AdvancedAnalysis from "./lotto-analysis/advanced-analysis"
 import { Skeleton } from "@/components/ui/skeleton" // 로딩 스켈레톤 추가
-import { AlertTriangle, Info } from "lucide-react" // 아이콘 추가
+import { AlertTriangle, Info } from "lucide-react"
+import {getApiUrl} from "@/lib/api-config"; // 아이콘 추가
 
 interface LottoAnalysisProps {
   numbers: number[]
@@ -70,7 +71,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
       // --- [수정] API를 통해 generated_numbers 통계 가져오기 ---
       try {
         // 3. [수정] /api/generated-stats 엔드포인트 호출
-        const response = await fetch('/api/generated-stats');
+        const response = await fetch(getApiUrl("/api/generated-stats"));
         const result = await response.json();
 
         if (!response.ok || !result.success) {
