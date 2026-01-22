@@ -7,9 +7,12 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "build:mobile": "NEXT_PUBLIC_IS_APP=true mv app/api ./api_backup && next build && mv ./api_backup app/api"
+    "build:ios": "( [ -d app/api ] && mv app/api app/_api || true ) && (NEXT_PUBLIC_IS_APP=true pnpm next build || ( [ -d app/_api ] && mv app/_api app/api || true; exit 1 )) && ( [ -d app/_api ] && mv app/_api app/api || true ) && pnpm cap sync ios && pnpm cap open ios"
   },
   "dependencies": {
+    "@capacitor/cli": "^8.0.1",
+    "@capacitor/core": "^8.0.1",
+    "@capacitor/ios": "^8.0.1",
     "@emotion/is-prop-valid": "latest",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "1.2.12",

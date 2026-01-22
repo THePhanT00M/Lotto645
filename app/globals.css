@@ -2,17 +2,21 @@
 @config "../tailwind.config.ts";
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+    .text-balance {
+        text-wrap: balance;
+    }
 }
 
 @layer base {
     :root {
+        /* Safe Area 변수 추가 */
+        --sat: env(safe-area-inset-top);
+        --sab: env(safe-area-inset-bottom);
+
         /* Updated to clean modern design tokens */
         --background: 0 0% 100%; /* Pure white background */
         --foreground: 197 37% 24%; /* Dark cyan for text */
@@ -85,29 +89,38 @@ body {
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+
+        /* ✅ 핵심: 상단바 및 하단 바 여백 추가 */
+        padding-top: var(--sat);
+        padding-bottom: var(--sab);
+
+        /* 콘텐츠가 잘리지 않도록 설정 */
+        min-height: 100vh;
+        /* iOS에서 바운스 스크롤 시 배경색 유지 */
+        background-attachment: fixed;
+    }
 }
 
 /* 추가: 스크롤바 스타일링 */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
+    width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
+    background: #f1f1f1;
+    border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #c5c5c5;
-  border-radius: 10px;
+    background: #c5c5c5;
+    border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #a0a0a0;
+    background: #a0a0a0;
 }
