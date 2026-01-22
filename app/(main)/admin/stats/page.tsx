@@ -34,7 +34,6 @@ export default function AdminStatsPage() {
     const fetchData = async () => {
       try {
         const response = await fetch(getApiUrl("/api/stats"));
-        if (!response.ok) throw new Error("네트워크 응답에 문제가 있습니다.");
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`)
