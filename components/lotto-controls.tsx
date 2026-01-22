@@ -29,7 +29,7 @@ export default function LottoControls({
             <Button
                 onClick={onDrawBall}
                 disabled={isDrawing || isDrawingAll || balls.length >= 6}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6"
+                className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white rounded-full px-6"
             >
               <Play className="w-4 h-4 mr-2" />
               {balls.length === 0 ? "시작하기" : "번호 뽑기"}
