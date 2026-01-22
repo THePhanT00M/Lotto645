@@ -29,31 +29,19 @@ export default function Header() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Logo />
-
             <Navigation showMobileMenu={showMobileMenu} isLoggedIn={isLoggedIn} onToggleMobileMenu={toggleMobileMenu} />
-
             <div className="flex items-center space-x-4">
               <SearchBar isLoggedIn={isLoggedIn} />
-
               <ThemeToggle />
-
               {isLoggedIn ? (
                 <>
                   <NotificationBell />
-
                   <ProfileDropdown onLogout={handleLogout} />
-
                   <MobileMenuToggle showMobileMenu={showMobileMenu} onToggle={toggleMobileMenu} />
                 </>
               ) : (
                 <>
-                  <Link
-                    href="/login"
-                    className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium"
-                  >
-                    로그인
-                  </Link>
-
+                  <Link href="/login" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">로그인</Link>
                   <MobileMenuToggle showMobileMenu={showMobileMenu} onToggle={toggleMobileMenu} />
                 </>
               )}
