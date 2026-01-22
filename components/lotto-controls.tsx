@@ -53,7 +53,7 @@ export default function LottoControls({
   }, [isDrawingAll, animationTexts.length])
 
   return (
-    <div className="flex flex-row gap-2 w-full max-w-md mb-6 justify-between">
+    <div className="flex flex-row gap-2 w-full max-w-md justify-between">
       {/* 번호 뽑기 버튼 - 추첨이 완료되지 않았고 전체 추첨 중이 아닐 때 표시 */}
       {balls.length < 6 && !isDrawingAll && (
         <Button

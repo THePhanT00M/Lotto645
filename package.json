@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
+    "build": "next build",
     "build:ios": "( [ -d app/api ] && mv app/api app/_api || true ) && (NEXT_PUBLIC_IS_APP=true pnpm next build || ( [ -d app/_api ] && mv app/_api app/api || true; exit 1 )) && ( [ -d app/_api ] && mv app/_api app/api || true ) && pnpm cap sync ios && pnpm cap open ios"
   },
   "dependencies": {
