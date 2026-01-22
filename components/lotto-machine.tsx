@@ -250,10 +250,10 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
       />
 
       {/* 11-4. 추첨 완료 시 결과 표시 영역 */}
-      <div className="w-full">
+      <div className="w-full mt-6 space-y-6">
         {/* 11-4-1. 축하 메시지 (완료 시 표시) */}
         {showCongrats && (
-          <div className="mb-6">
+          <div>
             <LottoCongratulation show={showCongrats} className="w-full max-w-none" />
           </div>
         )}

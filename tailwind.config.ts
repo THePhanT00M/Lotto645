@@ -25,6 +25,9 @@ const config: Config = {
       "2xl": "1536px",
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-noto-sans-kr)", "sans-serif"],
+      },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
