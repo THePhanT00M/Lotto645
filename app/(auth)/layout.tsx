@@ -1,13 +1,13 @@
 import type React from "react"
+import AuthBodyBackground from "@/components/auth-body-background"
 
-export default function AuthLayout({
-                                       children,
-                                   }: {
+export default function AuthLayout({children,}: {
     children: React.ReactNode
 }) {
     return (
         <>
-            <main className="bg-[#f0f2f5] dark:bg-[#0f0f0f]">{children}</main>
+            <AuthBodyBackground />
+            {children}
         </>
     )
 }
