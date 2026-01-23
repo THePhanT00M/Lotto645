@@ -1,178 +1,299 @@
 'use client'
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Eye, EyeOff, ArrowLeft } from "lucide-react"
+import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import Logo from "@/components/header/logo"
+import { supabase } from "@/lib/supabaseClient"
+import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
+  const { toast } = useToast()
+
+  // 뷰 및 로딩 상태
   const [currentView, setCurrentView] = useState<"login" | "forgot">("login")
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+
+  // 폼 데이터 및 에러 상태
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  })
+  const [errors, setErrors] = useState<{ [key: string]: string }>({})
+
+  // 입력 핸들러
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target
+    setFormData(prev => ({ ...prev, [id]: value }))
+
+    // 입력 시 해당 필드 에러 제거
+    if (errors[id]) {
+      setErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[id]
+        return newErrors
+      })
+    }
+  }
+
+  // 로그인 처리
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const newErrors: { [key: string]: string } = {}
+
+    if (!formData.email.trim()) {
+      newErrors.email = "이메일을 입력해주세요."
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "올바른 이메일 형식이 아닙니다."
+    }
+
+    if (!formData.password) {
+      newErrors.password = "비밀번호를 입력해주세요."
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      if (error) {
+        // 계정 정보가 틀린 경우 통합 에러 메시지 처리 또는 특정 필드 표시
+        if (error.message.includes("Invalid login credentials")) {
+          setErrors({
+            email: "이메일 또는 비밀번호가 일치하지 않습니다.",
+            password: " " // 테두리 강조용
+          })
+        } else {
+          throw error
+        }
+        return
+      }
+
+      router.push("/")
+      router.refresh()
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "로그인 실패",
+        description: error.message || "오류가 발생했습니다.",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 비밀번호 재설정 이메일 전송
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.email.trim()) {
+      setErrors({ email: "이메일을 입력해주세요." })
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
+      })
+      if (error) throw error
+
+      toast({
+        title: "이메일 전송 완료",
+        description: "비밀번호 재설정 링크를 확인해주세요.",
+      })
+      setCurrentView("login")
+    } catch (error: any) {
+      setErrors({ email: error.message })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 소셜 로그인 핸들러
+  const handleSocialLogin = async (provider: 'google' | 'apple') => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}/auth/callback` }
+      })
+      if (error) throw error
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "로그인 실패", description: error.message })
+    }
+  }
+
+  // 에러 메시지 컴포넌트
+  const ErrorMessage = ({ message }: { message?: string }) => {
+    if (!message || message === " ") return null
+    return (
+        <div className="flex items-center mt-1.5 text-red-500 dark:text-red-400">
+          <AlertCircle className="h-3.5 w-3.5 mr-1" />
+          <span className="text-xs font-medium">{message}</span>
+        </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#f0f2f5] dark:bg-[#0f0f0f] font-sans p-4 transition-colors duration-200">
-      {/* Card Container에 relative 추가하여 내부 절대 위치 기준점 설정 */}
-      <div className="relative w-full max-w-[448px] bg-white dark:bg-[#1f1f1f] rounded-xl shadow-md dark:shadow-none p-8 sm:p-12 space-y-8 transition-colors duration-200">
-        {/* Header Section */}
-        <div className="text-center space-y-4">
-          <div className="flex justify-center mb-6">
-            <Logo variant="auth" className="scale-110" />
-          </div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f0f2f5] dark:bg-[#0f0f0f] font-sans p-4 transition-colors duration-200">
+        <div className="relative w-full max-w-[448px] bg-white dark:bg-[#1f1f1f] rounded-xl shadow-md dark:shadow-none p-8 sm:p-12 space-y-8 transition-colors duration-200">
 
-          <div className="space-y-2">
+          {/* Header */}
+          <div className="text-center space-y-4">
+            <div className="flex justify-center mb-6">
+              <Logo variant="auth" className="scale-110" />
+            </div>
             <p className="text-[15px] text-gray-600 dark:text-[#aaaaaa] leading-relaxed">
               {currentView === "login"
-                ? "번호 생성 및 추천 서비스를 이용하려면 로그인하세요."
-                : "가입하신 이메일을 입력하시면 비밀번호 재설정 링크를 보내드립니다."}
+                  ? "번호 생성 및 추천 서비스를 이용하려면 로그인하세요."
+                  : "가입하신 이메일을 입력하시면 비밀번호 재설정 링크를 보내드립니다."}
             </p>
           </div>
-        </div>
 
-        {/* Form Section */}
-        <div className="space-y-6">
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                이메일
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="example@email.com"
-                className="h-12 border-gray-300 dark:border-[#3f3f3f] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#121212] dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 transition-all"
-              />
+          {/* Form */}
+          <form onSubmit={currentView === "login" ? handleLogin : handleResetPassword} className="space-y-6">
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">이메일</Label>
+                <Input
+                    id="email"
+                    type="email"
+                    placeholder="example@email.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    className={cn(
+                        "h-12 border-gray-300 dark:border-[#3f3f3f] focus:ring-2 rounded-lg bg-white dark:bg-[#121212] transition-all",
+                        errors.email && "border-red-500 dark:border-red-500 focus:ring-red-500/20 focus:border-red-500"
+                    )}
+                />
+                <ErrorMessage message={errors.email} />
+              </div>
+
+              {currentView === "login" && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">비밀번호</Label>
+                      <Button
+                          type="button"
+                          variant="link"
+                          className="p-0 h-auto text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 cursor-pointer"
+                          onClick={() => {
+                            setCurrentView("forgot")
+                            setErrors({})
+                          }}
+                      >
+                        비밀번호 찾기
+                      </Button>
+                    </div>
+                    <div className="relative">
+                      <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="비밀번호 입력"
+                          value={formData.password}
+                          onChange={handleChange}
+                          disabled={isLoading}
+                          className={cn(
+                              "h-12 pr-10 border-gray-300 dark:border-[#3f3f3f] focus:ring-2 rounded-lg bg-white dark:bg-[#121212] transition-all",
+                              errors.password && "border-red-500 dark:border-red-500 focus:ring-red-500/20 focus:border-red-500"
+                          )}
+                      />
+                      <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1 h-10 w-10 px-0 hover:bg-transparent text-gray-500 cursor-pointer"
+                          onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </Button>
+                    </div>
+                    <ErrorMessage message={errors.password} />
+                  </div>
+              )}
             </div>
 
-            {currentView !== "forgot" && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    비밀번호
-                  </Label>
-                  <Button
-                    variant="link"
-                    className="p-0 h-auto text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer"
-                    onClick={() => setCurrentView("forgot")}
-                  >
-                    비밀번호 찾기
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="비밀번호 입력"
-                    className="h-12 pr-10 border-gray-300 dark:border-[#3f3f3f] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 rounded-lg bg-white dark:bg-[#121212] dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 transition-all"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1 h-10 w-10 px-0 hover:bg-transparent text-gray-500 dark:text-gray-400 cursor-pointer"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+            <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-11 text-[15px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-full cursor-pointer transition-colors"
+            >
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (currentView === "login" ? "로그인" : "재설정 링크 보내기")}
+            </Button>
 
-          <Button
-            className="w-full h-11 text-[15px] font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 rounded-full shadow-none cursor-pointer transition-colors"
-          >
-            {currentView === "login" ? "로그인" : "재설정 링크 보내기"}
-          </Button>
-
-          {currentView !== "forgot" && (
-            <>
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator className="w-full bg-gray-200 dark:bg-[#3f3f3f]" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white dark:bg-[#1f1f1f] px-4 text-gray-500 dark:text-gray-400">
-                    간편 로그인
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  className="h-11 border-gray-300 dark:border-[#3f3f3f] hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-700 hover:text-gray-700 dark:text-white dark:hover:text-white rounded-lg bg-white dark:bg-[#121212] cursor-pointer transition-colors"
-                >
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  Google
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-11 border-gray-300 dark:border-[#3f3f3f] hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-700 hover:text-gray-700 dark:text-white dark:hover:text-white rounded-lg bg-white dark:bg-[#121212] cursor-pointer transition-colors"
-                >
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-.96 3.64-.82 1.57.06 2.75.63 3.54 1.51-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                  </svg>
-                  Apple
-                </Button>
-              </div>
-            </>
-          )}
-
-          <div className="text-center">
             {currentView === "login" && (
-              <p className="text-sm text-gray-600 dark:text-[#aaaaaa]">
-                아직 계정이 없으신가요?{" "}
-                <Link
-                  href="/register"
-                  className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 ml-1 transition-colors"
-                >
-                  회원가입
-                </Link>
-              </p>
-            )}
-            {currentView === "forgot" && (
-              <p className="text-sm text-gray-600 dark:text-[#aaaaaa]">
-                <Button
-                  variant="link"
-                  className="p-0 h-auto font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                  onClick={() => setCurrentView("login")}
-                >
-                  로그인으로 돌아가기
-                </Button>
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
+                <>
+                  <div className="relative py-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <Separator className="w-full bg-gray-200 dark:bg-[#3f3f3f]" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white dark:bg-[#1f1f1f] px-4 text-gray-500 dark:text-gray-400">간편 로그인</span>
+                    </div>
+                  </div>
 
-      <div className="mt-8 text-xs text-gray-500 dark:text-gray-500">
-        © {new Date().getFullYear()} Lotto645. All rights reserved.
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button type="button" variant="outline" onClick={() => handleSocialLogin('google')} className="h-11 border-gray-300 dark:border-[#3f3f3f] hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-700 dark:text-white rounded-lg bg-white dark:bg-[#121212] cursor-pointer">
+                      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                      </svg>
+                      Google
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => handleSocialLogin('apple')} className="h-11 border-gray-300 dark:border-[#3f3f3f] hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-700 dark:text-white rounded-lg bg-white dark:bg-[#121212] cursor-pointer">
+                      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-.96 3.64-.82 1.57.06 2.75.63 3.54 1.51-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                      </svg>
+                      Apple
+                    </Button>
+                  </div>
+                </>
+            )}
+
+            <div className="text-center">
+              {currentView === "login" ? (
+                  <p className="text-sm text-gray-600 dark:text-[#aaaaaa]">
+                    아직 계정이 없으신가요?{" "}
+                    <Link href="/register" className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors ml-1">
+                      회원가입
+                    </Link>
+                  </p>
+              ) : (
+                  <Button
+                      type="button"
+                      variant="link"
+                      className="p-0 h-auto font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors"
+                      onClick={() => {
+                        setCurrentView("login")
+                        setErrors({})
+                      }}
+                  >
+                    로그인으로 돌아가기
+                  </Button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        <div className="mt-8 text-xs text-gray-500">© {new Date().getFullYear()} Lotto645. All rights reserved.</div>
       </div>
-    </div>
   )
 }

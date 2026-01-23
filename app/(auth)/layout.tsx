@@ -7,6 +7,7 @@ import "../globals.css" // 경로 주의: 상위 폴더의 css 참조
 import { Suspense } from "react"
 import SplashScreen from "@/components/splash-screen"
 import localFont from "next/font/local"
+import { Toaster } from "@/components/ui/toaster"
 
 // 사파리 상단바 및 오버스크롤 배경색 대응 (회색 계열)
 export const viewport: Viewport = {
@@ -62,6 +63,7 @@ export default function AuthLayout({
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
                 {/* 로그인 페이지는 보통 Header/Footer를 제외하므로 children만 렌더링 */}
                 {children}
+                <Toaster />
                 <Analytics />
                 <SpeedInsights />
             </ThemeProvider>
