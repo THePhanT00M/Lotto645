@@ -8,13 +8,15 @@ export default function NotificationBell() {
     const [unreadCount, setUnreadCount] = useState(0)
 
     useEffect(() => {
-        // 1. 초기 알림 개수 가져오기
+        let user_id: string | null = null;
+
         const fetchUnreadCount = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
+            user_id = user.id;
 
             const { count, error } = await supabase
-                .from("notifications") // 실제 DB 테이블명에 맞춰 수정 가능
+                .from("notifications")
                 .select("*", { count: "exact", head: true })
                 .eq("user_id", user.id)
                 .eq("is_read", false)
@@ -26,7 +28,7 @@ export default function NotificationBell() {
 
         fetchUnreadCount()
 
-        // 2. 실시간 알림 상태 감시 (Realtime)
+        // 2. 실시간 알림 상태 감시 (내 아이디에 해당하는 데이터만)
         const channel = supabase
             .channel("notification_changes")
             .on(
@@ -35,9 +37,11 @@ export default function NotificationBell() {
                     event: "*",
                     schema: "public",
                     table: "notifications",
+                    filter: `user_id=eq.${user_id}`,
                 },
-                () => {
-                    fetchUnreadCount() // 데이터 변경 시 다시 가져오기
+                (payload) => {
+                    console.log("실시간 변경 감지:", payload); // 디버깅용
+                    fetchUnreadCount()
                 }
             )
             .subscribe()
