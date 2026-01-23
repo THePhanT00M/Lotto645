@@ -24,11 +24,8 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-              계정 만들기
-            </h2>
             <p className="text-[15px] text-gray-600 dark:text-[#aaaaaa] leading-relaxed">
-              Lotto645를 시작하려면 새 계정을 만드세요.
+              Lotto645를 시작하려면 계정을 만드세요.
             </p>
           </div>
         </div>
