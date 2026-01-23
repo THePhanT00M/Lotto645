@@ -42,7 +42,7 @@ export default function ProfileDropdown({ onLogout }: ProfileDropdownProps) {
   }
 
   return (
-      <div className="relative">
+      <div className="relative hidden sm:block">
         <button
             onClick={toggleProfileModal}
             className="flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg px-2 py-1 transition-colors"
@@ -55,10 +55,10 @@ export default function ProfileDropdown({ onLogout }: ProfileDropdownProps) {
                   className="w-8 h-8 rounded-full object-cover"
               />
           )}
-          <span className="text-gray-900 dark:text-white font-medium hidden sm:block">
-          {userData?.name || "로딩 중..."}
-        </span>
-          <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-300 hidden sm:block" />
+          <span className="text-gray-900 dark:text-white font-medium">
+            {userData?.name || "로딩 중..."}
+          </span>
+          <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
         </button>
 
         {showProfileModal && (

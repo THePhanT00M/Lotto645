@@ -91,17 +91,6 @@ export default function Navigation({ showMobileMenu, isLoggedIn, onToggleMobileM
 
           {/* 메뉴 본문 영역 - 스크롤 가능하도록 flex-1 및 overflow-y-auto 적용 */}
           <div className="flex-1 overflow-y-auto container mx-auto p-4 sm:p-6">
-            {isLoggedIn && (
-                <div className="relative mb-8">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-                  <input
-                      type="text"
-                      placeholder="검색어를 입력하세요..."
-                      className="pl-10 pr-4 py-3 w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                  />
-                </div>
-            )}
-
             <nav className="space-y-1">
               {navigationItems.map((item) => (
                   <Link
