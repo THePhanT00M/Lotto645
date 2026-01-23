@@ -26,7 +26,7 @@ export default function LoginPage() {
           <div className="space-y-2">
             <p className="text-[15px] text-gray-600 dark:text-[#aaaaaa] leading-relaxed">
               {currentView === "login"
-                ? "번호 추천 서비스를 이용하려면 로그인하세요."
+                ? "번호 생성 및 추천 서비스를 이용하려면 로그인하세요."
                 : "가입하신 이메일을 입력하시면 비밀번호 재설정 링크를 보내드립니다."}
             </p>
           </div>
