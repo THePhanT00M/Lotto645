@@ -87,11 +87,13 @@ export default function RegisterPage() {
           data: {
             full_name: formData.name,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         },
       })
 
       if (error) throw error
+
+      console.log(data)
 
       if (data.user) {
         toast({
