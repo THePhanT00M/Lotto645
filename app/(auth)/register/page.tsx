@@ -93,7 +93,11 @@ export default function RegisterPage() {
 
       if (error) throw error
 
-      console.log(data)
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        setErrors({ email: "이미 등록된 이메일입니다." })
+        setIsLoading(false)
+        return
+      }
 
       if (data.user) {
         toast({
