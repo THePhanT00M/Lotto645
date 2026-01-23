@@ -8,6 +8,7 @@ import "./globals.css"
 import { Suspense } from "react"
 import SplashScreen from "@/components/splash-screen"
 import localFont from "next/font/local"
+import { Toaster } from "@/components/ui/toaster"
 
 export const viewport: Viewport = {
     width: "device-width",
@@ -54,6 +55,7 @@ export default function RootLayout({children,}: Readonly<{
         <Suspense fallback={<SplashScreen />}>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
                 {children}
+                <Toaster />
                 <Analytics />
                 <SpeedInsights />
             </ThemeProvider>
