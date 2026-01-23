@@ -169,7 +169,7 @@ export default function LoginPage() {
           <form onSubmit={currentView === "login" ? handleLogin : handleResetPassword} className="space-y-6">
             <div className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">이메일</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">이메일</Label>
                 <Input
                     id="email"
                     type="email"

@@ -147,7 +147,7 @@ export default function RegisterPage() {
             <div className="space-y-5">
               {/* 이름 입력 */}
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">이름</Label>
+                <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">이름</Label>
                 <Input
                     id="name"
                     placeholder="홍길동"
@@ -164,7 +164,7 @@ export default function RegisterPage() {
 
               {/* 이메일 입력 */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">이메일</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">이메일</Label>
                 <Input
                     id="email"
                     type="email"
@@ -182,7 +182,7 @@ export default function RegisterPage() {
 
               {/* 비밀번호 입력 */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">비밀번호</Label>
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">비밀번호</Label>
                 <div className="relative">
                   <Input
                       id="password"
@@ -211,7 +211,7 @@ export default function RegisterPage() {
 
               {/* 비밀번호 확인 입력 */}
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">비밀번호 확인</Label>
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">비밀번호 확인</Label>
                 <div className="relative">
                   <Input
                       id="confirmPassword"
