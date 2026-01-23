@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react" // AlertCircle 아이콘 추가
+import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import Logo from "@/components/header/logo"
 import { supabase } from "@/lib/supabaseClient"
@@ -38,7 +38,6 @@ export default function RegisterPage() {
     const { id, value } = e.target
     setFormData(prev => ({ ...prev, [id]: value }))
 
-    // 사용자가 입력을 시작하면 해당 필드의 에러 메시지 삭제
     if (errors[id]) {
       setErrors(prev => {
         const newErrors = { ...prev }
@@ -61,6 +60,8 @@ export default function RegisterPage() {
       newErrors.email = "올바른 이메일 형식이 아닙니다."
     }
 
+    // 비밀번호 복잡성 검사: 8자 이상, 대소문자, 숫자, 특수문자 포함
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
     if (!formData.password) {
       newErrors.password = "비밀번호를 입력해주세요."
     } else if (formData.password.length < 6) {
@@ -71,7 +72,6 @@ export default function RegisterPage() {
       newErrors.confirmPassword = "비밀번호가 일치하지 않습니다."
     }
 
-    // 에러가 있으면 상태 업데이트 후 중단
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       return
@@ -107,8 +107,13 @@ export default function RegisterPage() {
         router.push("/login")
       }
     } catch (error: any) {
-      // 서버 에러(중복 이메일 등) 발생 시 이메일 필드 아래에 표시
-      setErrors({ email: error.message || "회원가입 중 오류가 발생했습니다." })
+      // 서버 에러 코드 확인 및 필드별 에러 처리
+      if (error.code === "weak_password") {
+        setErrors({ password: "비밀번호는 8자 이상이며 영문 대소문자, 숫자, 특수문자를 모두 포함해야 합니다." })
+      } else {
+        // 기타 서버 에러 발생 시 이메일 필드 또는 일반 에러로 표시
+        setErrors({ email: error.message || "회원가입 중 오류가 발생했습니다." })
+      }
     } finally {
       setIsLoading(false)
     }
@@ -242,7 +247,6 @@ export default function RegisterPage() {
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "계정 만들기"}
             </Button>
 
-            {/* ... (소셜 로그인 및 하단 링크 섹션은 이전과 동일) */}
             <div className="relative py-2">
               <div className="absolute inset-0 flex items-center">
                 <Separator className="w-full bg-gray-200 dark:bg-[#3f3f3f]" />
