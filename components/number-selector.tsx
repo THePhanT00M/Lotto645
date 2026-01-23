@@ -303,9 +303,9 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
 
   // 15. JSX 렌더링
   return (
-    <div className="w-full">
+    <div className="w-full space-y-6">
       {/* 15-1. 상단 탭 (선택/고정/제외) */}
-      <div className="mb-6">
+      <div>
         <Tabs defaultValue="select" onValueChange={(value) => setMode(value as any)}>
           <TabsList className="grid w-full grid-cols-3 bg-gray-200 dark:bg-[#262626] p-1 rounded-sm">
             <TabsTrigger
@@ -430,7 +430,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
       </div>
 
       {/* 15-3. 번호 선택 그리드 (1-45) */}
-      <div className="">
+      <div>
         <div className="grid grid-cols-5 sm:grid-cols-9 gap-2 sm:gap-3 place-items-center">
           {Array.from({ length: 45 }, (_, i) => i + 1).map((number) => {
             const isSelected = selectedNumbers.includes(number)
@@ -484,7 +484,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
 
       {/* 15-4. 축하 메시지 (6개 선택 완료 시) */}
       {showCongrats && (
-        <div className="mb-6">
+        <div>
           <LottoCongratulation show={showCongrats} className="w-full max-w-none" />
         </div>
       )}
