@@ -51,14 +51,21 @@ export default function Header() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Logo />
-              <Navigation showMobileMenu={showMobileMenu} isLoggedIn={isLoggedIn} onToggleMobileMenu={toggleMobileMenu} />
+              <Navigation
+                  showMobileMenu={showMobileMenu}
+                  isLoggedIn={isLoggedIn}
+                  onToggleMobileMenu={toggleMobileMenu}
+                  onLogout={handleLogout}
+              />
               <div className="flex items-center gap-4">
                 {/*<SearchBar isLoggedIn={isLoggedIn} />*/}
                 <ThemeToggle />
                 {isLoggedIn ? (
                     <>
                       <NotificationBell />
-                      <ProfileDropdown onLogout={handleLogout} />
+                      <div className="hidden lg:flex items-center gap-4 relative">
+                        <ProfileDropdown onLogout={handleLogout} />
+                      </div>
                       <MobileMenuToggle showMobileMenu={showMobileMenu} onToggle={toggleMobileMenu} />
                     </>
                 ) : (
