@@ -151,7 +151,7 @@ export default function LoginPage() {
 
   return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#f0f2f5] dark:bg-[#0f0f0f] p-4 transition-colors duration-200">
-        <div className="relative w-full max-w-[448px] bg-white dark:bg-[#1f1f1f] rounded-xl shadow-md dark:shadow-none p-8 sm:p-12 space-y-8 transition-colors duration-200">
+        <div className="relative w-full max-w-md bg-white dark:bg-[#1f1f1f] rounded-xl shadow-md dark:shadow-none p-8 sm:p-12 space-y-8 transition-colors duration-200">
 
           {/* Header */}
           <div className="text-center space-y-4">
