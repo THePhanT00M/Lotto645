@@ -9,7 +9,8 @@ import LottoCongratulation from "@/components/lotto-congratulation"
 import LottoNumberDisplay from "@/components/lotto-number-display"
 import { getRandomNumber } from "@/utils/lotto-utils"
 import { saveLottoResult } from "@/utils/lotto-storage" // 1. 로컬 저장소 유틸 임포트
-import { supabase } from "@/lib/supabaseClient" // [추가] Supabase 클라이언트 임포트
+import { supabase } from "@/lib/supabaseClient"
+import {getApiUrl} from "@/lib/api-config";
 
 interface LottoMachineProps {
   onDrawComplete: (numbers: number[]) => void
@@ -95,14 +96,12 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
         setIsSaved(true); // 6-4-1. UI를 '저장됨'으로 변경
 
         // 6-4-2. 서버 DB에 비동기 저장 (통계 수집용)
-        fetch('/api/log-draw', { // '/api/log-draw' 엔드포인트 호출
+        fetch(getApiUrl("/api/log-draw"), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             numbers: sortedBalls,
-            source: 'machine', // 출처: 'machine' (자동 추첨기)
-            // score는 AI가 아니므로 보내지 않음
-            // device_info는 API 서버에서 헤더를 통해 자동으로 수집
+            source: 'machine',
           }),
         }).catch((err) => {
           // 6-4-3. 서버 저장 실패 시, 사용자 경험을 막지 않고 콘솔에만 에러 기록

@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast" // 2. 토스트 훅 임포트
 import { Check, Lock, X } from "lucide-react"
 import LottoCongratulation from "@/components/lotto-congratulation"
 import LottoNumberDisplay from "@/components/lotto-number-display"
-import { supabase } from "@/lib/supabaseClient" // [추가] Supabase 클라이언트 임포트
+import { supabase } from "@/lib/supabaseClient" // Supabase 클라이언트 임포트
 
 interface NumberSelectorProps {
   onSelectComplete: (numbers: number[]) => void
@@ -25,7 +25,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
   const [fixedNumbers, setFixedNumbers] = useState<number[]>([]) // 고정 번호
   const [isSaved, setIsSaved] = useState(false) // 저장 완료(로컬) 여부
   const [showCongrats, setShowCongrats] = useState(false) // 축하 메시지 표시 여부
-  const [targetDrawNo, setTargetDrawNo] = useState<number | undefined>(undefined) // [추가] 목표 회차 상태
+  const [targetDrawNo, setTargetDrawNo] = useState<number | undefined>(undefined) // 목표 회차 상태
 
   // 4. DOM 참조 및 통지/저장 상태 관리
   const hasNotifiedRef = useRef(false) // 상위 컴포넌트로 완료 통지를 한 번만 보내기 위한 Ref
@@ -40,16 +40,16 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
     lastSaveTimeRef.current = 0
   }, [])
 
-  // [추가] 최신 회차 정보 가져오기
+  // 최신 회차 정보 가져오기
   useEffect(() => {
     const fetchTargetDrawNo = async () => {
       try {
         const { data } = await supabase
-          .from("winning_numbers")
-          .select("drawNo")
-          .order("drawNo", { ascending: false })
-          .limit(1)
-          .single()
+            .from("winning_numbers")
+            .select("drawNo")
+            .order("drawNo", { ascending: false })
+            .limit(1)
+            .single()
 
         if (data) {
           setTargetDrawNo(data.drawNo + 1) // 다음 회차 = 최신 회차 + 1
@@ -73,7 +73,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
 
     // 7-2. 뽑기 가능한 번호 풀 생성 (1~45 중, 제외된 번호와 고정된 번호를 뺀 나머지)
     const availableNumbers = Array.from({ length: 45 }, (_, i) => i + 1).filter(
-      (n) => !excludedNumbers.includes(n) && !fixedNumbers.includes(n),
+        (n) => !excludedNumbers.includes(n) && !fixedNumbers.includes(n),
     )
 
     // 7-3. 필요한 개수(count)만큼 랜덤 번호 선택
@@ -219,7 +219,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
         const currentTime = Date.now()
         if (currentTime - lastSaveTimeRef.current > 5000) {
 
-          // [수정] saveLottoResult에 targetDrawNo 전달 (AI 아님 = false)
+          // saveLottoResult에 targetDrawNo 전달 (AI 아님 = false)
           const saved = saveLottoResult(sortedNumbers, false, targetDrawNo)
 
           // 11-6. 로컬 저장이 성공한 경우 (중복이 아닐 때)
@@ -233,20 +233,34 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
             // 11-6-2. 마지막 저장 시간 업데이트
             lastSaveTimeRef.current = currentTime
 
-            // 11-6-3. 서버 DB에 비동기 저장 (통계 수집용)
-            fetch('/api/log-draw', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                numbers: sortedNumbers,
-                source: 'manual', // 출처: 'manual' (수동/반자동)
-                // score는 AI가 아니므로 보내지 않음
-                // device_info는 API 서버에서 헤더를 통해 자동으로 수집
-              }),
-            }).catch((err) => {
-              // 11-6-4. 서버 저장 실패 시 콘솔에만 에러 기록
-              console.error("서버 통계 저장 실패 (manual):", err);
-            });
+            // --- [신규] 서버 DB에 비동기 저장 (인증 정보 포함) ---
+            const logToServer = async () => {
+              try {
+                // 현재 세션에서 access_token을 가져옵니다.
+                const { data: { session } } = await supabase.auth.getSession();
+                const headers: HeadersInit = { 'Content-Type': 'application/json' };
+
+                // 로그인 상태라면 Authorization 헤더에 Bearer 토큰을 추가합니다.
+                if (session?.access_token) {
+                  headers['Authorization'] = `Bearer ${session.access_token}`;
+                }
+
+                await fetch('/api/log-draw', {
+                  method: 'POST',
+                  headers: headers,
+                  body: JSON.stringify({
+                    numbers: sortedNumbers,
+                    source: 'manual', // 출처: 'manual' (수동/반자동)
+                    userId: session?.user?.id // 서버에서 토큰으로 검증하지만 명시적으로도 전달 가능
+                  }),
+                });
+              } catch (err) {
+                console.error("서버 통계 저장 실패 (manual):", err);
+              }
+            };
+
+            logToServer();
+            // ------------------------------------
           }
         }
       }
@@ -271,7 +285,7 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
       setIsSaved(false)
       setShowCongrats(false)
     }
-  }, [selectedNumbers, isSaved, toast, onSelectComplete, targetDrawNo]) // [수정] 의존성 추가
+  }, [selectedNumbers, isSaved, toast, onSelectComplete, targetDrawNo]) // 의존성 유지
 
   /**
    * 13. 상위 컴포넌트(lotto-machine)에서 추첨한 번호를 받아오는 useEffect
@@ -299,204 +313,171 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
       // 13-3. 중복 저장 방지 시간 업데이트
       lastSaveTimeRef.current = Date.now()
     }
-  }, [drawnNumbers]) // 14. 의존성 배열
+  }, [drawnNumbers])
 
   // 15. JSX 렌더링
   return (
-    <div className="w-full space-y-6">
-      {/* 15-1. 상단 탭 (선택/고정/제외) */}
-      <div>
-        <Tabs defaultValue="select" onValueChange={(value) => setMode(value as any)}>
-          <TabsList className="grid w-full grid-cols-3 bg-gray-200 dark:bg-[#262626] p-1 rounded-sm">
-            <TabsTrigger
-              value="select"
-              className="flex items-center gap-1 rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white"
-            >
-              <Check className="w-4 h-4" />
-              <span>번호 선택</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="fix"
-              className="flex items-center gap-1 rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white"
-            >
-              <Lock className="w-4 h-4" />
-              <span>번호 고정</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="exclude"
-              className="flex items-center gap-1 rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white"
-            >
-              <X className="w-4 h-4" />
-              <span>번호 제외</span>
-            </TabsTrigger>
-          </TabsList>
-
-          {/* 탭별 설명 */}
-          <TabsContent value="select" className="mt-2">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              원하는 번호를 선택하세요. 최대 6개까지 선택할 수 있습니다.
-            </p>
-          </TabsContent>
-          <TabsContent value="fix" className="mt-2">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              고정할 번호를 선택하세요. 고정된 번호는 항상 선택 결과에 포함됩니다.
-            </p>
-          </TabsContent>
-          <TabsContent value="exclude" className="mt-2">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              제외할 번호를 선택하세요. 제외된 번호는 선택 결과에 포함되지 않습니다.
-            </p>
-          </TabsContent>
-        </Tabs>
-
-        {/* 15-2. 컨트롤 패널 (상태 표시, 초기화, 자동 버튼) */}
-        <div className="w-full bg-gray-200 dark:bg-[#262626] rounded-lg p-2 mt-4">
-          {/* 상태 표시 영역 */}
-          <div className="grid grid-cols-3 gap-2 mb-3 text-center">
-            <div className="bg-white dark:bg-black rounded-md p-2">
-              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
-                <Check className="w-3 h-3 text-blue-500" />
-                <span>선택</span>
-              </div>
-              <div className="font-medium text-lg dark:text-white">
-                {selectedNumbers.filter((n) => !fixedNumbers.includes(n)).length}/{6 - fixedNumbers.length}
-              </div>
-            </div>
-            <div className="bg-white dark:bg-black rounded-md p-2">
-              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
-                <Lock className="w-3 h-3 text-green-500" />
-                <span>고정</span>
-              </div>
-              <div className="font-medium text-lg text-green-600">{fixedNumbers.length}</div>
-            </div>
-            <div className="bg-white dark:bg-black rounded-md p-2">
-              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
-                <X className="w-3 h-3 text-red-500" />
-                <span>제외</span>
-              </div>
-              <div className="font-medium text-lg text-red-600">{excludedNumbers.length}</div>
-            </div>
-          </div>
-
-          {/* 버튼 영역 */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              onClick={resetAll}
-              className="h-10 text-gray-600 dark:text-gray-100 bg-gray-50 dark:bg-transparent border-gray-200 dark:border-[rgb(68,68,68)] hover:bg-gray-100 dark:hover:bg-[rgb(100,100,100)] hover:text-gray-600"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-1"
-              >
-                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-                <path d="M21 3v5h-5"></path>
-                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-                <path d="M8 16H3v5"></path>
-              </svg>
-              초기화
-            </Button>
-            <Button
-              onClick={() => generateRandomNumbers(6 - fixedNumbers.length)}
-              disabled={fixedNumbers.length >= 6}
-              className="h-10 text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-1"
-              >
-                <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
-              </svg>
-              {fixedNumbers.length}개 + {6 - fixedNumbers.length}개 자동
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* 15-3. 번호 선택 그리드 (1-45) */}
-      <div>
-        <div className="grid grid-cols-5 sm:grid-cols-9 gap-2 sm:gap-3 place-items-center">
-          {Array.from({ length: 45 }, (_, i) => i + 1).map((number) => {
-            const isSelected = selectedNumbers.includes(number)
-            const isFixed = fixedNumbers.includes(number)
-            const isExcluded = excludedNumbers.includes(number)
-            const ballSize = "w-10 h-10"
-
-            return (
-              <button
-                key={number}
-                onClick={() => toggleNumber(number)}
-                // 15-3-1. 버튼 비활성화 로직
-                disabled={
-                  (mode === "select" && selectedNumbers.length >= 6 && !selectedNumbers.includes(number)) || // 선택 모드: 6개 다 찼는데, 이미 선택된 공이 아닐 때
-                  (mode === "select" && fixedNumbers.includes(number)) || // 선택 모드: 고정된 공은 해제 불가
-                  (mode === "fix" && fixedNumbers.length >= 6 && !fixedNumbers.includes(number)) || // 고정 모드: 6개 다 찼는데, 이미 고정된 공이 아닐 때
-                  (mode === "exclude" && fixedNumbers.includes(number)) || // 제외 모드: 고정된 공은 제외 불가
-                  (mode === "fix" && excludedNumbers.includes(number)) // 고정 모드: 제외된 공은 고정 불가
-                }
-                className={`relative ${ballSize} rounded-full flex items-center justify-center font-medium text-sm sm:text-base transition-all ${getNumberClass(
-                  number,
-                )}`}
-                style={{
-                  // 15-3-2. 선택되었고 고정되지 않은 공에만 공 색상 적용
-                  backgroundColor: isSelected && !isFixed ? getBallColor(number) : "",
-                }}
-              >
-                {number}
-
-                {/* 15-3-3. 상태 아이콘 표시 (고정/제외/선택) */}
-                {isFixed && (
-                  <div className="absolute -top-1 -right-1 bg-green-500 rounded-full w-4 h-4 flex items-center justify-center">
-                    <Lock className="w-2.5 h-2.5 text-white" />
-                  </div>
-                )}
-                {isExcluded && (
-                  <div className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">
-                    <X className="w-2.5 h-2.5 text-white" />
-                  </div>
-                )}
-                {isSelected && !isFixed && (
-                  <div className="absolute -top-1 -right-1 bg-blue-600 rounded-full w-4 h-4 flex items-center justify-center">
-                    <Check className="w-2.5 h-2.5 text-white" />
-                  </div>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* 15-4. 축하 메시지 (6개 선택 완료 시) */}
-      {showCongrats && (
+      <div className="w-full space-y-6">
+        {/* 15-1. 상단 탭 (선택/고정/제외) */}
         <div>
-          <LottoCongratulation show={showCongrats} className="w-full max-w-none" />
-        </div>
-      )}
+          <Tabs defaultValue="select" onValueChange={(value) => setMode(value as any)}>
+            <TabsList className="grid w-full grid-cols-3 bg-gray-200 dark:bg-[#262626] p-1 rounded-sm">
+              <TabsTrigger
+                  value="select"
+                  className="flex items-center gap-1 rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white"
+              >
+                <Check className="w-4 h-4" />
+                <span>번호 선택</span>
+              </TabsTrigger>
+              <TabsTrigger
+                  value="fix"
+                  className="flex items-center gap-1 rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white"
+              >
+                <Lock className="w-4 h-4" />
+                <span>번호 고정</span>
+              </TabsTrigger>
+              <TabsTrigger
+                  value="exclude"
+                  className="flex items-center gap-1 rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[rgb(163,163,163)] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white"
+              >
+                <X className="w-4 h-4" />
+                <span>번호 제외</span>
+              </TabsTrigger>
+            </TabsList>
 
-      {/* 15-5. 선택된 번호 표시 (스크롤 대상 Ref 지정) */}
-      <LottoNumberDisplay
-        ref={drawnNumbersSectionRef}
-        numbers={selectedNumbers}
-        fixedNumbers={fixedNumbers}
-        isSaved={isSaved} // '기록 저장됨' 텍스트 표시 여부
-        className="mt-6"
-      />
-    </div>
+            <TabsContent value="select" className="mt-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                원하는 번호를 선택하세요. 최대 6개까지 선택할 수 있습니다.
+              </p>
+            </TabsContent>
+            <TabsContent value="fix" className="mt-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                고정할 번호를 선택하세요. 고정된 번호는 항상 선택 결과에 포함됩니다.
+              </p>
+            </TabsContent>
+            <TabsContent value="exclude" className="mt-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                제외할 번호를 선택하세요. 제외된 번호는 선택 결과에 포함되지 않습니다.
+              </p>
+            </TabsContent>
+          </Tabs>
+
+          {/* 15-2. 컨트롤 패널 */}
+          <div className="w-full bg-gray-200 dark:bg-[#262626] rounded-lg p-2 mt-4">
+            <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+              <div className="bg-white dark:bg-black rounded-md p-2">
+                <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
+                  <Check className="w-3 h-3 text-blue-500" />
+                  <span>선택</span>
+                </div>
+                <div className="font-medium text-lg dark:text-white">
+                  {selectedNumbers.filter((n) => !fixedNumbers.includes(n)).length}/{6 - fixedNumbers.length}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-black rounded-md p-2">
+                <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
+                  <Lock className="w-3 h-3 text-green-500" />
+                  <span>고정</span>
+                </div>
+                <div className="font-medium text-lg text-green-600">{fixedNumbers.length}</div>
+              </div>
+              <div className="bg-white dark:bg-black rounded-md p-2">
+                <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-1">
+                  <X className="w-3 h-3 text-red-500" />
+                  <span>제외</span>
+                </div>
+                <div className="font-medium text-lg text-red-600">{excludedNumbers.length}</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                  variant="outline"
+                  onClick={resetAll}
+                  className="h-10 text-gray-600 dark:text-gray-100 bg-gray-50 dark:bg-transparent border-gray-200 dark:border-[rgb(68,68,68)] hover:bg-gray-100 dark:hover:bg-[rgb(100,100,100)] hover:text-gray-600"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                  <path d="M21 3v5h-5"></path>
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                  <path d="M8 16H3v5"></path>
+                </svg>
+                초기화
+              </Button>
+              <Button
+                  onClick={() => generateRandomNumbers(6 - fixedNumbers.length)}
+                  disabled={fixedNumbers.length >= 6}
+                  className="h-10 text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                  <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                </svg>
+                {fixedNumbers.length}개 + {6 - fixedNumbers.length}개 자동
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* 15-3. 번호 선택 그리드 */}
+        <div>
+          <div className="grid grid-cols-5 sm:grid-cols-9 gap-2 sm:gap-3 place-items-center">
+            {Array.from({ length: 45 }, (_, i) => i + 1).map((number) => {
+              const isSelected = selectedNumbers.includes(number)
+              const isFixed = fixedNumbers.includes(number)
+              const isExcluded = excludedNumbers.includes(number)
+              const ballSize = "w-10 h-10"
+
+              return (
+                  <button
+                      key={number}
+                      onClick={() => toggleNumber(number)}
+                      disabled={
+                          (mode === "select" && selectedNumbers.length >= 6 && !selectedNumbers.includes(number)) ||
+                          (mode === "select" && fixedNumbers.includes(number)) ||
+                          (mode === "fix" && fixedNumbers.length >= 6 && !fixedNumbers.includes(number)) ||
+                          (mode === "exclude" && fixedNumbers.includes(number)) ||
+                          (mode === "fix" && excludedNumbers.includes(number))
+                      }
+                      className={`relative ${ballSize} rounded-full flex items-center justify-center font-medium text-sm sm:text-base transition-all ${getNumberClass(number)}`}
+                      style={{ backgroundColor: isSelected && !isFixed ? getBallColor(number) : "" }}
+                  >
+                    {number}
+                    {isFixed && (
+                        <div className="absolute -top-1 -right-1 bg-green-500 rounded-full w-4 h-4 flex items-center justify-center">
+                          <Lock className="w-2.5 h-2.5 text-white" />
+                        </div>
+                    )}
+                    {isExcluded && (
+                        <div className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">
+                          <X className="w-2.5 h-2.5 text-white" />
+                        </div>
+                    )}
+                    {isSelected && !isFixed && (
+                        <div className="absolute -top-1 -right-1 bg-blue-600 rounded-full w-4 h-4 flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-white" />
+                        </div>
+                    )}
+                  </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 15-4. 축하 메시지 */}
+        {showCongrats && (
+            <div>
+              <LottoCongratulation show={showCongrats} className="w-full max-w-none" />
+            </div>
+        )}
+
+        {/* 15-5. 선택된 번호 표시 */}
+        <LottoNumberDisplay
+            ref={drawnNumbersSectionRef}
+            numbers={selectedNumbers}
+            fixedNumbers={fixedNumbers}
+            isSaved={isSaved}
+            className="mt-6"
+        />
+      </div>
   )
 }
