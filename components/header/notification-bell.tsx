@@ -1,12 +1,7 @@
 "use client"
-
 import { Bell } from "lucide-react"
-import { useHeaderData } from "@/hooks/use-header-data"
 
-export default function NotificationBell() {
-    // 이미 로그인된 상태에서 렌더링되므로 true 전달
-    const { unreadCount } = useHeaderData(true)
-
+export default function NotificationBell({ unreadCount }: { unreadCount: number }) {
     return (
         <div className="relative">
             <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />

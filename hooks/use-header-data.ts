@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { supabase } from "@/lib/supabaseClient"
 
 export interface UserData {
@@ -10,12 +10,11 @@ export interface UserData {
     avatarUrl: string | null
 }
 
-export function useHeaderData(isLoggedIn: boolean) {
-    const [userData, setUserData] = useState<UserData | null>(null)
-    const [unreadCount, setUnreadCount] = useState(0)
-    const [loading, setLoading] = useState(true)
+export function useHeaderData(isLoggedIn: boolean, initialData?: UserData | null, initialCount?: number) {
+    const [userData, setUserData] = useState<UserData | null>(initialData || null)
+    const [unreadCount, setUnreadCount] = useState(initialCount || 0)
+    const isInitialized = useRef(false)
 
-    // 알림 개수 조회 함수
     const fetchUnreadCount = useCallback(async (userId: string) => {
         const { count, error } = await supabase
             .from("notifications")
@@ -32,58 +31,61 @@ export function useHeaderData(isLoggedIn: boolean) {
         if (!isLoggedIn) {
             setUserData(null)
             setUnreadCount(0)
-            setLoading(false)
+            isInitialized.current = false
             return
         }
 
-        const initHeaderData = async () => {
-            setLoading(true)
-            const { data: { user } } = await supabase.auth.getUser()
+        const initData = async () => {
+            let currentUserId = userData?.id
 
-            if (user) {
-                setUserData({
-                    id: user.id,
-                    name: user.user_metadata?.full_name || user.user_metadata?.name || "사용자",
-                    email: user.email || "",
-                    avatarUrl: user.user_metadata?.avatar_url || null,
-                })
+            // 데이터가 없으면 1회만 fetch
+            if (!currentUserId) {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (user) {
+                    currentUserId = user.id
+                    setUserData({
+                        id: user.id,
+                        name: user.user_metadata?.full_name || user.user_metadata?.name || "사용자",
+                        email: user.email || "",
+                        avatarUrl: user.user_metadata?.avatar_url || null,
+                    })
+                    await fetchUnreadCount(user.id)
+                }
+            }
 
-                await fetchUnreadCount(user.id)
-
-                // 실시간 알림 구독 설정
+            // 실시간 구독 설정 (1회만)
+            if (currentUserId && !isInitialized.current) {
                 const channel = supabase
-                    .channel(`header-notifs-${user.id}`)
+                    .channel(`header-notifs-${currentUserId}`)
                     .on(
                         "postgres_changes",
                         {
                             event: "*",
                             schema: "public",
                             table: "notifications",
-                            filter: `user_id=eq.${user.id}`,
+                            filter: `user_id=eq.${currentUserId}`,
                         },
-                        () => fetchUnreadCount(user.id)
+                        () => fetchUnreadCount(currentUserId!)
                     )
                     .subscribe()
 
-                setLoading(false)
+                isInitialized.current = true
                 return channel
             }
-            setLoading(false)
         }
 
-        const subscriptionPromise = initHeaderData()
+        const subscriptionPromise = initData()
 
         return () => {
             subscriptionPromise.then(channel => {
                 if (channel) supabase.removeChannel(channel)
             })
         }
-    }, [isLoggedIn, fetchUnreadCount])
+    }, [isLoggedIn, fetchUnreadCount]) // userData 의존성 제거로 중복 호출 방지
 
     return {
         userData,
         unreadCount,
-        loading,
         refreshNotifications: () => userData && fetchUnreadCount(userData.id)
     }
 }
