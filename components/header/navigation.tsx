@@ -43,7 +43,7 @@ export default function Navigation({
 
   // 데스크톱 네비게이션
   const DesktopNav = () => (
-      <nav className="hidden lg:flex items-center space-x-8">
+      <nav className="hidden lg:flex items-center gap-8">
         {navigationItems.map((item) => (
             <Link key={item.href} href={item.href} className={getLinkClasses(item.href)}>
               {item.label}
@@ -61,7 +61,7 @@ export default function Navigation({
           <div className="w-full bg-white/50 dark:bg-black border-b border-gray-100 dark:border-[rgb(26,26,26)] pt-[env(safe-area-inset-top)]">
             <div className="container mx-auto px-4 py-4 flex items-center justify-between">
               <Logo />
-              <div className="flex items-center space-x-4 relative">
+              <div className="flex items-center gap-2 relative">
                 {isLoggedIn && (
                     <>
                       <ProfileDropdown onLogout={onLogout} />

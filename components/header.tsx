@@ -57,7 +57,7 @@ export default function Header() {
                   onToggleMobileMenu={toggleMobileMenu}
                   onLogout={handleLogout}
               />
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 {/*<SearchBar isLoggedIn={isLoggedIn} />*/}
                 <ThemeToggle />
                 {isLoggedIn ? (
