@@ -45,7 +45,7 @@ export default function ProfileDropdown({ userData, onLogout }: ProfileDropdownP
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={toggleProfileModal}
-                className="flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg px-2 py-1 transition-colors"
+                className="flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1e1e1e] rounded-lg px-2 py-1 transition-colors"
             >
                 {userData?.avatarUrl ? (
                     <img
@@ -65,8 +65,8 @@ export default function ProfileDropdown({ userData, onLogout }: ProfileDropdownP
             </button>
 
             {showProfileModal && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-[#1e1e1e] rounded-lg shadow-lg border border-gray-200 dark:border-[#3f3f3f] py-2 z-50">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-[#3f3f3f]">
                         <div className="font-semibold text-gray-900 dark:text-white">
                             {userData?.name}
                         </div>
@@ -76,26 +76,26 @@ export default function ProfileDropdown({ userData, onLogout }: ProfileDropdownP
                     </div>
 
                     <div className="py-1">
-                        <button className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3 transition-colors">
+                        <button className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-[#2b2b2b] flex items-center space-x-3 transition-colors">
                             <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                             <span className="text-gray-700 dark:text-gray-300">프로필</span>
                         </button>
 
-                        <button className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3 transition-colors">
+                        <button className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-[#2b2b2b] flex items-center space-x-3 transition-colors">
                             <Bell className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                             <span className="text-gray-700 dark:text-gray-300">알림</span>
                         </button>
 
-                        <button className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3 transition-colors">
+                        <button className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-[#2b2b2b] flex items-center space-x-3 transition-colors">
                             <Settings className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                             <span className="text-gray-700 dark:text-gray-300">설정</span>
                         </button>
 
-                        <hr className="my-1 border-gray-100 dark:border-gray-700" />
+                        <hr className="my-1 border-gray-100 dark:border-[#3f3f3f]" />
 
                         <button
                             onClick={handleLogoutClick}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center space-x-3 transition-colors"
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-[#2b2b2b] flex items-center space-x-3 transition-colors"
                         >
                             <LogOut className="w-4 h-4 text-red-500" />
                             <span className="text-red-600 font-medium">로그아웃</span>

@@ -60,7 +60,7 @@ export default function Navigation({
                         <Logo />
                         <div className="flex items-center gap-2 relative">
                             {isLoggedIn && <ProfileDropdown userData={userData} onLogout={onLogout} />}
-                            <button onClick={onToggleMobileMenu} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                            <button onClick={onToggleMobileMenu} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#1e1e1e] transition-colors">
                                 <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                             </button>
                         </div>
