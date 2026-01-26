@@ -54,7 +54,7 @@ export default function ProfileDropdown({ userData, onLogout }: ProfileDropdownP
                         className="w-8 h-8 rounded-full object-cover"
                     />
                 ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-[#1e1e1e] flex items-center justify-center">
                         <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                     </div>
                 )}
