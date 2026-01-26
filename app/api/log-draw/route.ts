@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       draw_no: targetDrawNo,
       ip_address: clientIp,
       device_info: deviceInfo,
-      user_id: userId,         // [수정] 로그인 시 UUID 저장, 비로그인 시 NULL
+      user_id: userId,
     };
 
     if (body.score !== undefined) {
