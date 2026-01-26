@@ -174,7 +174,7 @@ export default function AdminNotificationPage() {
                         <table className="w-full text-left">
                             <thead className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                             <tr className="text-xs uppercase text-gray-400">
-                                <th className="px-4 py-3 font-medium w-12">선택</th>
+                                <th className="px-4 py-3 font-medium w-16">선택</th>
                                 <th className="px-4 py-3 font-medium">회원정보</th>
                                 <th className="px-4 py-3 font-medium text-right">등급</th>
                             </tr>
