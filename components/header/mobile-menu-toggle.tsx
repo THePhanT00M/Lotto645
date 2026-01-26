@@ -11,7 +11,7 @@ export default function MobileMenuToggle({ showMobileMenu, onToggle }: MobileMen
   return (
     <button
       onClick={onToggle}
-      className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#1e1e1e] transition-colors"
       aria-label="Toggle mobile menu"
     >
       {showMobileMenu ? (
