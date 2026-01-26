@@ -45,7 +45,7 @@ export default function ProfileDropdown({ userData, onLogout }: ProfileDropdownP
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={toggleProfileModal}
-                className="flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1e1e1e] rounded-lg px-2 py-1 transition-colors"
+                className="flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-[#1e1e1e] rounded-lg px-2 transition-colors"
             >
                 {userData?.avatarUrl ? (
                     <img
