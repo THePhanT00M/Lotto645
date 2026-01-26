@@ -140,7 +140,7 @@ export default function AdminNotificationPage() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6">
             <div className="flex items-center gap-2 mb-8">
                 <Send className="w-6 h-6 text-blue-500" />
                 <h1 className="text-2xl font-bold">알림 발송 관리</h1>
