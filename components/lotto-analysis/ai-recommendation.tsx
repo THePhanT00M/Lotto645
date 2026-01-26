@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { saveLottoResult } from "@/utils/lotto-storage"
 import AINumberDisplay from "@/components/lotto-analysis/ai-number-display"
 import { useToast } from "@/hooks/use-toast"
-import {getApiUrl} from "@/lib/api-config";
+import { getApiUrl } from "@/lib/api-config"
+import { supabase } from "@/lib/supabaseClient" // [추가] Supabase 클라이언트 임포트
 
 // --- 1단계: 타입 및 헬퍼 함수 (상위 컴포넌트에서 Props로 받음) ---
 type Grade = "하" | "중하" | "보통" | "중" | "중상" | "상" | "최상"
@@ -46,10 +47,10 @@ interface AIRecommendationProps {
   getRecentFrequencyScore: (numbers: number[], recentMap: FrequencyMap) => number
   getGapScore: (numbers: number[], gapMap: FrequencyMap) => number
   getQuadrupletScore: (
-    numbers: number[],
-    quadrupletLastSeen: StringFrequencyMap,
-    latestDrawNo: number,
-    recentThreshold: number,
+      numbers: number[],
+      quadrupletLastSeen: StringFrequencyMap,
+      latestDrawNo: number,
+      recentThreshold: number,
   ) => number
   getAiPopularityScore: (numbers: number[], generatedStats: FrequencyMap) => number
   winningNumbersSet: Set<string>
@@ -134,10 +135,10 @@ export default function AIRecommendation({
         const pairScore = getPairScore(currentNumbers, pairFrequencies)
         const tripletScore = getTripletScore(currentNumbers, tripletFrequencies)
         const quadrupletScore = getQuadrupletScore(
-          currentNumbers,
-          quadrupletLastSeen,
-          latestDrawNo,
-          RECENT_THRESHOLD,
+            currentNumbers,
+            quadrupletLastSeen,
+            latestDrawNo,
+            RECENT_THRESHOLD,
         )
         const recentScore = getRecentFrequencyScore(currentNumbers, recentFrequencies)
         const gapScore = getGapScore(currentNumbers, gapMap)
@@ -153,14 +154,14 @@ export default function AIRecommendation({
 
         // 3-2-3. (수정) totalScore 가중치 조정 + [신규] AI 인기 점수 추가
         const totalScore =
-          balanceScore * 0.08 +
-          quadrupletScore * 0.1 +
-          aiPopularityScore * 0.1 +
-          (pairScore / 150) * 50 * 0.2 +
-          (tripletScore / 20) * 50 * 0.15 +
-          (recentScore / 30) * 50 * 0.05 +
-          (gapScore / 600) * 50 * 0.1 +
-          (carryOverScore / 20) * 50 * 0.1
+            balanceScore * 0.08 +
+            quadrupletScore * 0.1 +
+            aiPopularityScore * 0.1 +
+            (pairScore / 150) * 50 * 0.2 +
+            (tripletScore / 20) * 50 * 0.15 +
+            (recentScore / 30) * 50 * 0.05 +
+            (gapScore / 600) * 50 * 0.1 +
+            (carryOverScore / 20) * 50 * 0.1
 
         // 3-2-4. (기존) 상위 TOP_K 후보군 관리
         if (topCandidates.length < TOP_K) {
@@ -201,15 +202,23 @@ export default function AIRecommendation({
     setAiGrade(finalGrade)
     setAiScore(finalBalanceScore)
 
-    // 4-4. [수정] 서버 DB에 자동으로 저장 (통계 수집용)
+    // 4-4. [수정] 서버 DB에 자동으로 저장 (통계 수집용) - 로그인 세션 반영
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const headers: HeadersInit = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch(getApiUrl("/api/log-draw"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: headers,
         body: JSON.stringify({
           numbers: finalCombination,
           source: "ai",
           score: finalBalanceScore,
+          userId: session?.user?.id, // [추가] 로그인 사용자 ID 포함
         }),
       })
 
@@ -242,22 +251,31 @@ export default function AIRecommendation({
   }, [isGenerating])
 
   /**
-   * [수정] "AI 번호 저장" 버튼 클릭 시 *로컬*에만 저장합니다.
-   * 저장 시 다음 회차 정보(targetDrawNo)를 포함합니다.
+   * [수정] "AI 번호 저장" 버튼 클릭 시 처리
+   * 로그인하지 않은 경우에만 로컬에 저장하며, 로그인 시에는 서버 저장이 주 목적이므로 로컬 저장을 생략합니다.
    */
-  const handleSaveToHistory = () => {
+  const handleSaveToHistory = async () => {
     if (recommendedNumbers.length === 6 && !isSaved) {
       // [추가] 다음 회차 번호 계산 (최신 회차 + 1)
       const targetDrawNo = latestDrawNo + 1
 
-      // [수정] saveLottoResult 호출 시 targetDrawNo 전달
-      const localSaveSuccess = saveLottoResult(recommendedNumbers, true, targetDrawNo)
+      // [추가] 세션 확인 (로그인 여부)
+      const { data: { session } } = await supabase.auth.getSession();
+      const isLoggedIn = !!session;
 
-      if (localSaveSuccess) {
+      let localSaveSuccess = false;
+
+      // [수정] 로그인하지 않은 경우에만 로컬 스토리지에 저장 (number-selector 참조)
+      if (!isLoggedIn) {
+        localSaveSuccess = saveLottoResult(recommendedNumbers, true, targetDrawNo)
+      }
+
+      // [수정] 로그인 상태이거나 로컬 저장에 성공한 경우 성공 알림 표시
+      if (localSaveSuccess || isLoggedIn) {
         setIsSaved(true)
         toast({
           title: "기록 저장 완료",
-          description: `${targetDrawNo}회차 AI 추천 번호가 '추첨 기록'에 저장되었습니다.`,
+          description: `${targetDrawNo}회차 AI 추천 번호가 저장되었습니다.`,
         })
       } else {
         toast({
@@ -283,79 +301,79 @@ export default function AIRecommendation({
   }
 
   return (
-    <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center">
-          <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
-          <h3 className="font-medium text-gray-800 dark:text-gray-200">AI 번호 추천</h3>
+      <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
+            <h3 className="font-medium text-gray-800 dark:text-gray-200">AI 번호 추천</h3>
+          </div>
         </div>
-      </div>
-      <div>
-        {/* AI 등급 및 번호 표시 영역 */}
-        <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4">
-          <div className="flex flex-col mb-3">
-            <div className="flex justify-between items-center w-full gap-3">
-              <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">
-                과거 당첨 패턴과 함께 등장한 번호 분석을 기반으로 생성된 추천 번호입니다.
-              </p>
-              {/* AI 등급 표시 (UI용) */}
+        <div>
+          {/* AI 등급 및 번호 표시 영역 */}
+          <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4">
+            <div className="flex flex-col mb-3">
+              <div className="flex justify-between items-center w-full gap-3">
+                <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">
+                  과거 당첨 패턴과 함께 등장한 번호 분석을 기반으로 생성된 추천 번호입니다.
+                </p>
+                {/* AI 등급 표시 (UI용) */}
+                {aiGrade && (
+                    <div
+                        className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(
+                            aiGrade,
+                        )}`}
+                    >
+                      {aiGrade}
+                    </div>
+                )}
+              </div>
+              {/* AI 등급 설명 */}
               {aiGrade && (
-                <div
-                  className={`px-3 py-1.5 rounded-lg font-semibold text-sm whitespace-nowrap ${getGradeColor(
-                    aiGrade,
-                  )}`}
-                >
-                  {aiGrade}
-                </div>
+                  <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200 mt-3">
+                    <p className="font-medium mb-1">
+                      추천 등급 안내 (밸런스 점수: {aiScore}점):
+                    </p>
+                    <p>
+                      • {aiGrade}: {getGradeDescription(aiGrade)}
+                    </p>
+                  </div>
               )}
             </div>
-            {/* AI 등급 설명 */}
-            {aiGrade && (
-              <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200 mt-3">
-                <p className="font-medium mb-1">
-                  추천 등급 안내 (밸런스 점수: {aiScore}점):
-                </p>
-                <p>
-                  • {aiGrade}: {getGradeDescription(aiGrade)}
-                </p>
+            {/* AI 추천 번호 표시 */}
+            <AINumberDisplay numbers={recommendedNumbers} />
+
+            <div className="mt-4 flex flex-col items-center gap-3 md:flex-row md:justify-between md:items-center md:gap-4">
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                * 이 추천은 과거 데이터 패턴을 기반으로 하며, 당첨을 보장하지 않습니다.
               </div>
+            </div>
+          </div>
+          {/* 버튼 영역 (당첨 패턴 보기 / AI 번호 저장) */}
+          <div className="mt-3 flex justify-between">
+            <Button
+                onClick={handleAnalyzeAINumbers}
+                variant="outline"
+                className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+            >
+              <BarChart3 className="w-4 h-4 mr-1" />
+              당첨 패턴 보기
+            </Button>
+            {isSaved ? (
+                <div className="text-sm text-green-600 flex items-center justify-center md:w-24 md:justify-end">
+                  <Check className="w-4 h-4 mr-1" />
+                  기록 저장됨
+                </div>
+            ) : (
+                <Button
+                    onClick={handleSaveToHistory}
+                    className="bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white whitespace-nowrap"
+                >
+                  <Save className="w-4 h-4 mr-1" />
+                  AI 번호 저장
+                </Button>
             )}
           </div>
-          {/* AI 추천 번호 표시 */}
-          <AINumberDisplay numbers={recommendedNumbers} />
-
-          <div className="mt-4 flex flex-col items-center gap-3 md:flex-row md:justify-between md:items-center md:gap-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              * 이 추천은 과거 데이터 패턴을 기반으로 하며, 당첨을 보장하지 않습니다.
-            </div>
-          </div>
-        </div>
-        {/* 버튼 영역 (당첨 패턴 보기 / AI 번호 저장) */}
-        <div className="mt-3 flex justify-between">
-          <Button
-            onClick={handleAnalyzeAINumbers}
-            variant="outline"
-            className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-          >
-            <BarChart3 className="w-4 h-4 mr-1" />
-            당첨 패턴 보기
-          </Button>
-          {isSaved ? (
-            <div className="text-sm text-green-600 flex items-center justify-center md:w-24 md:justify-end">
-              <Check className="w-4 h-4 mr-1" />
-              기록 저장됨
-            </div>
-          ) : (
-            <Button
-              onClick={handleSaveToHistory}
-              className="bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 text-white whitespace-nowrap"
-            >
-              <Save className="w-4 h-4 mr-1" />
-              AI 번호 저장
-            </Button>
-          )}
         </div>
       </div>
-    </div>
   )
 }
