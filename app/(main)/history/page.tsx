@@ -223,7 +223,7 @@ export default function HistoryPage() {
     return null
   }
 
-  if (1) {
+  if (loading) {
     return (
         <div className="container mx-auto p-4 sm:p-6 max-w-5xl space-y-6 animate-pulse">
           <div className="flex justify-between items-center">
