@@ -9,7 +9,6 @@ export default async function MainLayout({
                                          }: {
     children: React.ReactNode
 }) {
-    // Next.js 15: cookies()는 await로 호출해야 합니다.
     const cookieStore = await cookies()
 
     const supabase = createServerClient(
@@ -39,11 +38,20 @@ export default async function MainLayout({
     let userData = null
 
     if (user) {
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("nickname, role, level, avatar_url, phone_number")
+            .eq("id", user.id)
+            .single()
+
         userData = {
             id: user.id,
-            name: user.user_metadata?.full_name || user.user_metadata?.name || "사용자",
+            name: profile?.nickname || user.user_metadata?.full_name || user.user_metadata?.name || "사용자",
             email: user.email || "",
-            avatarUrl: user.user_metadata?.avatar_url || null,
+            avatarUrl: profile?.avatar_url || user.user_metadata?.avatar_url || null,
+            role: profile?.role || 'user',
+            level: profile?.level || 0,
+            phoneNumber: profile?.phone_number || ""
         }
 
         const { count } = await supabase
