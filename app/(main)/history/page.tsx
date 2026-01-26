@@ -119,7 +119,7 @@ export default function HistoryPage() {
 
         if (response.ok) {
           setHistory((prev) => prev.filter((item) => item.id !== id))
-          toast({ title: "삭제 완료", description: "서버에서 기록이 성공적으로 삭제되었습니다." })
+          toast({ title: "삭제 완료", description: "서버에서 추첨 기록이 삭제되었습니다." })
         } else {
           const errorData = await response.json()
           throw new Error(errorData.message || "서버 삭제 실패")
@@ -444,7 +444,7 @@ export default function HistoryPage() {
         <div className="bg-[#f2f8ff] dark:bg-[#1e1e1e] p-4 rounded-lg flex items-start gap-3 text-sm text-[#065fd4] dark:text-[#3ea6ff] border border-[#d3e3fd] dark:border-[#3f3f3f]">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1]">기록 관리 안내</p>
+            <p className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1]">안내사항</p>
             <ul className="list-disc list-inside mt-1 space-y-1 opacity-90 text-[#606060] dark:text-[#aaaaaa]">
               <li>
                 <strong className="font-semibold text-amber-800 dark:text-amber-400">로컬 기록</strong>은 현재 브라우저에만 저장되며 기기를 변경하거나 캐시 삭제 시 사라집니다.
