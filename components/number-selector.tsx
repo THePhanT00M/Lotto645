@@ -219,56 +219,49 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
         const currentTime = Date.now()
         if (currentTime - lastSaveTimeRef.current > 5000) {
 
-          // --- [수정] 로그인 여부에 따라 로컬 저장 여부 결정 ---
-          const handleStorageAndLogging = async () => {
-            try {
-              // 현재 세션 확인
-              const { data: { session } } = await supabase.auth.getSession();
+          // saveLottoResult에 targetDrawNo 전달 (AI 아님 = false)
+          const saved = saveLottoResult(sortedNumbers, false, targetDrawNo)
 
-              // 로그인되어 있지 않은 경우에만 로컬 스토리지에 저장
-              if (!session) {
-                const saved = saveLottoResult(sortedNumbers, false, targetDrawNo);
-                if (saved) {
-                  toast({
-                    title: "기기 저장 완료",
-                    description: `${targetDrawNo ? targetDrawNo + "회차 " : ""}선택 번호가 로컬에 저장되었습니다.`,
-                  });
+          // 11-6. 로컬 저장이 성공한 경우 (중복이 아닐 때)
+          if (saved) {
+            // 11-6-1. 토스트 알림 표시
+            toast({
+              title: "저장 완료",
+              description: `${targetDrawNo ? targetDrawNo + "회차 " : ""}선택 번호가 기록에 저장되었습니다.`,
+            })
+
+            // 11-6-2. 마지막 저장 시간 업데이트
+            lastSaveTimeRef.current = currentTime
+
+            // --- [신규] 서버 DB에 비동기 저장 (인증 정보 포함) ---
+            const logToServer = async () => {
+              try {
+                // 현재 세션에서 access_token을 가져옵니다.
+                const { data: { session } } = await supabase.auth.getSession();
+                const headers: HeadersInit = { 'Content-Type': 'application/json' };
+
+                // 로그인 상태라면 Authorization 헤더에 Bearer 토큰을 추가합니다.
+                if (session?.access_token) {
+                  headers['Authorization'] = `Bearer ${session.access_token}`;
                 }
-              }
 
-              // --- 서버 DB에 비동기 저장 (인증 정보 포함) ---
-              const headers: HeadersInit = { 'Content-Type': 'application/json' };
-
-              // 로그인 상태라면 Authorization 헤더에 Bearer 토큰을 추가합니다.
-              if (session?.access_token) {
-                headers['Authorization'] = `Bearer ${session.access_token}`;
-              }
-
-              const response = await fetch('/api/log-draw', {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify({
-                  numbers: sortedNumbers,
-                  source: 'manual',
-                  userId: session?.user?.id // 로그인된 유저 ID 전달
-                }),
-              });
-
-              if (response.ok && session) {
-                toast({
-                  title: "저장 완료",
-                  description: `${targetDrawNo ? targetDrawNo + "회차 " : ""}기록이 계정에 저장되었습니다.`,
+                await fetch('/api/log-draw', {
+                  method: 'POST',
+                  headers: headers,
+                  body: JSON.stringify({
+                    numbers: sortedNumbers,
+                    source: 'manual', // 출처: 'manual' (수동/반자동)
+                    userId: session?.user?.id // 서버에서 토큰으로 검증하지만 명시적으로도 전달 가능
+                  }),
                 });
+              } catch (err) {
+                console.error("서버 통계 저장 실패 (manual):", err);
               }
+            };
 
-              lastSaveTimeRef.current = currentTime;
-            } catch (err) {
-              console.error("저장 및 통계 기록 실패:", err);
-            }
-          };
-
-          handleStorageAndLogging();
-          // ------------------------------------
+            logToServer();
+            // ------------------------------------
+          }
         }
       }
 
