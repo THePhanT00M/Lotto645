@@ -276,7 +276,7 @@ export default function AdminNotificationPage() {
                             <div>
                                 <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">알림 내용</label>
                                 <textarea
-                                    rows={10}
+                                    rows={13}
                                     placeholder="회원에게 전달할 내용을 입력하세요..."
                                     className="w-full px-4 py-2 bg-white dark:bg-[#272727] border border-gray-200 dark:border-[#3f3f3f] rounded-lg outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
                                     value={notification.content}
@@ -293,13 +293,13 @@ export default function AdminNotificationPage() {
                                 <button
                                     onClick={handleSendNotification}
                                     disabled={!isFormValid || sending}
-                                    className={`w-full font-bold py-3.5 rounded-lg transition-all flex items-center justify-center gap-2 ${
+                                    className={`w-full font-bold py-2 h-10 rounded-lg text-sm transition-all flex items-center justify-center gap-2 ${
                                         isFormValid
                                             ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 active:scale-[0.98]"
                                             : "bg-gray-100 dark:bg-[#3f3f3f] text-gray-400 dark:text-[#737373] cursor-not-allowed"
                                     }`}
                                 >
-                                    {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                    {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4.5 h-4.5" />}
                                     알림 발송하기
                                 </button>
                             </div>
