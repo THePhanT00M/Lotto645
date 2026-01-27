@@ -33,7 +33,7 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }
 
   return (
     <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -94,7 +94,7 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }
         </div>
       </div>
 
-      <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4">
+      <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4">
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
           선택한 번호에서 가능한 모든 조합과 각 조합이 과거 당첨번호에 등장한 횟수입니다.
         </p>

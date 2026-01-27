@@ -73,7 +73,7 @@ export default function Home() {
 
         {/* 6. 로또 정보 및 안내 섹션 */}
         <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f] space-y-4">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-4">
             <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <h2 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">로또 정보</h2>
           </div>
