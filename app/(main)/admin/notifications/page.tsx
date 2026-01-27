@@ -229,7 +229,7 @@ export default function AdminNotificationPage() {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2">
                                             <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-[#3f3f3f] flex items-center justify-center overflow-hidden border border-gray-200 dark:border-slate-700">
                                                 {user.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <User className="w-4 h-4 text-gray-400" />}
                                             </div>

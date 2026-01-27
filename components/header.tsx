@@ -49,7 +49,7 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
                 onLogout={handleLogout}
                 userData={userData}
             />
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <ThemeToggle />
               {isLoggedIn ? (
                   <>

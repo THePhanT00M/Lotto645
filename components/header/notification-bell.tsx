@@ -104,7 +104,7 @@ export default function NotificationBell({ unreadCount }: { unreadCount: number 
 
     // 알림 벨 아이콘 (Trigger)
     const BellTrigger = (
-        <div className="relative cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-[#1e1e1e] rounded-full transition-colors">
+        <div className="relative cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-[#1e1e1e] rounded-lg transition-colors">
             <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             {unreadCount > 0 && (
                 <span className="absolute top-0.5 right-0.5 w-4.5 h-4.5 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-[#121212]">
