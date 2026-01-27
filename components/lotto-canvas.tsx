@@ -43,19 +43,26 @@ export default function LottoCanvas({ availableBalls, isAnimating }: LottoCanvas
     resizeCanvas()
     window.addEventListener("resize", resizeCanvas)
 
+    const MIN_SPEED = 3
+    const MAX_SPEED = 6
+
     // Initialize particles if empty or when availableBalls changes
     if (particlesRef.current.length === 0 || particlesRef.current.length !== availableBalls.length) {
       particlesRef.current = availableBalls.map((number) => {
-        // Increased radius for larger balls
         const radius = canvas.width < 400 ? 15 : 20
+
+        // [수정됨] 초기 속도 설정: 랜덤한 방향을 가지되, 최소 속도는 보장
+        const angle = Math.random() * Math.PI * 2
+        // MIN과 MAX 사이의 랜덤한 속도 크기 결정
+        const speed = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED)
+
         return {
           x: Math.random() * (canvas.width - radius * 2) + radius,
           y: Math.random() * (canvas.height - radius * 2) + radius,
           radius,
           number,
-          // Increased velocity for faster movement
-          vx: (Math.random() - 0.5) * 5,
-          vy: (Math.random() - 0.5) * 5,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
           color: getBallColor(number),
         }
       })
@@ -107,24 +114,43 @@ export default function LottoCanvas({ availableBalls, isAnimating }: LottoCanvas
           particle.x = newX
           particle.y = newY
 
-          // Reflect velocity
+          // Reflect velocity (기본 반사)
           const normalX = Math.cos(angle)
           const normalY = Math.sin(angle)
           const dot = particle.vx * normalX + particle.vy * normalY
           particle.vx = particle.vx - 2 * dot * normalX
           particle.vy = particle.vy - 2 * dot * normalY
 
-          // Add more randomness to prevent balls from getting stuck in patterns
-          // and to make movement more dynamic
-          particle.vx += (Math.random() - 0.5) * 0.8
-          particle.vy += (Math.random() - 0.5) * 0.8
+          // [수정됨] 무작위 속도 증가 대신, "바람 효과"를 위해 방향만 살짝 비틂 (속도 크기 유지)
+          // -0.2 ~ 0.2 라디안 정도의 랜덤한 각도 변화를 줌
+          const randomAngleParams = (Math.random() - 0.5) * 0.5
+          const currentVx = particle.vx
+          const currentVy = particle.vy
 
-          // 속도가 무한정 빨라지는 것을 방지하기 위해 최대 속도 제한 추가
-          const currentSpeed = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy)
-          const MAX_SPEED = 8 // 원하는 최대 속도로 조정 가능
-          if (currentSpeed > MAX_SPEED) {
-            particle.vx = (particle.vx / currentSpeed) * MAX_SPEED
-            particle.vy = (particle.vy / currentSpeed) * MAX_SPEED
+          // 회전 변환 행렬 적용 (방향만 변경)
+          particle.vx = currentVx * Math.cos(randomAngleParams) - currentVy * Math.sin(randomAngleParams)
+          particle.vy = currentVx * Math.sin(randomAngleParams) + currentVy * Math.cos(randomAngleParams)
+        }
+
+        // [수정됨] 속도 보정 로직 (매 프레임 확인)
+        // 공이 너무 느리거나 너무 빨라지지 않도록 속도 벡터의 크기(Magnitude)를 조정
+        const currentSpeed = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy)
+
+        if (currentSpeed < MIN_SPEED || currentSpeed > MAX_SPEED) {
+          // 목표 속도 설정 (범위 밖이면 경계값으로, 아니면 그대로)
+          let targetSpeed = currentSpeed
+          if (currentSpeed < MIN_SPEED) targetSpeed = MIN_SPEED + Math.random() // 너무 느리면 최소 속도보다 살짝 빠르게
+          if (currentSpeed > MAX_SPEED) targetSpeed = MAX_SPEED
+
+          // 0으로 나누기 방지
+          if (currentSpeed === 0) {
+            particle.vx = (Math.random() - 0.5) * targetSpeed
+            particle.vy = (Math.random() - 0.5) * targetSpeed
+          } else {
+            // 현재 방향은 유지하면서 속도 크기(스칼라)만 조절
+            const scale = targetSpeed / currentSpeed
+            particle.vx *= scale
+            particle.vy *= scale
           }
         }
 
@@ -139,7 +165,6 @@ export default function LottoCanvas({ availableBalls, isAnimating }: LottoCanvas
 
         // Draw number
         ctx.fillStyle = "#000"
-        // Larger font size for the numbers
         const fontSize = particle.radius * 0.7
         ctx.font = `bold ${fontSize}px Arial`
         ctx.textAlign = "center"
