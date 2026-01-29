@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { Sparkles, BarChart3 } from "lucide-react"
+import { useState, useEffect, useMemo, useCallback } from "react"
+import { Sparkles, BarChart3, SearchCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { saveLottoResult } from "@/utils/lotto-storage"
 import AINumberDisplay from "@/components/lotto-analysis/ai-number-display"
@@ -33,15 +33,16 @@ interface LottoAnalytics {
 
 interface AIRecommendationProps {
   analyticsData: LottoAnalytics
-  generatedStats: FrequencyMap
   winningNumbersSet: Set<string>
   latestDrawNo: number
+  historyData: WinningLottoNumbers[]
+  manualNumbers?: number[] | null
   onRecommendationGenerated?: (numbers: number[]) => void
   onAnalyzeNumbers?: (numbers: number[]) => void
   isGenerating: boolean
 }
 
-// --- 헬퍼 함수: AC 값 계산 ---
+// --- 헬퍼 함수 ---
 const calculateACValue = (numbers: number[]): number => {
   const diffs = new Set<number>()
   for (let i = 0; i < numbers.length; i++) {
@@ -52,87 +53,57 @@ const calculateACValue = (numbers: number[]): number => {
   return diffs.size - (numbers.length - 1)
 }
 
-// --- 헬퍼 함수: 계절 계산 ---
 const getSeason = (month: number): 'spring' | 'summer' | 'autumn' | 'winter' => {
   if (month >= 3 && month <= 5) return 'spring'
   if (month >= 6 && month <= 8) return 'summer'
   if (month >= 9 && month <= 11) return 'autumn'
-  return 'winter' // 12, 1, 2
+  return 'winter'
 }
 
 export default function AIRecommendation({
                                            analyticsData,
-                                           generatedStats,
                                            winningNumbersSet,
                                            latestDrawNo,
+                                           historyData,
+                                           manualNumbers,
                                            onRecommendationGenerated,
                                            onAnalyzeNumbers,
                                            isGenerating,
                                          }: AIRecommendationProps) {
   const [recommendedNumbers, setRecommendedNumbers] = useState<number[]>([])
   const [aiScore, setAiScore] = useState<number | null>(null)
-  const [historyData, setHistoryData] = useState<WinningLottoNumbers[]>([])
+  const [analysisMode, setAnalysisMode] = useState<"recommendation" | "manual">("recommendation")
   const { toast } = useToast()
 
-  // 1. DB에서 전체 당첨 번호 가져오기
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const { data, error } = await supabase
-            .from("winning_numbers")
-            .select("*")
-            .order("drawNo", { ascending: false }) // 최신순 정렬
-
-        if (error) throw error
-        if (data) {
-          setHistoryData(data)
-        }
-      } catch (error) {
-        console.error("당첨 번호 로딩 실패:", error)
-      }
-    }
-    fetchHistory()
-  }, [])
-
-  // --- 알고리즘 핵심 엔진 (메모이제이션) ---
+  // --- 알고리즘 엔진 (메모이제이션) ---
   const analysisEngine = useMemo(() => {
-    if (historyData.length === 0) {
+    if (!historyData || historyData.length === 0) {
       return {
         nextNumberProbabilities: new Map<number, Map<number, number[]>>(),
-        seasonalHotNumbers: new Map<number, number>()
+        seasonalHotNumbers: new Map<number, number>(),
+        numberAppearances: new Map<number, number>()
       }
     }
 
-    console.log(`%c[AI 분석 엔진] DB 데이터(${historyData.length}회) 스캔 시작...`, "color: #3b82f6; font-weight: bold;")
+    console.log(`%c[AI 분석 엔진] 데이터(${historyData.length}회) 정밀 분석 시작`, "color: #3b82f6; font-weight: bold;")
 
     const nextNumberProbabilities = new Map<number, Map<number, number[]>>()
     const seasonalHotNumbers = new Map<number, number>()
+    const numberAppearances = new Map<number, number>()
 
-    // 현재 시점의 월/계절 계산
     const now = new Date()
     const currentMonth = now.getMonth() + 1
     const currentSeason = getSeason(currentMonth)
 
-    // 히스토리 전체 스캔 (최신 -> 과거 순이나, 로직상 순회하며 패턴 축적)
-    // historyData는 내림차순(최신이 0번)
-    // 인과관계 분석을 위해 역순(과거->미래)으로 처리하거나, 현재 로직(i가 미래, i+1이 과거) 유지
-    // 기존 로직: prevDraw = i < length-1 ? i+1 : null (i+1이 과거)
-    // 과거(i+1)의 번호가 미래(i)를 불렀다고 기록해야 함.
-
     for (let i = 0; i < historyData.length; i++) {
-      const currentDraw = historyData[i] // 결과(미래/현재)
-      const prevDraw = i < historyData.length - 1 ? historyData[i + 1] : null // 원인(과거)
+      const currentDraw = historyData[i];
 
       // 1. 계절성 분석
       const drawMonth = parseInt(currentDraw.date.split("-")[1], 10)
       const drawSeason = getSeason(drawMonth)
       let seasonalWeight = 0
-
-      if (drawMonth === currentMonth) {
-        seasonalWeight = 3.0 // 같은 달: 가중치 높음
-      } else if (drawSeason === currentSeason) {
-        seasonalWeight = 1.0 // 같은 계절: 가중치 보통
-      }
+      if (drawMonth === currentMonth) seasonalWeight = 3.0; // 같은 달
+      else if (drawSeason === currentSeason) seasonalWeight = 1.0; // 같은 계절
 
       if (seasonalWeight > 0) {
         currentDraw.numbers.forEach((num) => {
@@ -140,247 +111,239 @@ export default function AIRecommendation({
         })
       }
 
-      // 2. 트리거(Trigger) 패턴 분석
-      if (prevDraw) {
+      // 2. 트리거 분석 (i = 과거, i+1 = 미래)
+      if (i < historyData.length - 1) {
+        const prevDraw = historyData[i];
+        const nextDraw = historyData[i + 1];
+
         const prevNumbers = [...prevDraw.numbers, prevDraw.bonusNo]
         prevNumbers.forEach((prevNum) => {
-          if (!nextNumberProbabilities.has(prevNum)) {
-            nextNumberProbabilities.set(prevNum, new Map())
-          }
+          // 모수(총 출현 횟수) 카운트
+          numberAppearances.set(prevNum, (numberAppearances.get(prevNum) || 0) + 1)
+
+          if (!nextNumberProbabilities.has(prevNum)) nextNumberProbabilities.set(prevNum, new Map())
           const targetMap = nextNumberProbabilities.get(prevNum)!
 
-          currentDraw.numbers.forEach((currNum) => {
-            if (!targetMap.has(currNum)) {
-              targetMap.set(currNum, [])
-            }
-            targetMap.get(currNum)!.push(currentDraw.drawNo)
+          nextDraw.numbers.forEach((nextNum) => {
+            if (!targetMap.has(nextNum)) targetMap.set(nextNum, [])
+            targetMap.get(nextNum)!.push(nextDraw.drawNo)
           })
         })
       }
     }
-
-    return { nextNumberProbabilities, seasonalHotNumbers }
+    return { nextNumberProbabilities, seasonalHotNumbers, numberAppearances }
   }, [historyData])
 
+  // --- 공통 점수 계산 로직 (수동/자동 모두 사용) ---
+  const calculateScoreForNumbers = useCallback((targetNumbers: number[]) => {
+    const { nextNumberProbabilities, seasonalHotNumbers, numberAppearances } = analysisEngine
+    const { latestDrawNumbers } = analyticsData
+
+    let score = 0
+    let triggerScore = 0
+
+    // 1. 정밀 트리거 점수 (확률 기반)
+    latestDrawNumbers.forEach(prevNum => {
+      const totalAppearances = numberAppearances.get(prevNum) || 1
+      const map = nextNumberProbabilities.get(prevNum)
+
+      if (map) {
+        targetNumbers.forEach(currNum => {
+          if (map.has(currNum)) {
+            const draws = map.get(currNum)!
+            // 확률 = (함께 나온 횟수) / (총 나온 횟수)
+            const probability = draws.length / totalAppearances
+            // [수정] 계수 조정: 100 -> 60 (점수 인플레이션 방지)
+            const impact = probability * Math.log(draws.length + 1) * 60
+            triggerScore += impact
+          }
+        })
+      }
+    })
+    // 트리거 점수 상한 35점
+    score += Math.min(35, triggerScore)
+
+    // 2. 계절성 점수 (정규화 적용)
+    let seasonalRawScore = 0
+    targetNumbers.forEach(num => seasonalRawScore += (seasonalHotNumbers.get(num) || 0))
+
+    // [수정] 절대값 나누기가 아니라, 데이터 길이에 비례한 정규화
+    // (누적점수 / 전체회차) * 35 -> 평균적인 계절성이면 약 10점, 높으면 20점
+    const historyLen = historyData.length || 1000
+    const normalizedSeasonal = (seasonalRawScore / historyLen) * 35
+    score += Math.min(20, normalizedSeasonal)
+
+    // 3. AC값 (극단적 허용, 7 이상이면 가산점 20)
+    if (calculateACValue(targetNumbers) >= 7) score += 20;
+
+    // 4. 합계 (극단적 허용, 범위 내면 가산점 10)
+    const sum = targetNumbers.reduce((a, b) => a + b, 0)
+    if (sum >= 80 && sum <= 200) score += 10;
+
+    // 5. 핫/콜드 밸런스 (가산점 10)
+    const recentNumbers = Object.keys(Object.fromEntries(analyticsData.recentFrequencies))
+        .map(Number).filter(n => analyticsData.recentFrequencies.get(n)! >= 2)
+    const hotCount = targetNumbers.filter(n => recentNumbers.includes(n)).length
+    if (hotCount >= 1 && hotCount <= 3) score += 10;
+
+    // [수정] 기본 보정치 축소 (+15 -> +5)
+    // 35(트리거) + 20(계절) + 20(AC) + 10(합계) + 10(핫) = 95점 만점 + 5점 보너스
+    return Math.min(100, Math.floor(score + 5));
+  }, [analysisEngine, analyticsData, historyData.length])
+
+  // --- 수동 분석 모드 ---
+  useEffect(() => {
+    if (manualNumbers && manualNumbers.length === 6) {
+      setAnalysisMode("manual")
+      setRecommendedNumbers(manualNumbers)
+      const calculatedScore = calculateScoreForNumbers(manualNumbers)
+      setAiScore(calculatedScore)
+    }
+  }, [manualNumbers, calculateScoreForNumbers])
+
   const getProbabilityStatus = (score: number) => {
-    if (score >= 96) return { text: "매우 높음", color: "text-purple-600 dark:text-purple-400" }
-    if (score >= 91) return { text: "높음", color: "text-blue-600 dark:text-blue-400" }
-    if (score >= 80) return { text: "보통", color: "text-green-600 dark:text-green-400" }
+    if (score >= 90) return { text: "매우 높음", color: "text-purple-600 dark:text-purple-400" }
+    if (score >= 80) return { text: "높음", color: "text-blue-600 dark:text-blue-400" }
+    if (score >= 60) return { text: "보통", color: "text-green-600 dark:text-green-400" }
     return { text: "낮음", color: "text-gray-500" }
   }
 
+  // --- AI 추천 생성 ---
   const generateAIRecommendation = async () => {
-    if (historyData.length === 0) {
-      toast({
-        title: "데이터 로딩 중",
-        description: "과거 당첨 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.",
-        variant: "destructive"
-      })
+    if (!historyData || historyData.length === 0) {
+      toast({ title: "데이터 로딩 중", description: "잠시 후 다시 시도해주세요.", variant: "destructive" })
       return
     }
 
+    setAnalysisMode("recommendation")
     setRecommendedNumbers([])
     setAiScore(null)
-
     await new Promise((resolve) => setTimeout(resolve, 10))
 
-    console.log("%c[AI 추천] 생성 프로세스 시작...", "color: #f59e0b; font-weight: bold;")
+    const { latestDrawNumbers } = analyticsData
+    const { nextNumberProbabilities, seasonalHotNumbers, numberAppearances } = analysisEngine
 
-    const finalCombination = await new Promise<number[]>((resolve) => {
-      const { latestDrawNumbers } = analyticsData
-      const { nextNumberProbabilities, seasonalHotNumbers } = analysisEngine
+    // 1. 가중치 맵 생성
+    const probabilityMap = new Map<number, number>()
 
-      console.log(`📌 지난 회차(${latestDrawNo}회) 당첨 번호:`, latestDrawNumbers)
-
-      // 1. 가중치 풀 생성
-      const probabilityMap = new Map<number, number>()
-
-      console.groupCollapsed("🔍 [분석 상세] 가중치 조정 (AI 6 : 무작위 4)")
-
-      // (1) 연관 번호(트리거) 가중치 - Log 스케일 적용
-      latestDrawNumbers.forEach(prevNum => {
-        const nextMap = nextNumberProbabilities.get(prevNum)
-        if (nextMap) {
-          nextMap.forEach((drawList, nextNum) => {
-            const weight = Math.sqrt(drawList.length) * 0.8
-            probabilityMap.set(nextNum, (probabilityMap.get(nextNum) || 0) + weight)
-          })
-        }
-      })
-
-      // (2) 계절성 점수
-      seasonalHotNumbers.forEach((score, num) => {
-        probabilityMap.set(num, (probabilityMap.get(num) || 0) + score * 0.3)
-      })
-
-      // (3) 미출현 번호(Gap) 보정
-      analyticsData.gapMap.forEach((gap, num) => {
-        if (gap >= 5 && gap <= 15) {
-          probabilityMap.set(num, (probabilityMap.get(num) || 0) + 3)
-        }
-      })
-
-      // (4) 기본 생존 점수
-      for(let i=1; i<=45; i++) {
-        if (!probabilityMap.has(i)) {
-          probabilityMap.set(i, 1.0);
-        }
+    // (1) 트리거 가중치
+    latestDrawNumbers.forEach(prevNum => {
+      const totalAppearances = numberAppearances.get(prevNum) || 1
+      const nextMap = nextNumberProbabilities.get(prevNum)
+      if (nextMap) {
+        nextMap.forEach((drawList, nextNum) => {
+          const probability = drawList.length / totalAppearances
+          // [수정] 계수 조정 (20 -> 40) : 선택 확률에는 좀 더 강하게 반영
+          const weight = probability * 40 * Math.log(drawList.length + 1)
+          probabilityMap.set(nextNum, (probabilityMap.get(nextNum) || 0) + weight)
+        })
       }
-      console.groupEnd()
+    })
 
-      const getWeightedRandomNumber = (): number => {
-        let totalWeight = 0
-        probabilityMap.forEach(w => totalWeight += w)
-        let random = Math.random() * totalWeight
-        for (const [num, weight] of probabilityMap.entries()) {
-          random -= weight
-          if (random <= 0) return num
-        }
-        return Math.floor(Math.random() * 45) + 1
+    // (2) 계절성 가중치
+    seasonalHotNumbers.forEach((score, num) => {
+      probabilityMap.set(num, (probabilityMap.get(num) || 0) + score * 0.3)
+    })
+
+    // (3) 미출현 보정
+    analyticsData.gapMap.forEach((gap, num) => {
+      if (gap >= 5 && gap <= 15) probabilityMap.set(num, (probabilityMap.get(num) || 0) + 3)
+    })
+
+    // (4) 기본 가중치
+    for(let i=1; i<=45; i++) { if (!probabilityMap.has(i)) probabilityMap.set(i, 1.0); }
+
+    const getWeightedRandomNumber = (): number => {
+      let totalWeight = 0; probabilityMap.forEach(w => totalWeight += w);
+      let random = Math.random() * totalWeight;
+      for (const [num, weight] of probabilityMap.entries()) { random -= weight; if (random <= 0) return num; }
+      return Math.floor(Math.random() * 45) + 1;
+    }
+
+    const ITERATIONS = 5000;
+    const candidates: any[] = [];
+    const recentDraws = historyData.slice(-30);
+
+    for (let i = 0; i < ITERATIONS; i++) {
+      const currentSet = new Set<number>()
+
+      // 60% 가중치(AI), 40% 무작위(Random)
+      while (currentSet.size < 6) {
+        if (Math.random() < 0.6) currentSet.add(getWeightedRandomNumber())
+        else currentSet.add(Math.floor(Math.random() * 45) + 1)
       }
 
-      // 2. 조합 생성 및 시뮬레이션
-      const ITERATIONS = 15000
-      const TOP_K = 20
-      const candidates: { combination: number[]; score: number; log: any; evidence: string[] }[] = []
+      const currentNumbers = Array.from(currentSet).sort((a, b) => a - b)
+      const comboKey = currentNumbers.join("-")
 
-      for (let i = 0; i < ITERATIONS; i++) {
-        const currentSet = new Set<number>()
+      // 필터 1: 역대 1등 제외
+      if (winningNumbersSet.has(comboKey)) continue
 
-        // [다양성 비율 6:4] AI 추천 60%, 완전 무작위 40%
-        while (currentSet.size < 6) {
-          if (Math.random() < 0.6) {
-            currentSet.add(getWeightedRandomNumber())
-          } else {
-            currentSet.add(Math.floor(Math.random() * 45) + 1)
-          }
+      // 필터 2: 최근 30회차 유사(4개 이상 일치) 제외
+      let isSimilar = false
+      for(const pastDraw of recentDraws) {
+        if (currentNumbers.filter(n => pastDraw.numbers.includes(n)).length >= 4) {
+          isSimilar = true; break;
         }
+      }
+      if (isSimilar) continue
 
-        const currentNumbers = Array.from(currentSet).sort((a, b) => a - b)
-        const combinationKey = currentNumbers.join("-")
+      // 점수 계산 (실제 로직 사용)
+      const score = calculateScoreForNumbers(currentNumbers)
 
-        // [필터 1] 역대 1등 번호 중복 제외 (완전 일치)
-        if (winningNumbersSet.has(combinationKey)) continue
-
-        // [필터 2] 최근 회차(30회)와 4개 이상 번호 일치 시 제외
-        // "가까운 시일 내에 4개 이상의 번호가 일치하는 확률도 극히 낮음" 반영
-        let isTooSimilarToRecent = false;
-        const RECENT_CHECK_LIMIT = 30; // 최근 30회차 확인
-        for (let k = 0; k < Math.min(historyData.length, RECENT_CHECK_LIMIT); k++) {
-          const pastDraw = historyData[k];
-          // 교집합 개수 확인
-          const matchCount = currentNumbers.filter(num => pastDraw.numbers.includes(num)).length;
-          if (matchCount >= 4) {
-            isTooSimilarToRecent = true;
-            break;
-          }
-        }
-        if (isTooSimilarToRecent) continue; // 4개 이상 겹치면 이 조합은 버림
-
-        // --- 점수 채점 ---
-        let score = 0
-        let logDetail = { trigger: 0, seasonal: 0, ac: 0, sum: 0, hot: 0 }
-        const evidenceList: string[] = []
-
-        let triggerScore = 0
+      // 로그 생성 (디버깅용)
+      let evidenceList: string[] = []
+      if (candidates.length < 10) {
         latestDrawNumbers.forEach(prevNum => {
+          const totalApp = numberAppearances.get(prevNum) || 1
           const map = nextNumberProbabilities.get(prevNum)
           if (map) {
             currentNumbers.forEach(currNum => {
               if (map.has(currNum)) {
                 const draws = map.get(currNum)!
-                triggerScore += Math.log(draws.length + 1)
-
-                if (Math.random() < 0.15 && evidenceList.length < 3) {
-                  const recentDraw = draws[0] // historyData가 내림차순이면 0번이 가장 최신(큰 숫자)
-                  evidenceList.push(`${prevNum}번→${currNum}번(${draws.length}회 동반/최근 ${recentDraw}회)`)
+                const prob = (draws.length / totalApp) * 100
+                if (prob > 5 && evidenceList.length < 2) {
+                  evidenceList.push(`${prevNum}→${currNum}(${prob.toFixed(0)}%)`)
                 }
               }
             })
           }
         })
-
-        const finalTriggerScore = Math.min(30, (triggerScore * 2))
-        score += finalTriggerScore
-        logDetail.trigger = finalTriggerScore
-
-        let seasonalScore = 0
-        currentNumbers.forEach(num => seasonalScore += (seasonalHotNumbers.get(num) || 0))
-        const finalSeasonalScore = Math.min(25, (seasonalScore / 10))
-        score += finalSeasonalScore
-        logDetail.seasonal = finalSeasonalScore
-
-        // [극단적 번호 허용] 감점 로직 제거
-        const acValue = calculateACValue(currentNumbers)
-        if (acValue >= 7) { score += 20; logDetail.ac = 20; }
-        // else { score -= 10; } // 감점 제거됨
-
-        const sum = currentNumbers.reduce((a, b) => a + b, 0)
-        if (sum >= 80 && sum <= 200) { score += 10; logDetail.sum = 10; }
-        // else { score -= 5; } // 감점 제거됨
-
-        const recentNumbers = Object.keys(Object.fromEntries(analyticsData.recentFrequencies))
-            .map(Number).filter(n => analyticsData.recentFrequencies.get(n)! >= 2)
-        const hotCount = currentNumbers.filter(n => recentNumbers.includes(n)).length
-        if (hotCount >= 1 && hotCount <= 3) { score += 10; logDetail.hot = 10; }
-
-        if (candidates.length < TOP_K) {
-          candidates.push({ combination: currentNumbers, score, log: logDetail, evidence: evidenceList })
-        } else {
-          const minScoreNode = candidates.reduce((prev, curr) => prev.score < curr.score ? prev : curr)
-          if (score > minScoreNode.score) {
-            const index = candidates.indexOf(minScoreNode)
-            candidates[index] = { combination: currentNumbers, score, log: logDetail, evidence: evidenceList }
-          }
-        }
       }
 
-      candidates.sort((a, b) => b.score - a.score)
-      const finalPick = candidates[Math.floor(Math.random() * Math.min(5, candidates.length))]
+      candidates.push({ combination: currentNumbers, score, evidence: evidenceList })
+    }
 
-      if (finalPick) {
-        console.group(`✨ [최종 추천] 조합: ${finalPick.combination.join(", ")}`)
-        console.log(`📊 종합 점수: ${finalPick.score.toFixed(1)}점`)
-        console.log(`🔗 분석 근거:`)
-        if (finalPick.evidence.length > 0) {
-          finalPick.evidence.forEach(e => console.log(`   - ${e}`));
-        } else {
-          console.log(`   - 다양한 패턴과 계절적 요인을 복합적으로 반영`);
-        }
-        console.groupEnd()
-      }
+    // 점수순 정렬 후 상위 5개 중 랜덤 선택
+    candidates.sort((a, b) => b.score - a.score)
+    const finalPick = candidates[Math.floor(Math.random() * Math.min(5, candidates.length))]
 
-      const fallbackCombo = finalPick ? finalPick.combination : Array.from({ length: 6 }, () => Math.floor(Math.random() * 45) + 1).sort((a, b) => a - b);
-      resolve(fallbackCombo)
-    })
+    const finalCombination = finalPick ? finalPick.combination : Array.from({ length: 6 }, () => Math.floor(Math.random() * 45) + 1).sort((a, b) => a - b)
+    // [중요] 계산된 실제 점수 사용 (폴백 로직 제거)
+    const finalScore = finalPick ? finalPick.score : Math.floor(Math.random() * 20 + 70)
 
-    const baseScore = Math.floor(Math.random() * 15 + 85);
-    const finalScore = Math.min(100, Math.max(80, baseScore));
+    if (finalPick) {
+      console.groupCollapsed(`✨ [AI 최종 추천] 점수: ${finalScore}점`)
+      console.log(`조합: ${finalCombination.join(", ")}`)
+      console.log(`근거: ${finalPick.evidence.join(", ") || "복합 패턴 분석"}`)
+      console.groupEnd()
+    }
 
     setRecommendedNumbers(finalCombination)
     setAiScore(finalScore)
 
+    // DB 저장
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const targetDrawNo = latestDrawNo + 1;
       const headers: HeadersInit = { "Content-Type": "application/json" };
       if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
 
       await fetch(getApiUrl("/api/log-draw"), {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify({
-          numbers: finalCombination,
-          source: "ai",
-          score: finalScore,
-          userId: session?.user?.id,
-        }),
+        method: "POST", headers,
+        body: JSON.stringify({ numbers: finalCombination, source: "ai", score: finalScore, userId: session?.user?.id }),
       })
-
-      if (!session) saveLottoResult(finalCombination, true, targetDrawNo);
-    } catch (error: any) {
-      console.error("자동 저장 중 오류 발생:", error.message)
-    }
+      if (!session) saveLottoResult(finalCombination, true, latestDrawNo + 1);
+    } catch (e) { console.error(e) }
 
     if (onRecommendationGenerated) onRecommendationGenerated(finalCombination)
   }
@@ -400,28 +363,38 @@ export default function AIRecommendation({
 
   if (recommendedNumbers.length === 0) return null
 
+  const isManual = analysisMode === "manual"
+
   return (
-      <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)]">
+      <div className={`p-4 rounded-lg border bg-white dark:bg-[rgb(36,36,36)] border-gray-200 dark:border-[rgb(36,36,36)]"`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
-            <h3 className="font-bold text-gray-800 dark:text-gray-200">AI 정밀 분석 추천</h3>
+            {isManual ? (
+                <SearchCheck className="w-5 h-5 text-indigo-600 mr-2" />
+            ) : (
+                <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
+            )}
+            <h3 className="font-bold text-gray-800 dark:text-gray-200">
+              {isManual ? "번호 패턴 정밀 분석" : "AI 정밀 분석 추천"}
+            </h3>
           </div>
         </div>
         <div>
           <div className="mt-2 relative overflow-hidden">
-            <div className="absolute bottom-1/3 right-0 p-4 opacity-5">
-              <Sparkles className="w-30 h-30" />
-            </div>
+            {!isManual && (
+                <div className="absolute bottom-1/3 right-0 p-4 opacity-5">
+                  <Sparkles className="w-30 h-30" />
+                </div>
+            )}
 
             <div className="flex flex-col mb-3">
               <div className="flex justify-between items-center w-full gap-3">
                 <p className="text-sm text-gray-600 dark:text-gray-300 flex-1 leading-relaxed">
-                <span className="font-semibold text-blue-600 dark:text-blue-400">
-                  지난 {latestDrawNo}회차 데이터
-                </span>
-                  와 전체 역대 당첨 번호의 상관관계를 분석하여,
-                  <span className="font-semibold text-green-600 dark:text-green-400"> 5등</span> 이상을 목표로 설계된 조합입니다.
+                  {isManual ? (
+                      <>선택하신 번호의 <span className="font-semibold text-indigo-600">패턴 매칭 점수</span>와 AI가 분석한 <span className="font-semibold text-blue-600">당첨 확률</span>입니다.</>
+                  ) : (
+                      <>지난 <span className="font-semibold text-blue-600">{latestDrawNo}회차 데이터</span>와 전체 역대 당첨 번호의 상관관계를 분석하여, <span className="font-semibold text-green-600">5등</span> 이상을 목표로 설계된 조합입니다.</>
+                  )}
                 </p>
               </div>
 
@@ -430,9 +403,9 @@ export default function AIRecommendation({
                     <div className="text-xs p-3 bg-gray-100 dark:bg-[#363636] rounded-lg text-gray-700 dark:text-gray-200">
                       <span className="text-gray-500 dark:text-white block mb-1">패턴 매칭 점수</span>
                       <span className="font-bold text-base text-gray-800 dark:text-gray-100">
-                    {aiScore}
+                        {aiScore}
                         <span className="text-xs font-normal text-gray-400 ml-1">/ 100</span>
-                    </span>
+                      </span>
                     </div>
                     <div className="text-xs p-3 bg-gray-100 dark:bg-[#363636] rounded-lg text-gray-700 dark:text-gray-200">
                       <span className="text-gray-500 dark:text-white block mb-1">예상 적중 확률</span>
@@ -453,6 +426,7 @@ export default function AIRecommendation({
             </div>
           </div>
 
+          {!isManual && (
           <div className="mt-3 flex justify-start">
             <Button
                 onClick={handleAnalyzeAINumbers}
@@ -463,6 +437,7 @@ export default function AIRecommendation({
               AI 조합의 패턴 보기
             </Button>
           </div>
+          )}
         </div>
       </div>
   )

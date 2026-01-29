@@ -8,6 +8,7 @@ import type { WinningLottoNumbers } from "@/types/lotto"
 import { Sparkles, BarChart3, MousePointerClick } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
+// --- 1단계: 타입 및 통계 훅 ---
 type FrequencyMap = Map<number, number>
 type StringFrequencyMap = Map<string, number>
 
@@ -33,7 +34,6 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
     const winningNumbersSet = new Set(
         winningNumbers.map((draw) => [...draw.numbers].sort((a, b) => a - b).join("-")),
     )
-
     const numberFrequencies: FrequencyMap = new Map()
     const pairFrequencies: StringFrequencyMap = new Map()
     const tripletFrequencies: StringFrequencyMap = new Map()
@@ -41,7 +41,6 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
     const recentFrequencies: FrequencyMap = new Map()
     const gapMap: FrequencyMap = new Map()
     const weightedNumberList: number[] = []
-
     const sumStats = { mean: 0, stdDev: 0, values: [] as number[] }
     const oddEvenDistribution: StringFrequencyMap = new Map()
     const sectionDistribution: StringFrequencyMap = new Map()
@@ -65,43 +64,34 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
     winningNumbers.forEach((draw, index) => {
       const drawNumbers = [...draw.numbers].sort((a, b) => a - b)
       const allDrawNumbers = [...draw.numbers, draw.bonusNo]
-
       for (const num of allDrawNumbers) {
         numberFrequencies.set(num, (numberFrequencies.get(num) || 0) + 1)
         weightedNumberList.push(num)
         lastSeen.set(num, draw.drawNo)
-        if (index >= recentDrawsStart) {
-          recentFrequencies.set(num, (recentFrequencies.get(num) || 0) + 1)
-        }
+        if (index >= recentDrawsStart) recentFrequencies.set(num, (recentFrequencies.get(num) || 0) + 1)
       }
-
       const sum = drawNumbers.reduce((a, b) => a + b, 0)
       sumStats.values.push(sum)
-
       const oddCount = drawNumbers.filter((n) => n % 2 === 1).length
       const oddEvenKey = `${oddCount}:${6 - oddCount}`
       oddEvenDistribution.set(oddEvenKey, (oddEvenDistribution.get(oddEvenKey) || 0) + 1)
-
       const s1 = drawNumbers.filter((n) => n <= 15).length
       const s2 = drawNumbers.filter((n) => n > 15 && n <= 30).length
       const s3 = drawNumbers.filter((n) => n > 30).length
       const sectionKey = [s1, s2, s3].sort((a, b) => b - a).join(":")
       sectionDistribution.set(sectionKey, (sectionDistribution.get(sectionKey) || 0) + 1)
-
       let consecutiveCount = 0
       for (let i = 0; i < drawNumbers.length - 1; i++) {
         if (drawNumbers[i + 1] - drawNumbers[i] === 1) consecutiveCount++
       }
       const consecutiveKey = `${consecutiveCount}쌍`
       consecutiveDistribution.set(consecutiveKey, (consecutiveDistribution.get(consecutiveKey) || 0) + 1)
-
       for (let i = 0; i < drawNumbers.length; i++) {
         for (let j = i + 1; j < drawNumbers.length; j++) {
           pairFrequencies.set(`${drawNumbers[i]}-${drawNumbers[j]}`, (pairFrequencies.get(`${drawNumbers[i]}-${drawNumbers[j]}`) || 0) + 1)
         }
       }
     })
-
     const latestDrawNo = winningNumbers[totalDraws - 1].drawNo
     for (let i = 1; i <= 45; i++) {
       if (!numberFrequencies.has(i)) {
@@ -110,7 +100,6 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
       }
       gapMap.set(i, latestDrawNo - (lastSeen.get(i) || 0))
     }
-
     const sumTotal = sumStats.values.reduce((a, b) => a + b, 0)
     sumStats.mean = sumTotal / totalDraws
     const variance = sumStats.values.reduce((a, b) => a + Math.pow(b - sumStats.mean, 2), 0) / totalDraws
@@ -126,10 +115,12 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
   }, [winningNumbers])
 }
 
+// --- 2단계: 메인 컴포넌트 ---
 interface AdvancedAnalysisProps {
   userDrawnNumbers: number[]
   numbers: number[]
   winningNumbers: WinningLottoNumbers[]
+  generatedStats: FrequencyMap
   multipleNumbers: MultipleNumberType[]
   similarDraws: SimilarDrawType[]
   winningNumbersCount: number
@@ -141,6 +132,7 @@ export default function AdvancedAnalysis({
                                            userDrawnNumbers,
                                            numbers,
                                            winningNumbers,
+                                           generatedStats,
                                            multipleNumbers,
                                            similarDraws,
                                            winningNumbersCount,
@@ -149,6 +141,10 @@ export default function AdvancedAnalysis({
                                          }: AdvancedAnalysisProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [originalUserNumbers, setOriginalUserNumbers] = useState<number[]>(userDrawnNumbers)
+
+  // [신규] 수동 분석할 번호 상태
+  const [manualAnalysisNumbers, setManualAnalysisNumbers] = useState<number[] | null>(null)
+
   const analyticsData = useLottoAnalytics(winningNumbers)
 
   useEffect(() => {
@@ -158,12 +154,16 @@ export default function AdvancedAnalysis({
   }, [userDrawnNumbers])
 
   const generateAIRecommendation = async () => {
+    setManualAnalysisNumbers(null) // AI 추천 요청 시 수동 분석 상태 초기화
     setIsGenerating(true)
   }
 
   const handleAnalyzeUserNumbers = () => {
     if (originalUserNumbers.length === 6) {
+      // 1. 차트 컴포넌트에 번호 전달
       onNumbersChange(originalUserNumbers)
+      // 2. [신규] AI 추천 컴포넌트에 번호 전달 (수동 분석 모드 트리거)
+      setManualAnalysisNumbers([...originalUserNumbers])
     }
   }
 
@@ -174,6 +174,7 @@ export default function AdvancedAnalysis({
 
   return (
       <div className="space-y-6">
+        {/* --- 상단 액션 카드: 분석 및 추천 --- */}
         <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-xl border border-gray-200 dark:border-[rgb(36,36,36)]">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex flex-col gap-2">
@@ -218,6 +219,7 @@ export default function AdvancedAnalysis({
           </div>
         </div>
 
+        {/* --- AI 추천 및 분석 결과 영역 --- */}
         <AIRecommendation
             analyticsData={analyticsData}
             isGenerating={isGenerating}
@@ -226,6 +228,7 @@ export default function AdvancedAnalysis({
             latestDrawNo={analyticsData.latestDrawNo}
             winningNumbersSet={analyticsData.winningNumbersSet}
             historyData={winningNumbers}
+            manualNumbers={manualAnalysisNumbers} // [중요] 수동 분석 번호 전달
         />
 
         <MultipleNumberAnalysis
