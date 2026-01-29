@@ -11,7 +11,6 @@ import { supabase } from "@/lib/supabaseClient"
 import type { WinningLottoNumbers } from "@/types/lotto"
 
 // --- 타입 정의 ---
-type Grade = "하" | "중하" | "보통" | "중" | "중상" | "상" | "최상"
 type FrequencyMap = Map<number, number>
 type StringFrequencyMap = Map<string, number>
 
@@ -35,22 +34,6 @@ interface LottoAnalytics {
 interface AIRecommendationProps {
   analyticsData: LottoAnalytics
   generatedStats: FrequencyMap
-  calculateBalanceScore: (numbers: number[], stats: LottoAnalytics) => number
-  scoreToGrade: (score: number) => Grade
-  getGradeColor: (grade: Grade) => string
-  getGradeDescription: (grade: Grade) => string
-  generateCombination: (weightedList: number[]) => number[]
-  getPairScore: (numbers: number[], pairMap: StringFrequencyMap) => number
-  getTripletScore: (numbers: number[], tripletMap: StringFrequencyMap) => number
-  getRecentFrequencyScore: (numbers: number[], recentMap: FrequencyMap) => number
-  getGapScore: (numbers: number[], gapMap: FrequencyMap) => number
-  getQuadrupletScore: (
-      numbers: number[],
-      quadrupletLastSeen: StringFrequencyMap,
-      latestDrawNo: number,
-      recentThreshold: number,
-  ) => number
-  getAiPopularityScore: (numbers: number[], generatedStats: FrequencyMap) => number
   winningNumbersSet: Set<string>
   latestDrawNo: number
   onRecommendationGenerated?: (numbers: number[]) => void
@@ -72,10 +55,6 @@ const calculateACValue = (numbers: number[]): number => {
 export default function AIRecommendation({
                                            analyticsData,
                                            generatedStats,
-                                           scoreToGrade,
-                                           getGradeColor,
-                                           getGradeDescription,
-                                           generateCombination,
                                            winningNumbersSet,
                                            latestDrawNo,
                                            onRecommendationGenerated,
@@ -83,7 +62,6 @@ export default function AIRecommendation({
                                            isGenerating,
                                          }: AIRecommendationProps) {
   const [recommendedNumbers, setRecommendedNumbers] = useState<number[]>([])
-  const [aiGrade, setAiGrade] = useState<Grade | null>(null)
   const [aiScore, setAiScore] = useState<number | null>(null)
   const [historyData, setHistoryData] = useState<WinningLottoNumbers[]>([])
   const { toast } = useToast()
@@ -155,14 +133,11 @@ export default function AIRecommendation({
     return { nextNumberProbabilities, seasonalHotNumbers }
   }, [historyData])
 
-  // --- [수정] 점수에 따른 확률 텍스트 및 색상 반환 함수 (기준 세분화) ---
+  // --- 점수에 따른 확률 텍스트 및 색상 반환 함수 ---
   const getProbabilityStatus = (score: number) => {
-    // aiScore는 200점 만점 기준 -> 100점 환산 점수 = score / 2
-    const score100 = score / 2;
-
-    if (score100 >= 96) return { text: "매우 높음", color: "text-purple-600 dark:text-purple-400" } // 96~100
-    if (score100 >= 91) return { text: "높음", color: "text-blue-600 dark:text-blue-400" }      // 91~95
-    if (score100 >= 80) return { text: "보통", color: "text-green-600 dark:text-green-400" }     // 80~90
+    if (score >= 96) return { text: "매우 높음", color: "text-purple-600 dark:text-purple-400" }
+    if (score >= 91) return { text: "높음", color: "text-blue-600 dark:text-blue-400" }
+    if (score >= 80) return { text: "보통", color: "text-green-600 dark:text-green-400" }
     return { text: "낮음", color: "text-gray-500" }
   }
 
@@ -177,7 +152,6 @@ export default function AIRecommendation({
     }
 
     setRecommendedNumbers([])
-    setAiGrade(null)
     setAiScore(null)
 
     await new Promise((resolve) => setTimeout(resolve, 10))
@@ -198,7 +172,7 @@ export default function AIRecommendation({
         const nextMap = nextNumberProbabilities.get(prevNum)
         if (nextMap) {
           const topCalls = [...nextMap.entries()]
-              .sort((a,b) => b[1].length - a[1].length)
+              .sort((a, b) => b[1].length - a[1].length)
               .slice(0, 3)
 
           console.log(`  └─ ${prevNum}번 패턴:`)
@@ -306,32 +280,26 @@ export default function AIRecommendation({
       }
 
       candidates.sort((a, b) => b.score - a.score)
-
       const finalPick = candidates[Math.floor(Math.random() * Math.min(3, candidates.length))]
 
       if (finalPick) {
         console.group(`✨ [최종 추천] 조합: ${finalPick.combination.join(", ")}`)
         console.log(`📊 종합 점수: ${finalPick.score.toFixed(1)}점`)
         console.log(`🔗 트리거 근거 (직전회차→이번번호): ${finalPick.evidence.length > 0 ? finalPick.evidence.join(", ") : "다수의 과거 패턴 반영"} 등 과거 패턴 반복`)
-        console.log(`📅 계절성 점수: ${finalPick.log.seasonal.toFixed(1)}`)
-        console.log(`🔢 AC(복잡도): ${finalPick.log.ac}`)
         console.groupEnd()
       }
 
-      resolve(finalPick ? finalPick.combination : generateCombination(analyticsData.weightedNumberList))
+      // fallback: 기본 조합 생성 로직은 analyticsData에서 직접 처리 가능
+      const fallbackCombo = finalPick ? finalPick.combination : Array.from({ length: 6 }, () => Math.floor(Math.random() * 45) + 1).sort((a, b) => a - b);
+      resolve(fallbackCombo)
     })
 
-    // [수정] 점수 생성 범위 상향: 85 ~ 99 사이 (인위적 보정 제거를 위해 기본 점수를 높임)
+    // [핵심 수정] 100점 만점 기준의 원래 점수 계산 및 저장
     const baseScore = Math.floor(Math.random() * 15 + 85); // 85 ~ 99
     const finalScore = Math.min(100, Math.max(80, baseScore));
 
-    // 200점 만점 스케일로 변환
-    const score200 = finalScore * 2;
-    const displayGrade = scoreToGrade(score200)
-
     setRecommendedNumbers(finalCombination)
-    setAiGrade(displayGrade)
-    setAiScore(score200)
+    setAiScore(finalScore) // 200점 변환 없이 원래 스코어(100점 기준) 저장
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -345,7 +313,7 @@ export default function AIRecommendation({
         body: JSON.stringify({
           numbers: finalCombination,
           source: "ai",
-          score: score200,
+          score: finalScore, // [수정] 200점으로 변환하지 않고 100점 기준 점수 저장
           userId: session?.user?.id,
         }),
       })
@@ -374,7 +342,7 @@ export default function AIRecommendation({
   if (recommendedNumbers.length === 0) return null
 
   return (
-      <div className="p-4 bg-gray-200 dark:bg-[rgb(36,36,36)] rounded-lg">
+      <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
             <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
@@ -382,12 +350,12 @@ export default function AIRecommendation({
           </div>
         </div>
         <div>
-          <div className="bg-gray-100 dark:bg-[#363636] rounded-lg p-4 mt-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-5">
-              <RotateCw className="w-24 h-24" />
+          <div className="mt-4 relative overflow-hidden">
+            <div className="absolute bottom-1/3 right-0 p-4 opacity-5">
+              <Sparkles className="w-30 h-30" />
             </div>
 
-            <div className="flex flex-col mb-3 relative z-10">
+            <div className="flex flex-col mb-3">
               <div className="flex justify-between items-center w-full gap-3">
                 <p className="text-sm text-gray-600 dark:text-gray-300 flex-1 leading-relaxed">
                 <span className="font-semibold text-blue-600 dark:text-blue-400">
@@ -396,27 +364,18 @@ export default function AIRecommendation({
                   와 전체 역대 당첨 번호의 상관관계를 분석하여,
                   <span className="font-semibold text-green-600 dark:text-green-400"> 5등</span> 이상을 목표로 설계된 조합입니다.
                 </p>
-                {aiGrade && (
-                    <div
-                        className={`px-3 py-1.5 rounded-lg font-bold text-sm whitespace-nowrap shadow-sm ${getGradeColor(
-                            aiGrade,
-                        )}`}
-                    >
-                      {aiGrade} 등급
-                    </div>
-                )}
               </div>
 
-              {aiGrade && aiScore !== null && (
+              {aiScore !== null && (
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200">
+                    <div className="text-xs p-3 bg-gray-100 dark:bg-[#363636] rounded-lg text-gray-700 dark:text-gray-200">
                       <span className="text-gray-500 dark:text-white block mb-1">패턴 매칭 점수</span>
                       <span className="font-bold text-base text-gray-800 dark:text-gray-100">
-                        {Math.floor(aiScore / 2)}
+                    {aiScore}
                         <span className="text-xs font-normal text-gray-400 ml-1">/ 100</span>
                     </span>
                     </div>
-                    <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200">
+                    <div className="text-xs p-3 bg-gray-100 dark:bg-[#363636] rounded-lg text-gray-700 dark:text-gray-200">
                       <span className="text-gray-500 dark:text-white block mb-1">예상 적중 확률</span>
                       <span className={`font-bold text-base ${probabilityStatus.color}`}>
                         {probabilityStatus.text}
@@ -439,7 +398,7 @@ export default function AIRecommendation({
             <Button
                 onClick={handleAnalyzeAINumbers}
                 variant="outline"
-                className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#464646] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                className="bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
             >
               <BarChart3 className="w-4 h-4 mr-2" />
               AI 조합의 패턴 보기

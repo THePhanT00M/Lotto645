@@ -13,7 +13,7 @@ export default function AINumberDisplay({ numbers, title }: AINumberDisplayProps
   const sortedNumbers = [...numbers].sort((a, b) => a - b)
 
   return (
-    <div className="pt-4 pb-4 pl-2 pr-2 bg-white dark:bg-[rgb(36,36,36)] rounded-lg">
+    <div className="pt-4 pb-4 pl-2 pr-2 bg-gray-100 dark:bg-[#363636] rounded-lg">
       <div className="flex max-w-xs mx-auto gap-2">
         {sortedNumbers.map((number) => (
           <div
