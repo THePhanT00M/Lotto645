@@ -235,11 +235,6 @@ export default function NumberSelector({ onSelectComplete, onReset, drawnNumbers
             // 11-7. 토스트 알림 표시 (로컬 저장 성공 시 혹은 로그인 상태일 때)
             // 로그인 상태라면 서버 저장이 주 목적이므로 알림을 띄워줍니다.
             if (savedLocally || isLoggedIn) {
-              toast({
-                title: "번호 생성 완료",
-                description: `${targetDrawNo ? targetDrawNo + "회차 " : ""} 번호가 저장되었습니다.`,
-              });
-
               lastSaveTimeRef.current = currentTime;
             }
 

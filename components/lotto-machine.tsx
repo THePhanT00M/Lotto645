@@ -111,10 +111,6 @@ export default function LottoMachine({ onDrawComplete, onReset }: LottoMachinePr
 
             // 6-4-3. 토스트 알림 표시 (로컬 저장 성공 시 혹은 로그인 상태일 때)
             if (savedLocally || isLoggedIn) {
-              toast({
-                title: "추첨 완료",
-                description: `${targetDrawNo ? targetDrawNo + "회차 " : ""} 번호가 저장되었습니다.`,
-              });
               lastSaveTimeRef.current = currentTime;
             }
 
