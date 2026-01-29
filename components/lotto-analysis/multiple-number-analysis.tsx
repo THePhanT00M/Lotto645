@@ -34,7 +34,7 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }
 
   return (
       <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)]">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between">
 
           <div className="flex items-center">
             <svg
@@ -99,7 +99,7 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }
 
         <div className="flex flex-col relative z-10">
           <div className="flex justify-between items-center w-full gap-3">
-          <p className="text-sm text-gray-600 dark:text-gray-300 flex-1 leading-relaxed">
+          <p className="text-sm text-gray-600 dark:text-gray-300 flex-1 leading-relaxed mt-2">
             선택한 번호에서 가능한 모든 조합과 각 조합이 과거에 등장한 횟수입니다.
           </p>
           </div>
