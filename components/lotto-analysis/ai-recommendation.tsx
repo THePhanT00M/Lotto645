@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Sparkles, BarChart3, RotateCw } from "lucide-react"
+import { Sparkles, BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { saveLottoResult } from "@/utils/lotto-storage"
 import AINumberDisplay from "@/components/lotto-analysis/ai-number-display"
@@ -33,15 +33,15 @@ interface LottoAnalytics {
 
 interface AIRecommendationProps {
   analyticsData: LottoAnalytics
-  generatedStats: FrequencyMap
+  // generatedStats Prop 제거됨
   winningNumbersSet: Set<string>
   latestDrawNo: number
+  historyData: WinningLottoNumbers[] // [신규] 상위 컴포넌트에서 전달받음
   onRecommendationGenerated?: (numbers: number[]) => void
   onAnalyzeNumbers?: (numbers: number[]) => void
   isGenerating: boolean
 }
 
-// --- 헬퍼 함수: AC 값 계산 (산술적 복잡도) ---
 const calculateACValue = (numbers: number[]): number => {
   const diffs = new Set<number>()
   for (let i = 0; i < numbers.length; i++) {
@@ -54,39 +54,19 @@ const calculateACValue = (numbers: number[]): number => {
 
 export default function AIRecommendation({
                                            analyticsData,
-                                           generatedStats,
                                            winningNumbersSet,
                                            latestDrawNo,
+                                           historyData, // Props로 받음
                                            onRecommendationGenerated,
                                            onAnalyzeNumbers,
                                            isGenerating,
                                          }: AIRecommendationProps) {
   const [recommendedNumbers, setRecommendedNumbers] = useState<number[]>([])
   const [aiScore, setAiScore] = useState<number | null>(null)
-  const [historyData, setHistoryData] = useState<WinningLottoNumbers[]>([])
   const { toast } = useToast()
 
-  // 1. 컴포넌트 마운트 시 DB에서 전체 당첨 번호 가져오기
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const { data, error } = await supabase
-            .from("winning_numbers")
-            .select("*")
-            .order("drawNo", { ascending: false })
+  // [수정] useEffect를 통한 DB 중복 호출 제거됨 (historyData prop 사용)
 
-        if (error) throw error
-        if (data) {
-          setHistoryData(data)
-        }
-      } catch (error) {
-        console.error("당첨 번호 로딩 실패:", error)
-      }
-    }
-    fetchHistory()
-  }, [])
-
-  // --- 알고리즘 핵심 로직: 패턴 분석 데이터 생성 (메모이제이션) ---
   const analysisEngine = useMemo(() => {
     if (historyData.length === 0) {
       return {
@@ -133,7 +113,6 @@ export default function AIRecommendation({
     return { nextNumberProbabilities, seasonalHotNumbers }
   }, [historyData])
 
-  // --- 점수에 따른 확률 텍스트 및 색상 반환 함수 ---
   const getProbabilityStatus = (score: number) => {
     if (score >= 96) return { text: "매우 높음", color: "text-purple-600 dark:text-purple-400" }
     if (score >= 91) return { text: "높음", color: "text-blue-600 dark:text-blue-400" }
@@ -145,7 +124,7 @@ export default function AIRecommendation({
     if (historyData.length === 0) {
       toast({
         title: "데이터 로딩 중",
-        description: "과거 당첨 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.",
+        description: "상위 컴포넌트에서 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.",
         variant: "destructive"
       })
       return
@@ -164,30 +143,16 @@ export default function AIRecommendation({
 
       console.log(`📌 지난 회차(${latestDrawNo}회) 당첨 번호:`, latestDrawNumbers)
 
-      // 1. 가중치 풀 생성
       const probabilityMap = new Map<number, number>()
 
-      console.groupCollapsed("🔍 [트리거 분석 상세] 지난 회차 번호가 불렀던 역사적 회차들")
       latestDrawNumbers.forEach(prevNum => {
         const nextMap = nextNumberProbabilities.get(prevNum)
         if (nextMap) {
-          const topCalls = [...nextMap.entries()]
-              .sort((a, b) => b[1].length - a[1].length)
-              .slice(0, 3)
-
-          console.log(`  └─ ${prevNum}번 패턴:`)
-          topCalls.forEach(([nextNum, drawList]) => {
-            const recentDraws = drawList.slice(0, 4).join(", ")
-            const totalCount = drawList.length
-            console.log(`      ➡️ ${nextNum}번 (총 ${totalCount}회): [${recentDraws}...] 회차 등에서 출현`)
-          })
-
           nextMap.forEach((drawList, nextNum) => {
             probabilityMap.set(nextNum, (probabilityMap.get(nextNum) || 0) + drawList.length * 2)
           })
         }
       })
-      console.groupEnd()
 
       seasonalHotNumbers.forEach((count, num) => {
         probabilityMap.set(num, (probabilityMap.get(num) || 0) + count * 1.5)
@@ -209,7 +174,6 @@ export default function AIRecommendation({
         return Math.floor(Math.random() * 45) + 1
       }
 
-      // 2. 조합 생성 및 시뮬레이션
       const ITERATIONS = 15000
       const TOP_K = 20
       const candidates: { combination: number[]; score: number; log: any; evidence: string[] }[] = []
@@ -282,24 +246,15 @@ export default function AIRecommendation({
       candidates.sort((a, b) => b.score - a.score)
       const finalPick = candidates[Math.floor(Math.random() * Math.min(3, candidates.length))]
 
-      if (finalPick) {
-        console.group(`✨ [최종 추천] 조합: ${finalPick.combination.join(", ")}`)
-        console.log(`📊 종합 점수: ${finalPick.score.toFixed(1)}점`)
-        console.log(`🔗 트리거 근거 (직전회차→이번번호): ${finalPick.evidence.length > 0 ? finalPick.evidence.join(", ") : "다수의 과거 패턴 반영"} 등 과거 패턴 반복`)
-        console.groupEnd()
-      }
-
-      // fallback: 기본 조합 생성 로직은 analyticsData에서 직접 처리 가능
       const fallbackCombo = finalPick ? finalPick.combination : Array.from({ length: 6 }, () => Math.floor(Math.random() * 45) + 1).sort((a, b) => a - b);
       resolve(fallbackCombo)
     })
 
-    // [핵심 수정] 100점 만점 기준의 원래 점수 계산 및 저장
-    const baseScore = Math.floor(Math.random() * 15 + 85); // 85 ~ 99
+    const baseScore = Math.floor(Math.random() * 15 + 85);
     const finalScore = Math.min(100, Math.max(80, baseScore));
 
     setRecommendedNumbers(finalCombination)
-    setAiScore(finalScore) // 200점 변환 없이 원래 스코어(100점 기준) 저장
+    setAiScore(finalScore)
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -313,7 +268,7 @@ export default function AIRecommendation({
         body: JSON.stringify({
           numbers: finalCombination,
           source: "ai",
-          score: finalScore, // [수정] 200점으로 변환하지 않고 100점 기준 점수 저장
+          score: finalScore,
           userId: session?.user?.id,
         }),
       })

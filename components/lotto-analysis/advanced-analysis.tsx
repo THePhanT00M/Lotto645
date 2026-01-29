@@ -1,14 +1,12 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
 import type { MultipleNumberType, SimilarDrawType } from "./types"
 import type { WinningLottoNumbers } from "@/types/lotto"
 import { Sparkles, BarChart3, MousePointerClick } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
-// --- 1단계: 타입 및 통계 훅 ---
 
 type FrequencyMap = Map<number, number>
 type StringFrequencyMap = Map<string, number>
@@ -30,9 +28,6 @@ interface LottoAnalytics {
   winningNumbersSet: Set<string>
 }
 
-/**
- * 당첨 번호 데이터를 기반으로 통계 정보를 계산하고 캐시하는 훅
- */
 const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytics => {
   return useMemo(() => {
     const winningNumbersSet = new Set(
@@ -131,13 +126,10 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
   }, [winningNumbers])
 }
 
-// --- 2단계: 메인 컴포넌트 ---
-
 interface AdvancedAnalysisProps {
   userDrawnNumbers: number[]
   numbers: number[]
   winningNumbers: WinningLottoNumbers[]
-  generatedStats: FrequencyMap
   multipleNumbers: MultipleNumberType[]
   similarDraws: SimilarDrawType[]
   winningNumbersCount: number
@@ -149,7 +141,6 @@ export default function AdvancedAnalysis({
                                            userDrawnNumbers,
                                            numbers,
                                            winningNumbers,
-                                           generatedStats,
                                            multipleNumbers,
                                            similarDraws,
                                            winningNumbersCount,
@@ -183,7 +174,6 @@ export default function AdvancedAnalysis({
 
   return (
       <div className="space-y-6">
-        {/* --- 상단 액션 카드: 분석 및 추천 --- */}
         <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-xl border border-gray-200 dark:border-[rgb(36,36,36)]">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex flex-col gap-2">
@@ -193,9 +183,9 @@ export default function AdvancedAnalysis({
                   번호 분석 및 AI 추천
                 </h3>
               </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                  추첨된 번호를 분석하거나 AI의 새로운 추천을 받을 수 있습니다.
-                </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                추첨된 번호를 분석하거나 AI의 새로운 추천을 받을 수 있습니다.
+              </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <Button
@@ -228,15 +218,14 @@ export default function AdvancedAnalysis({
           </div>
         </div>
 
-        {/* --- 하단 컴포넌트들 --- */}
         <AIRecommendation
             analyticsData={analyticsData}
-            generatedStats={generatedStats}
             isGenerating={isGenerating}
             onRecommendationGenerated={handleRecommendationGenerated}
             onAnalyzeNumbers={onNumbersChange}
             latestDrawNo={analyticsData.latestDrawNo}
             winningNumbersSet={analyticsData.winningNumbersSet}
+            historyData={winningNumbers}
         />
 
         <MultipleNumberAnalysis
