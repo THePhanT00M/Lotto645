@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
+import { LottoAnalytics } from './types'
 import { Sparkles, BarChart3, SearchCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { saveLottoResult } from "@/utils/lotto-storage"
@@ -9,27 +10,6 @@ import { useToast } from "@/hooks/use-toast"
 import { getApiUrl } from "@/lib/api-config"
 import { supabase } from "@/lib/supabaseClient"
 import type { WinningLottoNumbers } from "@/types/lotto"
-
-// --- 타입 정의 ---
-type FrequencyMap = Map<number, number>
-type StringFrequencyMap = Map<string, number>
-
-interface LottoAnalytics {
-  numberFrequencies: FrequencyMap
-  pairFrequencies: StringFrequencyMap
-  tripletFrequencies: StringFrequencyMap
-  quadrupletLastSeen: StringFrequencyMap
-  recentFrequencies: FrequencyMap
-  gapMap: FrequencyMap
-  weightedNumberList: number[]
-  sumStats: { mean: number; stdDev: number }
-  oddEvenDistribution: StringFrequencyMap
-  sectionDistribution: StringFrequencyMap
-  consecutiveDistribution: StringFrequencyMap
-  latestDrawNumbers: number[]
-  latestDrawNo: number
-  winningNumbersSet: Set<string>
-}
 
 interface AIRecommendationProps {
   analyticsData: LottoAnalytics
