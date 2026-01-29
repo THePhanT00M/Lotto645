@@ -5,7 +5,7 @@ import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
 import type { MultipleNumberType, SimilarDrawType } from "./types"
 import type { WinningLottoNumbers } from "@/types/lotto"
-import { Sparkles, BarChart3, MousePointerClick } from "lucide-react"
+import { Sparkles, SearchCheck, MousePointerClick } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 // --- 1단계: 타입 및 통계 훅 ---
@@ -195,8 +195,8 @@ export default function AdvancedAnalysis({
                   disabled={originalUserNumbers.length !== 6}
                   className="flex-1 sm:flex-none bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
               >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                추첨 번호 패턴 분석
+                <SearchCheck className="w-4 h-4" />
+                추첨 번호 AI 분석
               </Button>
               <Button
                   onClick={generateAIRecommendation}
@@ -205,12 +205,12 @@ export default function AdvancedAnalysis({
               >
                 {isGenerating ? (
                     <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                      연산 중...
+                      <Sparkles className="w-4 h-4 animate-spin" />
+                      분석 중...
                     </>
                 ) : (
                     <>
-                      <Sparkles className="w-4 h-4 mr-2" />
+                      <Sparkles className="w-4 h-4" />
                       AI 추천 받기
                     </>
                 )}
