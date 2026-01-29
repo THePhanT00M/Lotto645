@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast"
 import { getApiUrl } from "@/lib/api-config"
 import { supabase } from "@/lib/supabaseClient"
 import type { WinningLottoNumbers } from "@/types/lotto"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface AIRecommendationProps {
   analyticsData: LottoAnalytics
@@ -448,6 +449,35 @@ export default function AIRecommendation({
   }
 
   const probabilityStatus = aiScore ? getProbabilityStatus(aiScore) : { text: "-", color: "" }
+
+  // [수정됨] 스켈레톤 로딩 상태 처리
+  if (isGenerating) {
+    return (
+        <div className="p-4 rounded-lg border bg-white dark:bg-[rgb(36,36,36)] border-gray-200 dark:border-[rgb(36,36,36)] space-y-5">
+          <div className="flex items-center space-x-2">
+            <Skeleton className="w-5 h-5 rounded-md" />
+            <Skeleton className="h-6 w-40" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between gap-3">
+              <Skeleton className="h-4 w-full" />
+            </div>
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            <Skeleton className="h-16 rounded-lg" />
+            <Skeleton className="h-16 rounded-lg" />
+          </div>
+          <div className="flex justify-center py-6">
+            <div className="flex gap-2">
+              {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-10 rounded-full" />
+              ))}
+            </div>
+          </div>
+        </div>
+    )
+  }
 
   if (recommendedNumbers.length === 0) return null
 

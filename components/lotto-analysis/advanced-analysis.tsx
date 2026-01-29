@@ -174,6 +174,7 @@ export default function AdvancedAnalysis({
         <MultipleNumberAnalysis
             multipleNumbers={multipleNumbers}
             getBallColor={getBallColor}
+            isGenerating={isGenerating} // 스켈레톤 적용을 위해 상태 전달
         />
       </div>
   )
