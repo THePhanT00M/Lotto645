@@ -34,7 +34,7 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }
 
   return (
       <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)]">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
 
           <div className="flex items-center">
             <svg
