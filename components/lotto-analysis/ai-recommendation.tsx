@@ -8,7 +8,7 @@ import AINumberDisplay from "@/components/lotto-analysis/ai-number-display"
 import { useToast } from "@/hooks/use-toast"
 import { getApiUrl } from "@/lib/api-config"
 import { supabase } from "@/lib/supabaseClient"
-import type { WinningLottoNumbers } from "@/types/lotto" // 타입 import
+import type { WinningLottoNumbers } from "@/types/lotto"
 
 // --- 타입 정의 ---
 type Grade = "하" | "중하" | "보통" | "중" | "중상" | "상" | "최상"
@@ -85,7 +85,7 @@ export default function AIRecommendation({
   const [recommendedNumbers, setRecommendedNumbers] = useState<number[]>([])
   const [aiGrade, setAiGrade] = useState<Grade | null>(null)
   const [aiScore, setAiScore] = useState<number | null>(null)
-  const [historyData, setHistoryData] = useState<WinningLottoNumbers[]>([]) // DB 데이터 저장용
+  const [historyData, setHistoryData] = useState<WinningLottoNumbers[]>([])
   const { toast } = useToast()
 
   // 1. 컴포넌트 마운트 시 DB에서 전체 당첨 번호 가져오기
@@ -95,7 +95,7 @@ export default function AIRecommendation({
         const { data, error } = await supabase
             .from("winning_numbers")
             .select("*")
-            .order("drawNo", { ascending: false }) // 최신순 정렬
+            .order("drawNo", { ascending: false })
 
         if (error) throw error
         if (data) {
@@ -110,7 +110,6 @@ export default function AIRecommendation({
 
   // --- 알고리즘 핵심 로직: 패턴 분석 데이터 생성 (메모이제이션) ---
   const analysisEngine = useMemo(() => {
-    // 데이터가 아직 로드되지 않았으면 빈 값 반환
     if (historyData.length === 0) {
       return {
         nextNumberProbabilities: new Map<number, Map<number, number[]>>(),
@@ -120,18 +119,14 @@ export default function AIRecommendation({
 
     console.log(`%c[AI 분석 엔진] DB 데이터(${historyData.length}회) 스캔 시작...`, "color: #3b82f6; font-weight: bold;")
 
-    // Map<직전번호, Map<다음번호, [회차1, 회차2, ...]>>
     const nextNumberProbabilities = new Map<number, Map<number, number[]>>()
     const seasonalHotNumbers = new Map<number, number>()
     const currentMonth = new Date().getMonth() + 1
 
-    // 전체 과거 데이터 순회 (내림차순 데이터: historyData[0]이 최신)
     for (let i = 0; i < historyData.length; i++) {
       const currentDraw = historyData[i]
-      // 내림차순이므로 '이전 회차(과거)'는 인덱스 i + 1
       const prevDraw = i < historyData.length - 1 ? historyData[i + 1] : null
 
-      // 1. 계절성(Seasonal) 분석
       const drawMonth = parseInt(currentDraw.date.split("-")[1], 10)
       if (drawMonth === currentMonth) {
         currentDraw.numbers.forEach((num) => {
@@ -139,7 +134,6 @@ export default function AIRecommendation({
         })
       }
 
-      // 2. 트리거(Trigger) 분석: 회차 정보 기록
       if (prevDraw) {
         const prevNumbers = [...prevDraw.numbers, prevDraw.bonusNo]
         prevNumbers.forEach((prevNum) => {
@@ -152,7 +146,6 @@ export default function AIRecommendation({
             if (!targetMap.has(currNum)) {
               targetMap.set(currNum, [])
             }
-            // 해당 패턴이 발생한 '회차 번호'를 배열에 추가
             targetMap.get(currNum)!.push(currentDraw.drawNo)
           })
         })
@@ -160,11 +153,19 @@ export default function AIRecommendation({
     }
 
     return { nextNumberProbabilities, seasonalHotNumbers }
-  }, [historyData]) // historyData가 로드되면 재계산
+  }, [historyData])
 
-  /**
-   * AI 추천 번호 생성 및 로그 출력
-   */
+  // --- [수정] 점수에 따른 확률 텍스트 및 색상 반환 함수 (기준 세분화) ---
+  const getProbabilityStatus = (score: number) => {
+    // aiScore는 200점 만점 기준 -> 100점 환산 점수 = score / 2
+    const score100 = score / 2;
+
+    if (score100 >= 96) return { text: "매우 높음", color: "text-purple-600 dark:text-purple-400" } // 96~100
+    if (score100 >= 91) return { text: "높음", color: "text-blue-600 dark:text-blue-400" }      // 91~95
+    if (score100 >= 80) return { text: "보통", color: "text-green-600 dark:text-green-400" }     // 80~90
+    return { text: "낮음", color: "text-gray-500" }
+  }
+
   const generateAIRecommendation = async () => {
     if (historyData.length === 0) {
       toast({
@@ -189,36 +190,31 @@ export default function AIRecommendation({
 
       console.log(`📌 지난 회차(${latestDrawNo}회) 당첨 번호:`, latestDrawNumbers)
 
-      // --- 1단계: 가중치 풀 생성 ---
+      // 1. 가중치 풀 생성
       const probabilityMap = new Map<number, number>()
 
-      // 1-1. 트리거 가중치 (로그에 회차 정보 포함)
       console.groupCollapsed("🔍 [트리거 분석 상세] 지난 회차 번호가 불렀던 역사적 회차들")
       latestDrawNumbers.forEach(prevNum => {
         const nextMap = nextNumberProbabilities.get(prevNum)
         if (nextMap) {
-          // 상위 3개만 로그로 출력 (많이 나온 순)
           const topCalls = [...nextMap.entries()]
               .sort((a,b) => b[1].length - a[1].length)
               .slice(0, 3)
 
           console.log(`  └─ ${prevNum}번 패턴:`)
           topCalls.forEach(([nextNum, drawList]) => {
-            // 내림차순(최신순) 데이터이므로 앞부분(slice 0,4)이 최근 회차
             const recentDraws = drawList.slice(0, 4).join(", ")
             const totalCount = drawList.length
             console.log(`      ➡️ ${nextNum}번 (총 ${totalCount}회): [${recentDraws}...] 회차 등에서 출현`)
           })
 
           nextMap.forEach((drawList, nextNum) => {
-            // 빈도수(drawList.length)를 가중치로 사용
             probabilityMap.set(nextNum, (probabilityMap.get(nextNum) || 0) + drawList.length * 2)
           })
         }
       })
       console.groupEnd()
 
-      // 1-2. 계절성 및 미출현 가중치 적용
       seasonalHotNumbers.forEach((count, num) => {
         probabilityMap.set(num, (probabilityMap.get(num) || 0) + count * 1.5)
       })
@@ -239,7 +235,7 @@ export default function AIRecommendation({
         return Math.floor(Math.random() * 45) + 1
       }
 
-      // --- 2단계: 조합 생성 및 시뮬레이션 ---
+      // 2. 조합 생성 및 시뮬레이션
       const ITERATIONS = 15000
       const TOP_K = 20
       const candidates: { combination: number[]; score: number; log: any; evidence: string[] }[] = []
@@ -255,12 +251,10 @@ export default function AIRecommendation({
 
         if (winningNumbersSet.has(combinationKey)) continue
 
-        // --- 점수 채점 및 근거 수집 ---
         let score = 0
         let logDetail = { trigger: 0, seasonal: 0, ac: 0, sum: 0, hot: 0 }
         const evidenceList: string[] = []
 
-        // 1. 트리거 점수
         let triggerScore = 0
         latestDrawNumbers.forEach(prevNum => {
           const map = nextNumberProbabilities.get(prevNum)
@@ -269,10 +263,7 @@ export default function AIRecommendation({
               if (map.has(currNum)) {
                 const draws = map.get(currNum)!
                 triggerScore += draws.length
-
-                // 근거 기록 (확률적으로 일부만 기록하여 로그 폭주 방지)
                 if (Math.random() < 0.1 && evidenceList.length < 3) {
-                  // 최신 회차(0번 인덱스) 사용
                   const recentDraw = draws[0]
                   evidenceList.push(`${prevNum}→${currNum}(${recentDraw}회)`)
                 }
@@ -284,30 +275,25 @@ export default function AIRecommendation({
         score += finalTriggerScore
         logDetail.trigger = finalTriggerScore
 
-        // 2. 계절성 점수
         let seasonalScore = 0
         currentNumbers.forEach(num => seasonalScore += (seasonalHotNumbers.get(num) || 0))
         const finalSeasonalScore = (seasonalScore / 10) * 20
         score += finalSeasonalScore
         logDetail.seasonal = finalSeasonalScore
 
-        // 3. AC 값
         const acValue = calculateACValue(currentNumbers)
         if (acValue >= 7) { score += 20; logDetail.ac = 20; }
         else { score -= 10; logDetail.ac = -10; }
 
-        // 4. 총합
         const sum = currentNumbers.reduce((a, b) => a + b, 0)
         if (sum >= 80 && sum <= 200) { score += 10; logDetail.sum = 10; }
         else { score -= 5; logDetail.sum = -5; }
 
-        // 5. Hot 번호
         const recentNumbers = Object.keys(Object.fromEntries(analyticsData.recentFrequencies))
             .map(Number).filter(n => analyticsData.recentFrequencies.get(n)! >= 2)
         const hotCount = currentNumbers.filter(n => recentNumbers.includes(n)).length
         if (hotCount >= 1 && hotCount <= 3) { score += 10; logDetail.hot = 10; }
 
-        // 후보군 등록
         if (candidates.length < TOP_K) {
           candidates.push({ combination: currentNumbers, score, log: logDetail, evidence: evidenceList })
         } else {
@@ -321,7 +307,6 @@ export default function AIRecommendation({
 
       candidates.sort((a, b) => b.score - a.score)
 
-      // 최종 선택
       const finalPick = candidates[Math.floor(Math.random() * Math.min(3, candidates.length))]
 
       if (finalPick) {
@@ -336,12 +321,17 @@ export default function AIRecommendation({
       resolve(finalPick ? finalPick.combination : generateCombination(analyticsData.weightedNumberList))
     })
 
-    const finalScore = Math.min(99, Math.max(50, Math.floor(Math.random() * 20 + 75)))
-    const displayGrade = scoreToGrade(finalScore * 2)
+    // [수정] 점수 생성 범위 상향: 85 ~ 99 사이 (인위적 보정 제거를 위해 기본 점수를 높임)
+    const baseScore = Math.floor(Math.random() * 15 + 85); // 85 ~ 99
+    const finalScore = Math.min(100, Math.max(80, baseScore));
+
+    // 200점 만점 스케일로 변환
+    const score200 = finalScore * 2;
+    const displayGrade = scoreToGrade(score200)
 
     setRecommendedNumbers(finalCombination)
     setAiGrade(displayGrade)
-    setAiScore(finalScore * 2)
+    setAiScore(score200)
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -355,7 +345,7 @@ export default function AIRecommendation({
         body: JSON.stringify({
           numbers: finalCombination,
           source: "ai",
-          score: finalScore * 2,
+          score: score200,
           userId: session?.user?.id,
         }),
       })
@@ -378,6 +368,8 @@ export default function AIRecommendation({
       onAnalyzeNumbers(recommendedNumbers)
     }
   }
+
+  const probabilityStatus = aiScore ? getProbabilityStatus(aiScore) : { text: "-", color: "" }
 
   if (recommendedNumbers.length === 0) return null
 
@@ -420,15 +412,15 @@ export default function AIRecommendation({
                     <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200">
                       <span className="text-gray-500 dark:text-white block mb-1">패턴 매칭 점수</span>
                       <span className="font-bold text-base text-gray-800 dark:text-gray-100">
-                        {Math.min(100, Math.floor(aiScore / 2) + 15)}
+                        {Math.floor(aiScore / 2)}
                         <span className="text-xs font-normal text-gray-400 ml-1">/ 100</span>
                     </span>
                     </div>
                     <div className="text-xs p-2 bg-white dark:bg-[#464646] rounded-lg text-gray-700 dark:text-gray-200">
                       <span className="text-gray-500 dark:text-white block mb-1">예상 적중 확률</span>
-                      <span className="font-bold text-base text-blue-600 dark:text-blue-400">
-                        높음
-                      </span>
+                      <span className={`font-bold text-base ${probabilityStatus.color}`}>
+                        {probabilityStatus.text}
+                    </span>
                     </div>
                   </div>
               )}
@@ -447,7 +439,7 @@ export default function AIRecommendation({
             <Button
                 onClick={handleAnalyzeAINumbers}
                 variant="outline"
-                className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                className="bg-white dark:bg-[#464646] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#464646] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
             >
               <BarChart3 className="w-4 h-4 mr-2" />
               AI 조합의 패턴 보기
