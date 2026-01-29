@@ -343,7 +343,7 @@ export default function AIRecommendation({
 
   return (
       <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)]">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center">
             <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
             <h3 className="font-bold text-gray-800 dark:text-gray-200">AI 정밀 분석 추천</h3>
