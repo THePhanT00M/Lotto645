@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react"
 import { useMobile } from "@/hooks/use-mobile"
 import type { MultipleNumberType, CommonProps } from "./types"
-import {Sparkles} from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface MultipleNumberAnalysisProps extends CommonProps {
   multipleNumbers: MultipleNumberType[]
+  isGenerating?: boolean // 스켈레톤 상태 제어를 위해 추가
 }
 
-export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }: MultipleNumberAnalysisProps) {
+export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, isGenerating }: MultipleNumberAnalysisProps) {
   const [currentMultipleType, setCurrentMultipleType] = useState<"2쌍둥이" | "3쌍둥이" | "4쌍둥이">("4쌍둥이")
   const [currentPage, setCurrentPage] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(15)
@@ -31,6 +32,31 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }
   useEffect(() => {
     setCurrentPage(0)
   }, [currentMultipleType])
+
+  // [수정됨] 스켈레톤 로딩 상태 처리
+  if (isGenerating) {
+    return (
+        <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)] space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Skeleton className="w-5 h-5" />
+              <Skeleton className="h-6 w-32" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-16 rounded-md" />
+              <Skeleton className="h-8 w-16 rounded-md" />
+              <Skeleton className="h-8 w-16 rounded-md" />
+            </div>
+          </div>
+          <Skeleton className="h-4 w-full max-w-md mb-6" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-4">
+            {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            ))}
+          </div>
+        </div>
+    )
+  }
 
   return (
       <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)]">
@@ -99,9 +125,9 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor }
 
         <div className="flex flex-col relative z-10">
           <div className="flex justify-between items-center w-full gap-3">
-          <p className="text-sm text-gray-600 dark:text-gray-300 flex-1 leading-relaxed mt-2">
-            선택한 번호에서 가능한 모든 조합과 각 조합이 과거에 등장한 횟수입니다.
-          </p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 flex-1 leading-relaxed mt-2">
+              선택한 번호에서 가능한 모든 조합과 각 조합이 과거에 등장한 횟수입니다.
+            </p>
           </div>
 
           {/* 다중 번호 분석 영역 */}

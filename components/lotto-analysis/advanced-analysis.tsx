@@ -1,163 +1,90 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
-import type { MultipleNumberType, SimilarDrawType } from "./types"
+import type { MultipleNumberType, SimilarDrawType, LottoAnalytics } from "./types" // types.ts에서 import
 import type { WinningLottoNumbers } from "@/types/lotto"
-import { Sparkles, BarChart3, MousePointerClick } from "lucide-react"
+import { Sparkles, SearchCheck, MousePointerClick } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-// --- 1단계: 타입 및 통계 훅 ---
-
-type FrequencyMap = Map<number, number>
-type StringFrequencyMap = Map<string, number>
-
-interface LottoAnalytics {
-  numberFrequencies: FrequencyMap
-  pairFrequencies: StringFrequencyMap
-  tripletFrequencies: StringFrequencyMap
-  quadrupletLastSeen: StringFrequencyMap
-  recentFrequencies: FrequencyMap
-  gapMap: FrequencyMap
-  weightedNumberList: number[]
-  sumStats: { mean: number; stdDev: number }
-  oddEvenDistribution: StringFrequencyMap
-  sectionDistribution: StringFrequencyMap
-  consecutiveDistribution: StringFrequencyMap
-  latestDrawNumbers: number[]
-  latestDrawNo: number
-  winningNumbersSet: Set<string>
-}
-
-/**
- * 당첨 번호 데이터를 기반으로 통계 정보를 계산하고 캐시하는 훅
- */
+// --- 1단계: 통계 훅 (최적화됨) ---
+// AIRecommendation에서 실제로 사용하는 데이터(gapMap, latestDraw 등)만 계산합니다.
 const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytics => {
   return useMemo(() => {
+    const totalDraws = winningNumbers.length
+
+    // 데이터가 없는 경우 초기값 반환
+    if (totalDraws === 0) {
+      return {
+        gapMap: new Map(),
+        latestDrawNumbers: [],
+        latestDrawNo: 0,
+        winningNumbersSet: new Set(),
+      }
+    }
+
+    const latestDraw = winningNumbers[totalDraws - 1]
+    const latestDrawNo = latestDraw.drawNo
+    const latestDrawNumbers = [...latestDraw.numbers, latestDraw.bonusNo]
+
+    // 역대 당첨 번호 Set 생성 (중복 조합 생성 방지용)
     const winningNumbersSet = new Set(
         winningNumbers.map((draw) => [...draw.numbers].sort((a, b) => a - b).join("-")),
     )
 
-    const numberFrequencies: FrequencyMap = new Map()
-    const pairFrequencies: StringFrequencyMap = new Map()
-    const tripletFrequencies: StringFrequencyMap = new Map()
-    const quadrupletLastSeen: StringFrequencyMap = new Map()
-    const recentFrequencies: FrequencyMap = new Map()
-    const gapMap: FrequencyMap = new Map()
-    const weightedNumberList: number[] = []
-
-    const sumStats = { mean: 0, stdDev: 0, values: [] as number[] }
-    const oddEvenDistribution: StringFrequencyMap = new Map()
-    const sectionDistribution: StringFrequencyMap = new Map()
-    const consecutiveDistribution: StringFrequencyMap = new Map()
-
-    const totalDraws = winningNumbers.length
-    if (totalDraws === 0) {
-      return {
-        numberFrequencies, pairFrequencies, tripletFrequencies, quadrupletLastSeen,
-        recentFrequencies, gapMap, weightedNumberList, sumStats, oddEvenDistribution,
-        sectionDistribution, consecutiveDistribution, latestDrawNumbers: [],
-        latestDrawNo: 0, winningNumbersSet: new Set()
-      }
-    }
-
-    const RECENT_DRAW_COUNT = 260
-    const recentDrawsStart = Math.max(0, totalDraws - RECENT_DRAW_COUNT)
-    const lastSeen: Map<number, number> = new Map()
+    // 각 번호별 마지막 등장 회차 추적
+    const lastSeen = new Map<number, number>()
+    // 초기화 (모든 번호 0회차)
     for (let i = 1; i <= 45; i++) lastSeen.set(i, 0)
 
-    winningNumbers.forEach((draw, index) => {
-      const drawNumbers = [...draw.numbers].sort((a, b) => a - b)
+    // 전체 회차를 순회하며 마지막 등장 시점 업데이트
+    // (이전 코드처럼 복잡한 빈도수, 홀짝, 구간 분석 등은 AIRecommendation에서 사용하지 않으므로 제거)
+    winningNumbers.forEach((draw) => {
       const allDrawNumbers = [...draw.numbers, draw.bonusNo]
-
       for (const num of allDrawNumbers) {
-        numberFrequencies.set(num, (numberFrequencies.get(num) || 0) + 1)
-        weightedNumberList.push(num)
         lastSeen.set(num, draw.drawNo)
-        if (index >= recentDrawsStart) {
-          recentFrequencies.set(num, (recentFrequencies.get(num) || 0) + 1)
-        }
-      }
-
-      const sum = drawNumbers.reduce((a, b) => a + b, 0)
-      sumStats.values.push(sum)
-
-      const oddCount = drawNumbers.filter((n) => n % 2 === 1).length
-      const oddEvenKey = `${oddCount}:${6 - oddCount}`
-      oddEvenDistribution.set(oddEvenKey, (oddEvenDistribution.get(oddEvenKey) || 0) + 1)
-
-      const s1 = drawNumbers.filter((n) => n <= 15).length
-      const s2 = drawNumbers.filter((n) => n > 15 && n <= 30).length
-      const s3 = drawNumbers.filter((n) => n > 30).length
-      const sectionKey = [s1, s2, s3].sort((a, b) => b - a).join(":")
-      sectionDistribution.set(sectionKey, (sectionDistribution.get(sectionKey) || 0) + 1)
-
-      let consecutiveCount = 0
-      for (let i = 0; i < drawNumbers.length - 1; i++) {
-        if (drawNumbers[i + 1] - drawNumbers[i] === 1) consecutiveCount++
-      }
-      const consecutiveKey = `${consecutiveCount}쌍`
-      consecutiveDistribution.set(consecutiveKey, (consecutiveDistribution.get(consecutiveKey) || 0) + 1)
-
-      for (let i = 0; i < drawNumbers.length; i++) {
-        for (let j = i + 1; j < drawNumbers.length; j++) {
-          pairFrequencies.set(`${drawNumbers[i]}-${drawNumbers[j]}`, (pairFrequencies.get(`${drawNumbers[i]}-${drawNumbers[j]}`) || 0) + 1)
-        }
       }
     })
 
-    const latestDrawNo = winningNumbers[totalDraws - 1].drawNo
+    // 미출현 기간(Gap) 계산
+    const gapMap = new Map<number, number>()
     for (let i = 1; i <= 45; i++) {
-      if (!numberFrequencies.has(i)) {
-        numberFrequencies.set(i, 1)
-        weightedNumberList.push(i)
-      }
       gapMap.set(i, latestDrawNo - (lastSeen.get(i) || 0))
     }
 
-    const sumTotal = sumStats.values.reduce((a, b) => a + b, 0)
-    sumStats.mean = sumTotal / totalDraws
-    const variance = sumStats.values.reduce((a, b) => a + Math.pow(b - sumStats.mean, 2), 0) / totalDraws
-    sumStats.stdDev = Math.sqrt(variance)
-
     return {
-      numberFrequencies, pairFrequencies, tripletFrequencies, quadrupletLastSeen,
-      recentFrequencies, gapMap, weightedNumberList, sumStats, oddEvenDistribution,
-      sectionDistribution, consecutiveDistribution,
-      latestDrawNumbers: [...winningNumbers[totalDraws - 1].numbers, winningNumbers[totalDraws - 1].bonusNo],
-      latestDrawNo, winningNumbersSet,
+      gapMap,
+      latestDrawNumbers,
+      latestDrawNo,
+      winningNumbersSet,
     }
   }, [winningNumbers])
 }
 
 // --- 2단계: 메인 컴포넌트 ---
-
 interface AdvancedAnalysisProps {
   userDrawnNumbers: number[]
-  numbers: number[]
   winningNumbers: WinningLottoNumbers[]
-  generatedStats: FrequencyMap
   multipleNumbers: MultipleNumberType[]
-  similarDraws: SimilarDrawType[]
-  winningNumbersCount: number
   getBallColor: (number: number) => string
   onNumbersChange: (numbers: number[]) => void
 }
 
 export default function AdvancedAnalysis({
                                            userDrawnNumbers,
-                                           numbers,
                                            winningNumbers,
-                                           generatedStats,
                                            multipleNumbers,
-                                           similarDraws,
-                                           winningNumbersCount,
                                            getBallColor,
                                            onNumbersChange,
                                          }: AdvancedAnalysisProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [originalUserNumbers, setOriginalUserNumbers] = useState<number[]>(userDrawnNumbers)
+
+  // 수동 분석할 번호 상태
+  const [manualAnalysisNumbers, setManualAnalysisNumbers] = useState<number[] | null>(null)
+
+  // 최적화된 훅 사용
   const analyticsData = useLottoAnalytics(winningNumbers)
 
   useEffect(() => {
@@ -167,12 +94,16 @@ export default function AdvancedAnalysis({
   }, [userDrawnNumbers])
 
   const generateAIRecommendation = async () => {
+    setManualAnalysisNumbers(null) // AI 추천 요청 시 수동 분석 상태 초기화
     setIsGenerating(true)
   }
 
   const handleAnalyzeUserNumbers = () => {
     if (originalUserNumbers.length === 6) {
+      // 1. 차트 컴포넌트에 번호 전달
       onNumbersChange(originalUserNumbers)
+      // 2. AI 추천 컴포넌트에 번호 전달 (수동 분석 모드 트리거)
+      setManualAnalysisNumbers([...originalUserNumbers])
     }
   }
 
@@ -193,9 +124,9 @@ export default function AdvancedAnalysis({
                   번호 분석 및 AI 추천
                 </h3>
               </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                  추첨된 번호를 분석하거나 AI의 새로운 추천을 받을 수 있습니다.
-                </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                추첨된 번호를 분석하거나 AI의 새로운 추천을 받을 수 있습니다.
+              </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <Button
@@ -204,8 +135,8 @@ export default function AdvancedAnalysis({
                   disabled={originalUserNumbers.length !== 6}
                   className="flex-1 sm:flex-none bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
               >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                추첨 번호 패턴 분석
+                <SearchCheck className="w-4 h-4" />
+                추첨 번호 AI 분석
               </Button>
               <Button
                   onClick={generateAIRecommendation}
@@ -214,12 +145,12 @@ export default function AdvancedAnalysis({
               >
                 {isGenerating ? (
                     <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                      연산 중...
+                      <Sparkles className="w-4 h-4 animate-spin" />
+                      분석 중...
                     </>
                 ) : (
                     <>
-                      <Sparkles className="w-4 h-4 mr-2" />
+                      <Sparkles className="w-4 h-4" />
                       AI 추천 받기
                     </>
                 )}
@@ -228,20 +159,22 @@ export default function AdvancedAnalysis({
           </div>
         </div>
 
-        {/* --- 하단 컴포넌트들 --- */}
+        {/* --- AI 추천 및 분석 결과 영역 --- */}
         <AIRecommendation
             analyticsData={analyticsData}
-            generatedStats={generatedStats}
             isGenerating={isGenerating}
             onRecommendationGenerated={handleRecommendationGenerated}
             onAnalyzeNumbers={onNumbersChange}
             latestDrawNo={analyticsData.latestDrawNo}
             winningNumbersSet={analyticsData.winningNumbersSet}
+            historyData={winningNumbers}
+            manualNumbers={manualAnalysisNumbers}
         />
 
         <MultipleNumberAnalysis
             multipleNumbers={multipleNumbers}
             getBallColor={getBallColor}
+            isGenerating={isGenerating} // 스켈레톤 적용을 위해 상태 전달
         />
       </div>
   )
