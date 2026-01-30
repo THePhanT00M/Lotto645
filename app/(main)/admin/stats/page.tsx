@@ -427,7 +427,7 @@ export default function AdminStatsPage() {
                   이번 회차에 당첨된 모든 추첨 번호 리스트입니다.
                 </p>
               </div>
-              <ScrollArea className="h-[400px] w-full p-4">
+              <ScrollArea className="h-max[400px] w-full p-4">
                 {winningResults.length > 0 ? (
                     <div className="grid gap-3">
                       {winningResults.map((item, index) => (
@@ -583,11 +583,10 @@ export default function AdminStatsPage() {
               <div className="bg-blue-50 dark:bg-[#1e1e1e] p-4 rounded-xl text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-[#3f3f3f] flex flex-col gap-2">
                 <h3 className="font-semibold text-blue-800 dark:text-blue-300 flex gap-2 items-center">
                   <Calendar className="w-5 h-5" />
-                  {upcomingDrawNo}회차 결과 대기 중인 추첨
+                  {upcomingDrawNo}회차 결과 대기 중
                 </h3>
-                <p className="">
-                  {pendingAnalysis.length}개의 추첨이 아직 당첨 결과 발표를 기다리고 있습니다. 다음 회차 추첨 후 자동으로
-                  분석됩니다.
+                <p className="text-sm">
+                  {pendingAnalysis.length}개의 추첨 번호가 당첨 결과 발표를 기다리고 있습니다. 다음 회차 발표 후 자동으로 분석됩니다.
                 </p>
               </div>
 
