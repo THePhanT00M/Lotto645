@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       ip_address: clientIp,
       device_info: deviceInfo,
       user_id: userId,
+      is_deleted: 'N', // 기본값 명시
     };
     if (body.score !== undefined) dataToInsert.score = body.score;
 
@@ -76,7 +77,8 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * [추가] DELETE: 서버 기록 삭제
+ * DELETE: 서버 기록 삭제 (Soft Delete)
+ * 실제 삭제 대신 is_deleted 플래그와 deleted_at 시간을 업데이트합니다.
  */
 export async function DELETE(request: NextRequest) {
   if (!supabaseUrl || !supabaseServiceKey) return NextResponse.json({ success: false }, { status: 500 });
@@ -97,14 +99,19 @@ export async function DELETE(request: NextRequest) {
     const { id } = await request.json();
     if (!id) return NextResponse.json({ success: false, message: "ID 누락" }, { status: 400 });
 
-    // 본인의 기록만 삭제 가능하도록 user_id 조건 추가
-    const { error: deleteError } = await supabaseAdmin
+    // [Soft Delete 적용]
+    // 본인의 기록만 삭제 처리 가능하도록 user_id 조건 유지
+    // is_deleted를 'Y'로 변경하고, deleted_at에 현재 시간을 기록
+    const { error: updateError } = await supabaseAdmin
         .from("generated_numbers")
-        .delete()
+        .update({
+          is_deleted: 'Y',
+          deleted_at: new Date().toISOString()
+        })
         .eq("id", id)
         .eq("user_id", user.id);
 
-    if (deleteError) throw deleteError;
+    if (updateError) throw updateError;
 
     return NextResponse.json({ success: true, message: "삭제되었습니다." });
   } catch (error: any) {

@@ -63,11 +63,11 @@ export default function HistoryPage() {
         const { data: { session } } = await supabase.auth.getSession()
 
         if (session) {
-          // api/log-draw/route.ts에 정의된 'generated_numbers' 테이블 사용
           const { data, error } = await supabase
               .from("generated_numbers")
               .select("*")
               .eq("user_id", session.user.id)
+              .eq("is_deleted", "N")
               .order("created_at", { ascending: false })
 
           if (!error && data) {
@@ -99,7 +99,7 @@ export default function HistoryPage() {
   // 개별 삭제 핸들러
   const handleDelete = async (id: string, source: "local" | "user") => {
     if (source === "user") {
-      if (!confirm("서버에 저장된 '내 기록'을 삭제하시겠습니까?")) return
+      if (!confirm("해당 추첨번호를 삭제하시겠습니까?")) return
 
       try {
         const { data: { session } } = await supabase.auth.getSession()
