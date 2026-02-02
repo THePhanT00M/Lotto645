@@ -167,7 +167,6 @@ export default function AIRecommendation({
       // 현재 시점 기준 앞뒤 3주(약 한 달 반) 이내 데이터만 유효
       if (weekDiff <= 3) {
         // 최신성 가중치: 최근 회차일수록 가중치가 높음 (과거 10년 전보다 작년이 더 중요)
-        // i(현재 인덱스)가 클수록 최근 데이터.
         // 1.0(과거) ~ 3.0(최근) 사이로 가중치 부여
         const recencyWeight = 1.0 + (i / totalDraws) * 2.0;
 
@@ -225,7 +224,7 @@ export default function AIRecommendation({
   }, [historyData])
 
   // ----------------------------------------------------------------------
-  // 점수 계산 (업데이트된 계절성 반영)
+  // 점수 계산 (보정됨: Gap 점수 로직 개선 및 배점 조정)
   // ----------------------------------------------------------------------
   const calculateScoreForNumbers = useCallback((targetNumbers: number[], debug: boolean = false) => {
     const {
@@ -238,7 +237,8 @@ export default function AIRecommendation({
 
     let score = 0
 
-    // 1. 연관수(Trigger) (35점)
+    // 1. 연관수(Trigger) (35 -> 25점 하향)
+    // 이전 회차 번호에 지나치게 의존하지 않도록 비중 축소
     let triggerScoreRaw = 0
     latestDrawNumbers.forEach(prevNum => {
       const totalAppearances = numberAppearances.get(prevNum) || 1
@@ -252,7 +252,7 @@ export default function AIRecommendation({
         })
       }
     })
-    const finalTriggerScore = Math.min(35, triggerScoreRaw)
+    const finalTriggerScore = Math.min(25, triggerScoreRaw)
     score += finalTriggerScore
 
     // 2. AC(복잡도) (15점)
@@ -260,39 +260,43 @@ export default function AIRecommendation({
     const acScore = getGaussianScore(currentAC, acStats.mean, acStats.stdDev, 15)
     score += acScore
 
-    // 3. 합계(Sum) (10점)
+    // 3. 합계(Sum) (10 -> 15점 상향)
+    // 번호 대역(고저) 밸런스가 더 중요하다고 판단
     const currentSum = targetNumbers.reduce((a, b) => a + b, 0)
-    const sumScore = getGaussianScore(currentSum, sumStats.mean, sumStats.stdDev, 10)
+    const sumScore = getGaussianScore(currentSum, sumStats.mean, sumStats.stdDev, 15)
     score += sumScore
 
-    // 4. 밸런스(Hot) (5점)
+    // 4. 밸런스(Hot) (5 -> 10점 상향)
     const currentHotCount = targetNumbers.filter(n => (gapMap.get(n) || 0) < 5).length
-    const balanceScore = getGaussianScore(currentHotCount, hotCountStats.mean, hotCountStats.stdDev, 5)
+    const balanceScore = getGaussianScore(currentHotCount, hotCountStats.mean, hotCountStats.stdDev, 10)
     score += balanceScore
 
-    // 5. 주기(Gap) (20점)
+    // 5. 주기(Gap) (20 -> 25점 상향 및 정밀화)
+    // 단순 Hot/Cold 뿐만 아니라 '중위권 Gap(5~9)'도 점수화
     let gapScoreRaw = 0
     targetNumbers.forEach(num => {
       const currentGap = gapMap.get(num) || 0
-      const normalMatch = getGaussianWeight(currentGap, gapStats.avgGap, 2.5)
-      const coldMatch = getGaussianWeight(currentGap, gapStats.coldAvgGap, 4.0)
-      gapScoreRaw += (normalMatch * 3.5) + (coldMatch * 5.0)
+      const normalMatch = getGaussianWeight(currentGap, gapStats.avgGap, 3.0) // 표준편차 여유 있게
+
+      // 장기 미출현 타겟을 너무 먼 값(평균 15주 이상 등)으로 잡으면 점수 획득이 어려우므로 10주 이상이면 인정
+      const coldTarget = gapStats.coldAvgGap > 10 ? gapStats.coldAvgGap : 10;
+      const coldMatch = getGaussianWeight(currentGap, coldTarget, 5.0)
+
+      // [New] 중위권 Gap (5~9주 미출현) 가산점
+      // 너무 핫하지도, 너무 콜드하지도 않은 번호들이 실제 당첨 번호에 자주 포함됨
+      const mediumMatch = (currentGap >= 5 && currentGap <= 9) ? 0.8 : 0;
+
+      gapScoreRaw += (normalMatch * 3.0) + (coldMatch * 4.0) + (mediumMatch * 2.0)
     })
-    const finalGapScore = Math.min(20, gapScoreRaw)
+    const finalGapScore = Math.min(25, gapScoreRaw)
     score += finalGapScore
 
-    // 6. [New] 정밀 계절성 점수 (15점)
-    // 과거 "평균"에 맞추는게 아니라, "많이 나올수록" 점수를 높게 부여 (Linear)
+    // 6. 계절성 (15 -> 10점 하향)
     let seasonalRawScore = 0
     targetNumbers.forEach(num => seasonalRawScore += (seasonalHotNumbers.get(num) || 0))
 
-    // 6개 번호의 최대 가능 점수 = (가장 핫한 번호 점수 * 6)
-    // 하지만 현실적으로 6개 모두가 핫할 수는 없으므로, 적절한 기대치로 나눔
-    // 단일 번호 최대 점수(seasonalMaxScore) 기준으로,
-    // "이번 조합의 계절성 파워"가 얼마나 되는지 평가.
-    // 보통 6개 합산 점수가 (seasonalMaxScore * 2.5) 정도면 매우 훌륭함.
     const targetSeasonalScore = seasonalMaxScore * 2.5;
-    const finalSeasonalScore = Math.min(15, (seasonalRawScore / targetSeasonalScore) * 15);
+    const finalSeasonalScore = Math.min(10, (seasonalRawScore / targetSeasonalScore) * 10);
 
     score += finalSeasonalScore
 
@@ -300,12 +304,12 @@ export default function AIRecommendation({
 
     if (debug) {
       console.group(`📊 [동적 점수 분석] 총점: ${totalScore}점`)
-      console.log(`1. 연관수(Trigger): ${finalTriggerScore.toFixed(1)} / 35`)
+      console.log(`1. 연관수(Trigger): ${finalTriggerScore.toFixed(1)} / 25`)
       console.log(`2. AC(복잡도)     : ${acScore.toFixed(1)} / 15 (값:${currentAC}, μ:${acStats.mean.toFixed(1)})`)
-      console.log(`3. 합계(Sum)      : ${sumScore.toFixed(1)} / 10 (값:${currentSum}, μ:${sumStats.mean.toFixed(0)})`)
-      console.log(`4. 밸런스(Hot)    : ${balanceScore.toFixed(1)} / 5 (개수:${currentHotCount}, μ:${hotCountStats.mean.toFixed(1)})`)
-      console.log(`5. 주기(Gap)      : ${finalGapScore.toFixed(1)} / 20`)
-      console.log(`6. 계절성(정밀)   : ${finalSeasonalScore.toFixed(1)} / 15 (Raw:${seasonalRawScore.toFixed(1)}, Ref:${targetSeasonalScore.toFixed(1)})`)
+      console.log(`3. 합계(Sum)      : ${sumScore.toFixed(1)} / 15 (값:${currentSum}, μ:${sumStats.mean.toFixed(0)})`)
+      console.log(`4. 밸런스(Hot)    : ${balanceScore.toFixed(1)} / 10 (개수:${currentHotCount}, μ:${hotCountStats.mean.toFixed(1)})`)
+      console.log(`5. 주기(Gap)      : ${finalGapScore.toFixed(1)} / 25`)
+      console.log(`6. 계절성(정밀)   : ${finalSeasonalScore.toFixed(1)} / 10 (Raw:${seasonalRawScore.toFixed(1)})`)
       console.groupEnd()
     }
 
@@ -345,33 +349,49 @@ export default function AIRecommendation({
 
     // 1단계: 가중치 맵 생성
     const probabilityMap = new Map<number, number>()
-    for(let i=1; i<=45; i++) probabilityMap.set(i, 1.0)
+    // [보정] 초기값을 1.0으로 고정하지 않고 약간의 랜덤 노이즈(0.8~1.2)를 주어
+    // 매번 실행 시 미세하게 다른 번호가 선택될 확률을 높임 (특정 번호 고착화 방지)
+    for(let i=1; i<=45; i++) probabilityMap.set(i, 0.8 + Math.random() * 0.4)
 
     latestDrawNumbers.forEach(prevNum => {
       const totalAppearances = numberAppearances.get(prevNum) || 1
       const nextMap = nextNumberProbabilities.get(prevNum)
       if (nextMap) {
         nextMap.forEach((drawList, nextNum) => {
-          const w = (drawList.length / totalAppearances) * 50 * Math.log(drawList.length + 1)
+          // [보정] 연관수 가중치 계수 하향 (50 -> 30)
+          const w = (drawList.length / totalAppearances) * 30 * Math.log(drawList.length + 1)
           probabilityMap.set(nextNum, (probabilityMap.get(nextNum) || 0) + w)
         })
       }
     })
 
-    // [New] 계절성 가중치 반영
+    // [New] 계절성 가중치가 너무 지배적이지 않게 클램핑
     seasonalHotNumbers.forEach((score, num) => {
-      // score 자체가 이미 정밀 계산된 가중치이므로 그대로 반영 (비중 조절)
-      probabilityMap.set(num, (probabilityMap.get(num) || 0) + score * 1.5)
+      const adjustedScore = Math.min(score, 10);
+      probabilityMap.set(num, (probabilityMap.get(num) || 0) + adjustedScore * 1.2)
     })
 
+    // [보정] Gap 가중치 세분화 (Hot / Medium / Cold)
     for (let i = 1; i <= 45; i++) {
       const currentGap = gapMap.get(i) || 0
-      const normalWeight = getGaussianWeight(currentGap, gapStats.avgGap, 2.0) * 10
+
+      // 1. Hot (최근 자주 나옴)
+      const hotWeight = getGaussianWeight(currentGap, gapStats.avgGap, 2.5) * 8
+
+      // 2. Cold (장기 미출현)
       let coldWeight = 0
       if (currentGap > gapStats.avgGap) {
-        coldWeight = getGaussianWeight(currentGap, gapStats.coldAvgGap, 3.0) * 15
+        coldWeight = getGaussianWeight(currentGap, gapStats.coldAvgGap, 4.0) * 12
       }
-      probabilityMap.set(i, (probabilityMap.get(i) || 0) + normalWeight + coldWeight)
+
+      // 3. [신규] Medium (Gap 5~9주) - 1209회차 같은 패턴 포착용
+      // 최근 5주간 안 나왔지만, 장기 미출현은 아닌 번호들에게 가산점
+      let mediumWeight = 0
+      if (currentGap >= 5 && currentGap <= 9) {
+        mediumWeight = 6.0;
+      }
+
+      probabilityMap.set(i, (probabilityMap.get(i) || 0) + hotWeight + coldWeight + mediumWeight)
     }
 
     const getWeightedRandomNumber = (excludeSet: Set<number>): number => {
@@ -450,7 +470,6 @@ export default function AIRecommendation({
 
   const probabilityStatus = aiScore ? getProbabilityStatus(aiScore) : { text: "-", color: "" }
 
-  // [수정됨] 스켈레톤 로딩 상태 처리
   if (isGenerating) {
     return (
         <div className="p-4 rounded-lg border bg-white dark:bg-[rgb(36,36,36)] border-gray-200 dark:border-[rgb(36,36,36)] space-y-5">

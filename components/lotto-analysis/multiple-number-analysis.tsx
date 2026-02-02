@@ -11,7 +11,8 @@ interface MultipleNumberAnalysisProps extends CommonProps {
 }
 
 export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, isGenerating }: MultipleNumberAnalysisProps) {
-  const [currentMultipleType, setCurrentMultipleType] = useState<"2쌍둥이" | "3쌍둥이" | "4쌍둥이">("4쌍둥이")
+  // [수정] 5쌍둥이 타입 추가 및 기본값 설정 (원하면 기본값을 5쌍둥이로 변경 가능)
+  const [currentMultipleType, setCurrentMultipleType] = useState<"5쌍둥이" | "4쌍둥이" | "3쌍둥이" | "2쌍둥이">("5쌍둥이")
   const [currentPage, setCurrentPage] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(15)
   const isMobile = useMobile()
@@ -33,7 +34,7 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
     setCurrentPage(0)
   }, [currentMultipleType])
 
-  // [수정됨] 스켈레톤 로딩 상태 처리
+  // 스켈레톤 로딩 상태 처리
   if (isGenerating) {
     return (
         <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)] space-y-4">
@@ -43,6 +44,7 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
               <Skeleton className="h-6 w-32" />
             </div>
             <div className="flex gap-2">
+              <Skeleton className="h-8 w-16 rounded-md" />
               <Skeleton className="h-8 w-16 rounded-md" />
               <Skeleton className="h-8 w-16 rounded-md" />
               <Skeleton className="h-8 w-16 rounded-md" />
@@ -61,7 +63,6 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
   return (
       <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)]">
         <div className="flex items-center justify-between">
-
           <div className="flex items-center">
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -85,10 +86,20 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
             <h3 className="font-bold text-gray-800 dark:text-gray-200">당첨 패턴 통계</h3>
           </div>
 
-
           {/* 필터 컨트롤 */}
           <div className="flex items-center space-x-2">
             <div className="flex border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
+              {/* [추가] 5쌍둥이 버튼 */}
+              <button
+                  onClick={() => setCurrentMultipleType("5쌍둥이")}
+                  className={`px-2 py-1 text-xs ${
+                      currentMultipleType === "5쌍둥이"
+                          ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                          : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                  }`}
+              >
+                5쌍둥이
+              </button>
               <button
                   onClick={() => setCurrentMultipleType("4쌍둥이")}
                   className={`px-2 py-1 text-xs ${
@@ -183,13 +194,11 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
           {/* 페이지네이션 컨트롤 - 모바일 최적화 */}
           {totalPages > 1 && (
               <div className={`mt-4 ${isMobile ? "flex flex-col space-y-2" : "flex items-center justify-between"}`}>
-                {/* 총 항목 수 정보 */}
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   총 {filteredMultipleNumbers.length}개 중 {currentPage * itemsPerPage + 1}-
                   {Math.min((currentPage + 1) * itemsPerPage, filteredMultipleNumbers.length)}개 표시
                 </div>
 
-                {/* 페이지네이션 컨트롤 */}
                 <div className={`flex items-center ${isMobile ? "justify-center mt-2" : ""}`}>
                   <button
                       onClick={() => setCurrentPage(0)}
@@ -199,7 +208,6 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
                               ? "text-gray-300 dark:text-gray-600"
                               : "text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                       }`}
-                      aria-label="첫 페이지"
                   >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -224,7 +232,6 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
                               ? "text-gray-300 dark:text-gray-600"
                               : "text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                       }`}
-                      aria-label="이전 페이지"
                   >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -253,7 +260,6 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
                               ? "text-gray-300 dark:text-gray-600"
                               : "text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                       }`}
-                      aria-label="다음 페이지"
                   >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -277,7 +283,6 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
                               ? "text-gray-300 dark:text-gray-600"
                               : "text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                       }`}
-                      aria-label="마지막 페이지"
                   >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -296,7 +301,6 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
                   </button>
                 </div>
 
-                {/* 표시 항목 수 선택 */}
                 <div className={`flex items-center ${isMobile ? "justify-center mt-2" : ""}`}>
                   <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">표시:</span>
                   <select
@@ -306,7 +310,6 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
                         setCurrentPage(0)
                       }}
                       className="text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded p-1"
-                      aria-label="페이지당 항목 수"
                   >
                     <option value="15">15개</option>
                     <option value="30">30개</option>
@@ -316,9 +319,15 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
               </div>
           )}
 
-          {/* 다중 번호 통계 요약 */}
+          {/* 다중 번호 통계 요약 - [수정] 4열 그리드 적용 */}
           <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/40 rounded-md text-sm">
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+              <div>
+                <div className="font-medium text-blue-700 dark:text-blue-400">5쌍둥이</div>
+                <div className="text-gray-600 dark:text-gray-400">
+                  {multipleNumbers.filter((item) => item.type === "5쌍둥이" && item.count > 0).length}개 조합이 과거 당첨
+                </div>
+              </div>
               <div>
                 <div className="font-medium text-blue-700 dark:text-blue-400">4쌍둥이</div>
                 <div className="text-gray-600 dark:text-gray-400">

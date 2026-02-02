@@ -3,18 +3,16 @@
 import { useState, useEffect, useMemo } from "react"
 import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
-import type { MultipleNumberType, SimilarDrawType, LottoAnalytics } from "./types" // types.ts에서 import
+import type { MultipleNumberType, SimilarDrawType, LottoAnalytics } from "./types"
 import type { WinningLottoNumbers } from "@/types/lotto"
 import { Sparkles, SearchCheck, MousePointerClick } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 // --- 1단계: 통계 훅 (최적화됨) ---
-// AIRecommendation에서 실제로 사용하는 데이터(gapMap, latestDraw 등)만 계산합니다.
 const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytics => {
   return useMemo(() => {
     const totalDraws = winningNumbers.length
 
-    // 데이터가 없는 경우 초기값 반환
     if (totalDraws === 0) {
       return {
         gapMap: new Map(),
@@ -28,18 +26,13 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
     const latestDrawNo = latestDraw.drawNo
     const latestDrawNumbers = [...latestDraw.numbers, latestDraw.bonusNo]
 
-    // 역대 당첨 번호 Set 생성 (중복 조합 생성 방지용)
     const winningNumbersSet = new Set(
         winningNumbers.map((draw) => [...draw.numbers].sort((a, b) => a - b).join("-")),
     )
 
-    // 각 번호별 마지막 등장 회차 추적
     const lastSeen = new Map<number, number>()
-    // 초기화 (모든 번호 0회차)
     for (let i = 1; i <= 45; i++) lastSeen.set(i, 0)
 
-    // 전체 회차를 순회하며 마지막 등장 시점 업데이트
-    // (이전 코드처럼 복잡한 빈도수, 홀짝, 구간 분석 등은 AIRecommendation에서 사용하지 않으므로 제거)
     winningNumbers.forEach((draw) => {
       const allDrawNumbers = [...draw.numbers, draw.bonusNo]
       for (const num of allDrawNumbers) {
@@ -47,7 +40,6 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
       }
     })
 
-    // 미출현 기간(Gap) 계산
     const gapMap = new Map<number, number>()
     for (let i = 1; i <= 45; i++) {
       gapMap.set(i, latestDrawNo - (lastSeen.get(i) || 0))
@@ -64,27 +56,31 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
 
 // --- 2단계: 메인 컴포넌트 ---
 interface AdvancedAnalysisProps {
+  numbers: number[] // 추가됨
   userDrawnNumbers: number[]
   winningNumbers: WinningLottoNumbers[]
   multipleNumbers: MultipleNumberType[]
+  similarDraws: SimilarDrawType[] // 추가됨
+  winningNumbersCount: number // 추가됨
   getBallColor: (number: number) => string
   onNumbersChange: (numbers: number[]) => void
 }
 
 export default function AdvancedAnalysis({
+                                           numbers, // 추가됨
                                            userDrawnNumbers,
                                            winningNumbers,
                                            multipleNumbers,
+                                           similarDraws, // 추가됨
+                                           winningNumbersCount, // 추가됨
                                            getBallColor,
                                            onNumbersChange,
                                          }: AdvancedAnalysisProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [originalUserNumbers, setOriginalUserNumbers] = useState<number[]>(userDrawnNumbers)
 
-  // 수동 분석할 번호 상태
   const [manualAnalysisNumbers, setManualAnalysisNumbers] = useState<number[] | null>(null)
 
-  // 최적화된 훅 사용
   const analyticsData = useLottoAnalytics(winningNumbers)
 
   useEffect(() => {
@@ -94,15 +90,13 @@ export default function AdvancedAnalysis({
   }, [userDrawnNumbers])
 
   const generateAIRecommendation = async () => {
-    setManualAnalysisNumbers(null) // AI 추천 요청 시 수동 분석 상태 초기화
+    setManualAnalysisNumbers(null)
     setIsGenerating(true)
   }
 
   const handleAnalyzeUserNumbers = () => {
     if (originalUserNumbers.length === 6) {
-      // 1. 차트 컴포넌트에 번호 전달
       onNumbersChange(originalUserNumbers)
-      // 2. AI 추천 컴포넌트에 번호 전달 (수동 분석 모드 트리거)
       setManualAnalysisNumbers([...originalUserNumbers])
     }
   }
@@ -174,7 +168,7 @@ export default function AdvancedAnalysis({
         <MultipleNumberAnalysis
             multipleNumbers={multipleNumbers}
             getBallColor={getBallColor}
-            isGenerating={isGenerating} // 스켈레톤 적용을 위해 상태 전달
+            isGenerating={isGenerating}
         />
       </div>
   )
