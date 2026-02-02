@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { LottoAnalytics } from './types'
-import { Sparkles, BarChart3, SearchCheck } from "lucide-react"
+import { Sparkles, BarChart3, SearchCheck, RotateCcw } from "lucide-react" // RotateCcw 아이콘 추가
 import { Button } from "@/components/ui/button"
 import { saveLottoResult } from "@/utils/lotto-storage"
 import AINumberDisplay from "@/components/lotto-analysis/ai-number-display"
@@ -85,6 +85,7 @@ export default function AIRecommendation({
                                            isGenerating,
                                          }: AIRecommendationProps) {
   const [recommendedNumbers, setRecommendedNumbers] = useState<number[]>([])
+  const [savedAiNumbers, setSavedAiNumbers] = useState<number[]>([]) // [추가] AI가 생성한 번호 백업용
   const [aiScore, setAiScore] = useState<number | null>(null)
   const [analysisMode, setAnalysisMode] = useState<"recommendation" | "manual">("recommendation")
   const { toast } = useToast()
@@ -106,7 +107,7 @@ export default function AIRecommendation({
       }
     }
 
-    console.log(`%c[AI 분석 엔진] 데이터(${historyData.length}회) 정밀 계절성 분석 시작`, "color: #3b82f6; font-weight: bold;")
+    // console.log(`%c[AI 분석 엔진] 데이터(${historyData.length}회) 정밀 계절성 분석 시작`, "color: #3b82f6; font-weight: bold;")
 
     const nextNumberProbabilities = new Map<number, Map<number, number[]>>()
     const seasonalHotNumbers = new Map<number, number>()
@@ -209,7 +210,7 @@ export default function AIRecommendation({
     const maxGap = Math.max(...allGaps, 0)
 
     // 통계 로그 (계절성 최대 점수 포함)
-    console.log(`[통계] 계절성최고점:${maxSeasonalScore.toFixed(1)} AC평균:${acStats.mean.toFixed(1)} 합계평균:${sumStats.mean.toFixed(0)}`)
+    // console.log(`[통계] 계절성최고점:${maxSeasonalScore.toFixed(1)} AC평균:${acStats.mean.toFixed(1)} 합계평균:${sumStats.mean.toFixed(0)}`)
 
     return {
       nextNumberProbabilities,
@@ -442,6 +443,7 @@ export default function AIRecommendation({
     const finalScore = calculateScoreForNumbers(finalCombination, true)
 
     setRecommendedNumbers(finalCombination)
+    setSavedAiNumbers(finalCombination) // [추가] 생성된 번호 백업
     setAiScore(finalScore)
 
     try {
@@ -465,6 +467,17 @@ export default function AIRecommendation({
   const handleAnalyzeAINumbers = () => {
     if (recommendedNumbers.length === 6 && onAnalyzeNumbers) {
       onAnalyzeNumbers(recommendedNumbers)
+    }
+  }
+
+  // [추가] AI 번호로 복구하는 핸들러
+  const handleRestoreAiNumbers = () => {
+    if (savedAiNumbers.length === 6) {
+      setRecommendedNumbers(savedAiNumbers)
+      setAnalysisMode("recommendation")
+      const score = calculateScoreForNumbers(savedAiNumbers, true)
+      setAiScore(score)
+      if (onAnalyzeNumbers) onAnalyzeNumbers(savedAiNumbers) // 부모 컴포넌트 차트 등 동기화
     }
   }
 
@@ -559,15 +572,15 @@ export default function AIRecommendation({
             </div>
           </div>
 
-          {!isManual && (
+          {isManual && savedAiNumbers.length === 6 && (
               <div className="mt-3 flex justify-start">
                 <Button
-                    onClick={handleAnalyzeAINumbers}
+                    onClick={handleRestoreAiNumbers}
                     variant="outline"
                     className="bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
                 >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  AI 조합의 패턴 보기
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  AI 추천 번호 분석
                 </Button>
               </div>
           )}
