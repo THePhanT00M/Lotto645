@@ -4,7 +4,7 @@
 export type MultipleNumberType = {
   numbers: number[]
   count: number
-  type: "2쌍둥이" | "3쌍둥이" | "4쌍둥이"
+  type: "2쌍둥이" | "3쌍둥이" | "4쌍둥이" | "5쌍둥이" // [수정] 5쌍둥이 추가
   appearances: {
     drawNo: number
     date: string
@@ -23,7 +23,7 @@ export interface CommonProps {
   getBallColor: (number: number) => string
 }
 
-// [추가] AI 추천 및 분석에 필요한 핵심 데이터 타입
+// AI 추천 및 분석에 필요한 핵심 데이터 타입
 export interface LottoAnalytics {
   gapMap: Map<number, number>        // 번호별 미출현 기간
   latestDrawNumbers: number[]        // 지난 회차 번호 (보너스 포함)

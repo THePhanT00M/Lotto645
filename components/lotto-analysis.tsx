@@ -11,11 +11,11 @@ interface LottoAnalysisProps {
   numbers: number[]
 }
 
-// 다중 번호 타입 정의
+// 다중 번호 타입 정의 (types.ts와 동일하게 업데이트)
 type MultipleNumberType = {
   numbers: number[]
   count: number
-  type: "2쌍둥이" | "3쌍둥이" | "4쌍둥이"
+  type: "2쌍둥이" | "3쌍둥이" | "4쌍둥이" | "5쌍둥이"
   appearances: {
     drawNo: number
     date: string
@@ -101,6 +101,43 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
     const sortedNumbers = [...selectedNumbers].sort((a, b) => a - b)
     const results: MultipleNumberType[] = []
 
+    // [추가] 5쌍둥이 조합 생성 (6개 중 5개 선택 = 6가지 조합)
+    for (let a = 0; a < sortedNumbers.length - 4; a++) {
+      for (let b = a + 1; b < sortedNumbers.length - 3; b++) {
+        for (let c = b + 1; c < sortedNumbers.length - 2; c++) {
+          for (let d = c + 1; d < sortedNumbers.length - 1; d++) {
+            for (let e = d + 1; e < sortedNumbers.length; e++) {
+              const quint = [
+                sortedNumbers[a],
+                sortedNumbers[b],
+                sortedNumbers[c],
+                sortedNumbers[d],
+                sortedNumbers[e],
+              ]
+
+              const appearances: { drawNo: number; date: string }[] = []
+
+              for (const draw of winningNumbers) {
+                if (quint.every((num) => draw.numbers.includes(num))) {
+                  appearances.push({
+                    drawNo: draw.drawNo,
+                    date: draw.date,
+                  })
+                }
+              }
+
+              results.push({
+                numbers: quint,
+                count: appearances.length,
+                appearances: appearances.sort((a, b) => b.drawNo - a.drawNo),
+                type: "5쌍둥이",
+              })
+            }
+          }
+        }
+      }
+    }
+
     // 4쌍둥이 조합 생성 (6개 중 4개 선택 = 15가지 조합)
     for (let a = 0; a < sortedNumbers.length - 3; a++) {
       for (let b = a + 1; b < sortedNumbers.length - 2; b++) {
@@ -183,8 +220,11 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
     }
 
     return results.sort((a, b) => {
-      const typeOrder = { "4쌍둥이": 0, "3쌍둥이": 1, "2쌍둥이": 2 }
+      // [수정] 5쌍둥이 정렬 순서 추가
+      const typeOrder = { "5쌍둥이": 0, "4쌍둥이": 1, "3쌍둥이": 2, "2쌍둥이": 3 }
+      // @ts-ignore
       if (typeOrder[a.type] !== typeOrder[b.type]) {
+        // @ts-ignore
         return typeOrder[a.type] - typeOrder[b.type]
       }
       return b.count - a.count
