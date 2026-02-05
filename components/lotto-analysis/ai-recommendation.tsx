@@ -494,7 +494,7 @@ export default function AIRecommendation({
                 <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
             )}
             <h3 className="font-bold text-gray-800 dark:text-gray-200">
-              {isManual ? (isFilterResult ? "AI 추천 V2 분석" : "번호 패턴 분석") : "AI 추천 분석"}
+              {isManual ? (isFilterResult ? "AI 추천 분석 V2" : "번호 패턴 분석") : "AI 추천 분석"}
             </h3>
           </div>
         </div>

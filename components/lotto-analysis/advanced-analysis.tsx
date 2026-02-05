@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { supabase } from "@/lib/supabaseClient"
 import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
 import type { MultipleNumberType, SimilarDrawType, LottoAnalytics } from "./types"
@@ -91,6 +92,9 @@ export default function AdvancedAnalysis({
   // V2 추천 번호 백업 상태
   const [savedV2Numbers, setSavedV2Numbers] = useState<number[] | null>(null)
 
+  // 사용자 레벨 상태
+  const [userLevel, setUserLevel] = useState(0)
+
   const { toast } = useToast()
   const analyticsData = useLottoAnalytics(winningNumbers)
 
@@ -99,6 +103,25 @@ export default function AdvancedAnalysis({
       setOriginalUserNumbers([...userDrawnNumbers])
     }
   }, [userDrawnNumbers])
+
+  // 사용자 레벨 조회
+  useEffect(() => {
+    const fetchUserLevel = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data } = await supabase
+            .from("profiles")
+            .select("level")
+            .eq("id", user.id)
+            .single()
+
+        if (data) {
+          setUserLevel(data.level)
+        }
+      }
+    }
+    fetchUserLevel()
+  }, [])
 
   // 기존 AI 추천 핸들러
   const generateAIRecommendation = async () => {
@@ -188,7 +211,7 @@ export default function AdvancedAnalysis({
                   disabled={originalUserNumbers.length !== 6}
                   className="flex-1 sm:flex-none bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
               >
-                <SearchCheck className="w-4 h-4 mr-2" />
+                <SearchCheck className="w-4 h-4" />
                 추첨 번호 AI 분석
               </Button>
 
@@ -199,34 +222,36 @@ export default function AdvancedAnalysis({
               >
                 {isGenerating ? (
                     <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                      <Sparkles className="w-4 h-4 animate-spin" />
                       분석 중...
                     </>
                 ) : (
                     <>
-                      <Sparkles className="w-4 h-4 mr-2" />
+                      <Sparkles className="w-4 h-4" />
                       AI 추천
                     </>
                 )}
               </Button>
 
-              <Button
-                  onClick={handleGenerateV2Numbers}
-                  disabled={isGenerating || isGeneratingV2}
-                  className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20"
-              >
-                {isGeneratingV2 ? (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                      생성 중...
-                    </>
-                ) : (
-                    <>
-                      <Filter className="w-4 h-4 mr-2" />
-                      AI 추천 V2
-                    </>
-                )}
-              </Button>
+              {userLevel >= 2 && (
+                  <Button
+                      onClick={handleGenerateV2Numbers}
+                      disabled={isGenerating || isGeneratingV2}
+                      className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20"
+                  >
+                    {isGeneratingV2 ? (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                          생성 중...
+                        </>
+                    ) : (
+                        <>
+                          <Filter className="w-4 h-4 mr-2" />
+                          AI 추천 V2
+                        </>
+                    )}
+                  </Button>
+              )}
             </div>
           </div>
         </div>
