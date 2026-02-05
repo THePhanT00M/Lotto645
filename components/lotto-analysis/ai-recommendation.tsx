@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { LottoAnalytics } from './types'
-import { Sparkles, BarChart3, SearchCheck, RotateCcw } from "lucide-react"
+import { Sparkles, SearchCheck, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { saveLottoResult } from "@/utils/lotto-storage"
 import AINumberDisplay from "@/components/lotto-analysis/ai-number-display"
@@ -12,10 +12,6 @@ import { supabase } from "@/lib/supabaseClient"
 import type { WinningLottoNumbers } from "@/types/lotto"
 import { Skeleton } from "@/components/ui/skeleton"
 
-/**
- * AI 추천 컴포넌트의 Props 인터페이스 정의
- * 분석 데이터, 당첨 번호 집합, 회차 정보, 이력 데이터 등을 받습니다.
- */
 interface AIRecommendationProps {
   analyticsData: LottoAnalytics
   winningNumbersSet: Set<string>
@@ -25,20 +21,18 @@ interface AIRecommendationProps {
   onRecommendationGenerated?: (numbers: number[]) => void
   onAnalyzeNumbers?: (numbers: number[]) => void
   isGenerating: boolean
+  isFilterResult?: boolean
+  shouldLogV2?: boolean
+  savedFilteredNumbers?: number[] | null
+  onRestoreFilteredNumbers?: () => void
 }
 
-/**
- * 분포 통계(평균, 표준편차)를 저장하기 위한 인터페이스
- */
 interface DistributionStats {
   mean: number
   stdDev: number
 }
 
-/**
- * AC(Arithmetic Complexity) 값 계산 함수
- * 번호 쌍 간의 차이값의 고유 개수를 계산하여 산술적 복잡도를 측정합니다.
- */
+// AC 값 계산 함수
 const calculateACValue = (numbers: number[]): number => {
   const diffs = new Set<number>()
   for (let i = 0; i < numbers.length; i++) {
@@ -49,9 +43,7 @@ const calculateACValue = (numbers: number[]): number => {
   return diffs.size - (numbers.length - 1)
 }
 
-/**
- * 숫자 배열의 평균과 표준편차를 계산하는 유틸리티 함수
- */
+// 통계 계산 함수
 const calculateStats = (values: number[]): DistributionStats => {
   if (values.length === 0) return { mean: 0, stdDev: 0 }
   const mean = values.reduce((a, b) => a + b, 0) / values.length
@@ -59,10 +51,7 @@ const calculateStats = (values: number[]): DistributionStats => {
   return { mean, stdDev: Math.sqrt(variance) }
 }
 
-/**
- * 정규 분포 기반 점수 계산 함수
- * 평균에 가까울수록 높은 점수를 부여합니다.
- */
+// 가우시안 점수 계산
 const getGaussianScore = (val: number, mean: number, stdDev: number, maxScore: number): number => {
   if (stdDev === 0) return maxScore * 0.5
   const z = Math.abs(val - mean) / stdDev
@@ -70,26 +59,12 @@ const getGaussianScore = (val: number, mean: number, stdDev: number, maxScore: n
   return factor * maxScore
 }
 
-/**
- * 선형 보간 점수 계산 함수
- * 값이 클수록 높은 점수를 부여합니다.
- */
-const getLinearScore = (val: number, maxVal: number, maxScore: number): number => {
-  if (maxVal === 0) return 0;
-  return (val / maxVal) * maxScore;
-}
-
-/**
- * 가우시안 가중치 계산 함수
- * 특정 값(mean)을 중심으로 종 모양의 가중치를 반환합니다.
- */
+// 가우시안 가중치 계산
 const getGaussianWeight = (x: number, mean: number, sigma: number = 3): number => {
   return Math.exp(-Math.pow(x - mean, 2) / (2 * Math.pow(sigma, 2)))
 }
 
-/**
- * 날짜 문자열을 입력받아 해당 날짜의 주차(Week Number)를 계산하는 함수
- */
+// 주차 계산
 const getWeekNumber = (dateStr: string): number => {
   const date = new Date(dateStr);
   const start = new Date(date.getFullYear(), 0, 1);
@@ -108,6 +83,10 @@ export default function AIRecommendation({
                                            onRecommendationGenerated,
                                            onAnalyzeNumbers,
                                            isGenerating,
+                                           isFilterResult,
+                                           shouldLogV2,
+                                           savedFilteredNumbers,
+                                           onRestoreFilteredNumbers,
                                          }: AIRecommendationProps) {
   const [recommendedNumbers, setRecommendedNumbers] = useState<number[]>([])
   const [savedAiNumbers, setSavedAiNumbers] = useState<number[]>([])
@@ -115,11 +94,7 @@ export default function AIRecommendation({
   const [analysisMode, setAnalysisMode] = useState<"recommendation" | "manual">("recommendation")
   const { toast } = useToast()
 
-  /**
-   * 분석 엔진 useMemo
-   * 로또 당첨 이력을 분석하여 다음 회차 예측에 필요한 통계 데이터를 생성합니다.
-   * 주요 분석 항목: 연관수 확률, 계절성(주차별) 핫 넘버, 미출현 주기(Gap), AC/합계 통계 등
-   */
+  // 분석 엔진
   const analysisEngine = useMemo(() => {
     if (!historyData || historyData.length === 0) {
       return {
@@ -153,18 +128,13 @@ export default function AIRecommendation({
 
     let maxSeasonalScore = 0;
 
-    /**
-     * 전체 이력 순회 및 통계 집계
-     */
     for (let i = 0; i < totalDraws; i++) {
       const draw = sortedHistory[i]
       const { drawNo, numbers, bonusNo, date } = draw
 
-      // AC값 및 합계 수집
       acList.push(calculateACValue(numbers))
       sumList.push(numbers.reduce((a, b) => a + b, 0))
 
-      // 최근 5회차 내 번호가 포함된 개수(Hot Count) 계산
       if (i >= 5) {
         const past5Draws = sortedHistory.slice(i - 5, i)
         const hotSetAtThatTime = new Set<number>()
@@ -173,7 +143,6 @@ export default function AIRecommendation({
         hotCountList.push(count)
       }
 
-      // 번호별 출현 빈도 및 미출현 주기(Gap) 계산
       const drawNumbers = [...numbers, bonusNo]
       drawNumbers.forEach(num => {
         if (lastSeenMap.has(num)) {
@@ -186,17 +155,10 @@ export default function AIRecommendation({
         numberAppearances.set(num, (numberAppearances.get(num) || 0) + 1)
       })
 
-      /**
-       * 계절성 분석 로직
-       * 현재 주차(Week)와 유사한 과거 시점의 번호에 가중치를 부여합니다.
-       * - Recency Weight: 최근 연도일수록 가중치 증가
-       * - Precision Weight: 주차 차이가 적을수록 가중치 증가
-       */
       const drawWeek = getWeekNumber(date);
       let weekDiff = Math.abs(currentWeek - drawWeek);
       if (weekDiff > 26) weekDiff = 52 - weekDiff;
 
-      // 앞뒤 3주 이내 데이터만 계절성 점수에 반영
       if (weekDiff <= 3) {
         const recencyWeight = 1.0 + (i / totalDraws) * 2.0;
         const precisionWeight = 1.0 - (weekDiff * 0.2);
@@ -210,9 +172,6 @@ export default function AIRecommendation({
       }
     }
 
-    /**
-     * 마르코프 체인 유사 로직: 특정 번호 다음에 나온 번호들의 빈도 맵핑
-     */
     for (let i = 0; i < sortedHistory.length - 1; i++) {
       const prev = sortedHistory[i]
       const next = sortedHistory[i+1]
@@ -227,7 +186,6 @@ export default function AIRecommendation({
       })
     }
 
-    // 최종 통계 지표 계산 (평균, 표준편차)
     const acStats = calculateStats(acList)
     const sumStats = calculateStats(sumList)
     const hotCountStats = calculateStats(hotCountList)
@@ -248,11 +206,7 @@ export default function AIRecommendation({
     }
   }, [historyData])
 
-  /**
-   * 번호 조합 점수 계산 함수 useCallback
-   * 생성된 번호 조합이 통계적으로 얼마나 유의미한지 점수화합니다.
-   * 항목별 가중치를 적용하여 총점 100점 만점으로 환산합니다.
-   */
+  // 점수 계산
   const calculateScoreForNumbers = useCallback((targetNumbers: number[], debug: boolean = false) => {
     const {
       nextNumberProbabilities, seasonalHotNumbers, seasonalMaxScore, numberAppearances,
@@ -264,7 +218,6 @@ export default function AIRecommendation({
 
     let score = 0
 
-    // 1. 연관수 점수 (25점 만점): 이전 회차 번호들과의 연관성 분석
     let triggerScoreRaw = 0
     latestDrawNumbers.forEach(prevNum => {
       const totalAppearances = numberAppearances.get(prevNum) || 1
@@ -281,23 +234,18 @@ export default function AIRecommendation({
     const finalTriggerScore = Math.min(25, triggerScoreRaw)
     score += finalTriggerScore
 
-    // 2. AC(복잡도) 점수 (15점 만점): 번호 간 간격의 다양성 평가
     const currentAC = calculateACValue(targetNumbers)
     const acScore = getGaussianScore(currentAC, acStats.mean, acStats.stdDev, 15)
     score += acScore
 
-    // 3. 합계 점수 (15점 만점): 번호 합계가 평균 분포에 위치하는지 평가
     const currentSum = targetNumbers.reduce((a, b) => a + b, 0)
     const sumScore = getGaussianScore(currentSum, sumStats.mean, sumStats.stdDev, 15)
     score += sumScore
 
-    // 4. 밸런스(Hot/Cold) 점수 (10점 만점): 최근 출현 번호 비율 평가
     const currentHotCount = targetNumbers.filter(n => (gapMap.get(n) || 0) < 5).length
     const balanceScore = getGaussianScore(currentHotCount, hotCountStats.mean, hotCountStats.stdDev, 10)
     score += balanceScore
 
-    // 5. 주기(Gap) 점수 (25점 만점): 미출현 기간에 따른 가중치 평가
-    // 일반적인 주기, 장기 미출현(Cold), 중위권 주기(5~9주) 등을 복합적으로 고려
     let gapScoreRaw = 0
     targetNumbers.forEach(num => {
       const currentGap = gapMap.get(num) || 0
@@ -313,7 +261,6 @@ export default function AIRecommendation({
     const finalGapScore = Math.min(25, gapScoreRaw)
     score += finalGapScore
 
-    // 6. 계절성 점수 (10점 만점): 현재 시기(주차)에 자주 나왔던 번호인지 평가
     let seasonalRawScore = 0
     targetNumbers.forEach(num => seasonalRawScore += (seasonalHotNumbers.get(num) || 0))
 
@@ -322,37 +269,48 @@ export default function AIRecommendation({
 
     score += finalSeasonalScore
 
-    const totalScore = Math.min(100, Math.floor(score))
-
-    if (debug) {
-      console.group(`📊 [동적 점수 분석] 총점: ${totalScore}점`)
-      console.log(`1. 연관수(Trigger): ${finalTriggerScore.toFixed(1)} / 25`)
-      console.log(`2. AC(복잡도)     : ${acScore.toFixed(1)} / 15`)
-      console.log(`3. 합계(Sum)      : ${sumScore.toFixed(1)} / 15`)
-      console.log(`4. 밸런스(Hot)    : ${balanceScore.toFixed(1)} / 10`)
-      console.log(`5. 주기(Gap)      : ${finalGapScore.toFixed(1)} / 25`)
-      console.log(`6. 계절성(정밀)   : ${finalSeasonalScore.toFixed(1)} / 10`)
-      console.groupEnd()
-    }
-
-    return totalScore
+    return Math.min(100, Math.floor(score))
   }, [analysisEngine, analyticsData])
 
-  /**
-   * 수동 선택 번호가 입력될 경우 분석 모드로 전환하는 Effect
-   */
+  // 수동/V2 번호 입력 및 로깅 처리
   useEffect(() => {
     if (manualNumbers && manualNumbers.length === 6) {
       setAnalysisMode("manual")
       setRecommendedNumbers(manualNumbers)
       const calculatedScore = calculateScoreForNumbers(manualNumbers, true)
       setAiScore(calculatedScore)
-    }
-  }, [manualNumbers, calculateScoreForNumbers])
 
-  /**
-   * 점수에 따른 확률 상태 텍스트 및 색상 반환
-   */
+      // shouldLogV2가 true인 경우에만 로깅 수행
+      if (isFilterResult && shouldLogV2) {
+        const saveFilteredResult = async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession()
+            const headers: HeadersInit = { "Content-Type": "application/json" }
+            if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`
+
+            await fetch(getApiUrl("/api/log-draw"), {
+              method: "POST", headers,
+              body: JSON.stringify({
+                numbers: manualNumbers,
+                source: "ai",
+                memo: "ai-filter",
+                score: calculatedScore,
+                userId: session?.user?.id
+              }),
+            })
+
+            if (!session) saveLottoResult(manualNumbers, true, latestDrawNo + 1)
+          } catch (e) {
+            console.error("V2 결과 저장 실패:", e)
+          }
+        }
+
+        saveFilteredResult()
+      }
+    }
+  }, [manualNumbers, calculateScoreForNumbers, isFilterResult, shouldLogV2, latestDrawNo])
+
+  // 확률 상태 텍스트
   const getProbabilityStatus = (score: number) => {
     if (score >= 90) return { text: "매우 높음", color: "text-purple-600 dark:text-purple-400" }
     if (score >= 80) return { text: "높음", color: "text-blue-600 dark:text-blue-400" }
@@ -360,10 +318,7 @@ export default function AIRecommendation({
     return { text: "낮음", color: "text-gray-500" }
   }
 
-  /**
-   * AI 추천 번호 생성 함수
-   * 통계 분석 데이터를 바탕으로 가중치 기반 무작위 추첨 및 시뮬레이션을 수행합니다.
-   */
+  // AI 추천 생성 (기존)
   const generateAIRecommendation = async () => {
     if (!historyData || historyData.length === 0) {
       toast({ title: "데이터 로딩 중", description: "잠시 후 다시 시도해주세요.", variant: "destructive" })
@@ -378,11 +333,9 @@ export default function AIRecommendation({
     const { latestDrawNumbers, gapMap } = analyticsData
     const { nextNumberProbabilities, seasonalHotNumbers, numberAppearances, gapStats } = analysisEngine
 
-    // 가중치 맵 초기화 (약간의 랜덤 노이즈 추가하여 다양성 확보)
     const probabilityMap = new Map<number, number>()
     for(let i=1; i<=45; i++) probabilityMap.set(i, 0.8 + Math.random() * 0.4)
 
-    // 연관수 가중치 적용
     latestDrawNumbers.forEach(prevNum => {
       const totalAppearances = numberAppearances.get(prevNum) || 1
       const nextMap = nextNumberProbabilities.get(prevNum)
@@ -394,26 +347,20 @@ export default function AIRecommendation({
       }
     })
 
-    // 계절성 가중치 적용 (과도한 쏠림 방지를 위해 클램핑)
     seasonalHotNumbers.forEach((score, num) => {
       const adjustedScore = Math.min(score, 10);
       probabilityMap.set(num, (probabilityMap.get(num) || 0) + adjustedScore * 1.2)
     })
 
-    // Gap(미출현 주기) 기반 가중치 적용 (Hot/Cold/Medium)
     for (let i = 1; i <= 45; i++) {
       const currentGap = gapMap.get(i) || 0
-
-      // Hot: 최근 평균 주기 근처에서 자주 출몰
       const hotWeight = getGaussianWeight(currentGap, gapStats.avgGap, 2.5) * 8
 
-      // Cold: 장기 미출현 번호 보정
       let coldWeight = 0
       if (currentGap > gapStats.avgGap) {
         coldWeight = getGaussianWeight(currentGap, gapStats.coldAvgGap, 4.0) * 12
       }
 
-      // Medium: 특정 주기(5~9주) 사이 번호 가중치
       let mediumWeight = 0
       if (currentGap >= 5 && currentGap <= 9) {
         mediumWeight = 6.0;
@@ -422,7 +369,6 @@ export default function AIRecommendation({
       probabilityMap.set(i, (probabilityMap.get(i) || 0) + hotWeight + coldWeight + mediumWeight)
     }
 
-    // 가중치 기반 랜덤 번호 추출 함수
     const getWeightedRandomNumber = (excludeSet: Set<number>): number => {
       let totalWeight = 0
       const candidates: { num: number, weight: number }[] = []
@@ -441,11 +387,8 @@ export default function AIRecommendation({
       return candidates[candidates.length - 1].num
     }
 
-    // 시뮬레이션: 여러 조합을 생성하고 점수가 높은 후보 선별
     const ITERATIONS = 10000
     const candidates: any[] = []
-
-    // [변경] 최근 2년(약 104주) 간의 데이터를 비교 대상으로 설정
     const recentDraws = historyData.slice(-104)
 
     for (let i = 0; i < ITERATIONS; i++) {
@@ -453,11 +396,9 @@ export default function AIRecommendation({
       while (currentSet.size < 6) currentSet.add(getWeightedRandomNumber(currentSet))
       const currentNumbers = Array.from(currentSet).sort((a, b) => a - b)
 
-      // 과거 당첨 번호와 완전 일치하는 경우 제외
       const comboKey = currentNumbers.join("-")
       if (winningNumbersSet.has(comboKey)) continue
 
-      // [변경] 최근 2년(104회차) 내 4개 이상 번호가 겹치는 경우 제외 (유사 패턴 필터링)
       let isSimilar = false
       for(const pastDraw of recentDraws) {
         if (currentNumbers.filter(n => pastDraw.numbers.includes(n)).length >= 4) {
@@ -470,7 +411,6 @@ export default function AIRecommendation({
       candidates.push({ combination: currentNumbers, score })
     }
 
-    // 점수 기준 정렬 후 상위 3개 중 랜덤 선택
     candidates.sort((a, b) => b.score - a.score)
     const finalPick = candidates[Math.floor(Math.random() * Math.min(3, candidates.length))]
     const finalCombination = finalPick ? finalPick.combination : Array.from({ length: 6 }, () => Math.floor(Math.random() * 45) + 1).sort((a, b) => a - b)
@@ -480,7 +420,6 @@ export default function AIRecommendation({
     setSavedAiNumbers(finalCombination)
     setAiScore(finalScore)
 
-    // 결과 로깅 (Supabase 및 로컬 스토리지)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const headers: HeadersInit = { "Content-Type": "application/json" }
@@ -495,20 +434,12 @@ export default function AIRecommendation({
     if (onRecommendationGenerated) onRecommendationGenerated(finalCombination)
   }
 
-  // 생성 플래그 변경 시 추천 번호 생성 트리거
+  // 생성 트리거
   useEffect(() => {
     if (isGenerating) generateAIRecommendation()
   }, [isGenerating])
 
-  const handleAnalyzeAINumbers = () => {
-    if (recommendedNumbers.length === 6 && onAnalyzeNumbers) {
-      onAnalyzeNumbers(recommendedNumbers)
-    }
-  }
-
-  /**
-   * AI 분석 번호 복원 핸들러 (수동 모드에서 다시 AI 추천 보기로 전환 시)
-   */
+  // AI 추천 복원
   const handleRestoreAiNumbers = () => {
     if (savedAiNumbers.length === 6) {
       setRecommendedNumbers(savedAiNumbers)
@@ -521,7 +452,6 @@ export default function AIRecommendation({
 
   const probabilityStatus = aiScore ? getProbabilityStatus(aiScore) : { text: "-", color: "" }
 
-  // 로딩(생성 중) 상태 렌더링
   if (isGenerating) {
     return (
         <div className="p-4 rounded-lg border bg-white dark:bg-[rgb(36,36,36)] border-gray-200 dark:border-[rgb(36,36,36)] space-y-5">
@@ -564,13 +494,13 @@ export default function AIRecommendation({
                 <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
             )}
             <h3 className="font-bold text-gray-800 dark:text-gray-200">
-              {isManual ? "번호 패턴 정밀 분석" : "AI 정밀 분석 추천"}
+              {isManual ? (isFilterResult ? "AI 추천 분석 V2" : "번호 패턴 분석") : "AI 추천 분석"}
             </h3>
           </div>
         </div>
         <div>
           <div className="mt-2 relative overflow-hidden">
-            {!isManual && (
+            {(!isManual || isFilterResult) && (
                 <div className="absolute bottom-1/3 right-0 p-4 opacity-5">
                   <Sparkles className="w-30 h-30" />
                 </div>
@@ -611,18 +541,31 @@ export default function AIRecommendation({
             </div>
           </div>
 
-          {isManual && savedAiNumbers.length === 6 && (
-              <div className="mt-3 flex justify-start">
+          <div className="mt-3 flex flex-wrap gap-2 justify-start">
+            {/* AI 추천 복원 버튼 */}
+            {isManual && savedAiNumbers.length === 6 && (
                 <Button
                     onClick={handleRestoreAiNumbers}
                     variant="outline"
                     className="bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
                 >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  AI 추천 번호 분석
+                  <RotateCcw className="w-4 h-4" />
+                  AI 추천 번호 돌아가기
                 </Button>
-              </div>
-          )}
+            )}
+
+            {/* AI 추천 V2 복원 버튼 (현재 V2 화면이 아닐 때만 표시) */}
+            {onRestoreFilteredNumbers && savedFilteredNumbers && savedFilteredNumbers.length === 6 && !isFilterResult && (
+                <Button
+                    onClick={onRestoreFilteredNumbers}
+                    variant="outline"
+                    className="bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  AI 추천 V2 돌아가기
+                </Button>
+            )}
+          </div>
         </div>
       </div>
   )

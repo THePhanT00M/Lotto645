@@ -10,6 +10,7 @@ interface RequestBody {
   source: 'manual' | 'machine' | 'ai';
   score?: number;
   userId?: string;
+  memo?: string;
 }
 
 /**
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
     const dataToInsert: any = {
       numbers: body.numbers,
       source: body.source,
+      memo: body.memo,
       draw_no: targetDrawNo,
       ip_address: clientIp,
       device_info: deviceInfo,
