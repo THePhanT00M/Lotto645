@@ -79,6 +79,9 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
 
   const findSimilarDraws = (nums: number[]) => {
     // 선택한 번호와 유사한 과거 당첨 번호 찾기 (4개 이상 일치)
+    // [수정] 유사 회차 분석에서도 보너스 번호를 포함하여 매칭 개수를 계산할지 선택 가능하지만,
+    // 보통 유사 회차는 1등 번호 기준이므로 여기서는 유지하거나 필요 시 수정 가능합니다.
+    // 현재는 1등 번호(6개) 기준으로 매칭합니다.
     const similar = winningNumbers
         .map((draw) => {
           const matchCount = nums.filter((num) => draw.numbers.includes(num)).length
@@ -101,7 +104,9 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
     const sortedNumbers = [...selectedNumbers].sort((a, b) => a - b)
     const results: MultipleNumberType[] = []
 
-    // [추가] 5쌍둥이 조합 생성 (6개 중 5개 선택 = 6가지 조합)
+    // [중요 수정] 모든 비교 로직에서 보너스 번호 포함 (1등, 2등, 3등 통합 검색)
+
+    // 5쌍둥이 조합 생성 (6개 중 5개 선택 = 6가지 조합)
     for (let a = 0; a < sortedNumbers.length - 4; a++) {
       for (let b = a + 1; b < sortedNumbers.length - 3; b++) {
         for (let c = b + 1; c < sortedNumbers.length - 2; c++) {
@@ -118,7 +123,10 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
               const appearances: { drawNo: number; date: string }[] = []
 
               for (const draw of winningNumbers) {
-                if (quint.every((num) => draw.numbers.includes(num))) {
+                // [수정] 당첨 번호 + 보너스 번호를 합친 배열에서 검색
+                const drawNumbersWithBonus = [...draw.numbers, draw.bonusNo]
+
+                if (quint.every((num) => drawNumbersWithBonus.includes(num))) {
                   appearances.push({
                     drawNo: draw.drawNo,
                     date: draw.date,
@@ -148,7 +156,10 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
             const appearances: { drawNo: number; date: string }[] = []
 
             for (const draw of winningNumbers) {
-              if (quad.every((num) => draw.numbers.includes(num))) {
+              // [수정] 4쌍둥이도 보너스 포함 여부를 확인 (필요에 따라 제외 가능하나 일관성 유지)
+              const drawNumbersWithBonus = [...draw.numbers, draw.bonusNo]
+
+              if (quad.every((num) => drawNumbersWithBonus.includes(num))) {
                 appearances.push({
                   drawNo: draw.drawNo,
                   date: draw.date,
@@ -176,7 +187,9 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
           const appearances: { drawNo: number; date: string }[] = []
 
           for (const draw of winningNumbers) {
-            if (triplet.every((num) => draw.numbers.includes(num))) {
+            const drawNumbersWithBonus = [...draw.numbers, draw.bonusNo]
+
+            if (triplet.every((num) => drawNumbersWithBonus.includes(num))) {
               appearances.push({
                 drawNo: draw.drawNo,
                 date: draw.date,
@@ -202,7 +215,9 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         const appearances: { drawNo: number; date: string }[] = []
 
         for (const draw of winningNumbers) {
-          if (pair.every((num) => draw.numbers.includes(num))) {
+          const drawNumbersWithBonus = [...draw.numbers, draw.bonusNo]
+
+          if (pair.every((num) => drawNumbersWithBonus.includes(num))) {
             appearances.push({
               drawNo: draw.drawNo,
               date: draw.date,

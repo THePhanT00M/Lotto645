@@ -500,7 +500,7 @@ export default function AIRecommendation({
         </div>
         <div>
           <div className="mt-2 relative overflow-hidden">
-            {!isManual && (
+            {(!isManual || isFilterResult) && (
                 <div className="absolute bottom-1/3 right-0 p-4 opacity-5">
                   <Sparkles className="w-30 h-30" />
                 </div>

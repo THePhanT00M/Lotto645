@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { supabase } from "@/lib/supabaseClient"
 import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
 import type { MultipleNumberType, SimilarDrawType, LottoAnalytics } from "./types"
@@ -92,9 +91,6 @@ export default function AdvancedAnalysis({
   // V2 추천 번호 백업 상태
   const [savedV2Numbers, setSavedV2Numbers] = useState<number[] | null>(null)
 
-  // 사용자 레벨 상태
-  const [userLevel, setUserLevel] = useState(0)
-
   const { toast } = useToast()
   const analyticsData = useLottoAnalytics(winningNumbers)
 
@@ -103,25 +99,6 @@ export default function AdvancedAnalysis({
       setOriginalUserNumbers([...userDrawnNumbers])
     }
   }, [userDrawnNumbers])
-
-  // 사용자 레벨 조회
-  useEffect(() => {
-    const fetchUserLevel = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data } = await supabase
-            .from("profiles")
-            .select("level")
-            .eq("id", user.id)
-            .single()
-
-        if (data) {
-          setUserLevel(data.level)
-        }
-      }
-    }
-    fetchUserLevel()
-  }, [])
 
   // 기존 AI 추천 핸들러
   const generateAIRecommendation = async () => {
@@ -183,6 +160,15 @@ export default function AdvancedAnalysis({
     }
   }
 
+  // AI 모드로 복귀 핸들러 (부모 상태 초기화)
+  // 기존 AI 추천으로 돌아갈 때 V2/매뉴얼 모드 상태를 해제하여
+  // "AI 추천 V2 돌아가기" 버튼이 다시 보일 수 있도록 함
+  const handleRestoreAiMode = (numbers: number[]) => {
+    setIsV2Result(false)
+    setManualAnalysisNumbers(null)
+    onNumbersChange(numbers)
+  }
+
   const handleRecommendationGenerated = (newNumbers: number[]) => {
     setIsGenerating(false)
     onNumbersChange(newNumbers)
@@ -211,7 +197,7 @@ export default function AdvancedAnalysis({
                   disabled={originalUserNumbers.length !== 6}
                   className="flex-1 sm:flex-none bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
               >
-                <SearchCheck className="w-4 h-4" />
+                <SearchCheck className="w-4 h-4 mr-2" />
                 추첨 번호 AI 분석
               </Button>
 
@@ -222,36 +208,34 @@ export default function AdvancedAnalysis({
               >
                 {isGenerating ? (
                     <>
-                      <Sparkles className="w-4 h-4 animate-spin" />
+                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
                       분석 중...
                     </>
                 ) : (
                     <>
-                      <Sparkles className="w-4 h-4" />
+                      <Sparkles className="w-4 h-4 mr-2" />
                       AI 추천
                     </>
                 )}
               </Button>
 
-              {userLevel >= 2 && (
-                  <Button
-                      onClick={handleGenerateV2Numbers}
-                      disabled={isGenerating || isGeneratingV2}
-                      className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20"
-                  >
-                    {isGeneratingV2 ? (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                          생성 중...
-                        </>
-                    ) : (
-                        <>
-                          <Filter className="w-4 h-4 mr-2" />
-                          AI 추천 V2
-                        </>
-                    )}
-                  </Button>
-              )}
+              <Button
+                  onClick={handleGenerateV2Numbers}
+                  disabled={isGenerating || isGeneratingV2}
+                  className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20"
+              >
+                {isGeneratingV2 ? (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                      생성 중...
+                    </>
+                ) : (
+                    <>
+                      <Filter className="w-4 h-4 mr-2" />
+                      AI 추천 V2
+                    </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
@@ -260,7 +244,7 @@ export default function AdvancedAnalysis({
             analyticsData={analyticsData}
             isGenerating={isGenerating}
             onRecommendationGenerated={handleRecommendationGenerated}
-            onAnalyzeNumbers={onNumbersChange}
+            onAnalyzeNumbers={handleRestoreAiMode} // 수정: 상태 초기화를 위한 핸들러 전달
             latestDrawNo={analyticsData.latestDrawNo}
             winningNumbersSet={analyticsData.winningNumbersSet}
             historyData={winningNumbers}

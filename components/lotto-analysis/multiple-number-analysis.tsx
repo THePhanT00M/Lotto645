@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useMobile } from "@/hooks/use-mobile"
 import type { MultipleNumberType, CommonProps } from "./types"
 import { Skeleton } from "@/components/ui/skeleton"
+import { BarChart3 } from "lucide-react"
 
 interface MultipleNumberAnalysisProps extends CommonProps {
   multipleNumbers: MultipleNumberType[]
@@ -62,32 +63,16 @@ export default function MultipleNumberAnalysis({ multipleNumbers, getBallColor, 
 
   return (
       <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)]">
-        <div className="flex items-center justify-between">
+        {/* [수정] 모바일 레이아웃 대응: flex-col sm:flex-row 적용 */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
           <div className="flex items-center">
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-blue-600 mr-2"
-            >
-              <path d="M16 16v-4a4 4 0 0 0-8 0v4"></path>
-              <path d="M12 12h8"></path>
-              <path d="M8 12H4"></path>
-              <path d="M4 8v8"></path>
-              <path d="M20 8v8"></path>
-              <path d="M8 16h8"></path>
-            </svg>
+            {/* [수정] 통계 아이콘으로 변경 (BarChart3) */}
+            <BarChart3 className="w-5 h-5 text-blue-600 mr-2" />
             <h3 className="font-bold text-gray-800 dark:text-gray-200">당첨 패턴 통계</h3>
           </div>
 
           {/* 필터 컨트롤 */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 self-end sm:self-auto">
             <div className="flex border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
               {/* [추가] 5쌍둥이 버튼 */}
               <button
