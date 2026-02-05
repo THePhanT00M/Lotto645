@@ -485,7 +485,7 @@ export default function AIRecommendation({
   const isManual = analysisMode === "manual"
 
   return (
-      <div className={`p-4 rounded-lg border bg-white dark:bg-[rgb(36,36,36)] border-gray-200 dark:border-[rgb(36,36,36)]"`}>
+      <div className="p-4 bg-white dark:bg-[rgb(36,36,36)] rounded-lg border border-gray-200 dark:border-[rgb(36,36,36)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             {isManual ? (
