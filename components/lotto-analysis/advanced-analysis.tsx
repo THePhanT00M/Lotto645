@@ -27,7 +27,8 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
 
     const latestDraw = winningNumbers[totalDraws - 1]
     const latestDrawNo = latestDraw.drawNo
-    const latestDrawNumbers = [...latestDraw.numbers, latestDraw.bonusNo]
+    // [수정] 보너스 번호를 제외하고 메인 번호 6개만 사용하도록 수정
+    const latestDrawNumbers = [...latestDraw.numbers]
 
     const winningNumbersSet = new Set(
         winningNumbers.map((draw) => [...draw.numbers].sort((a, b) => a - b).join("-")),
@@ -37,7 +38,8 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
     for (let i = 1; i <= 45; i++) lastSeen.set(i, 0)
 
     winningNumbers.forEach((draw) => {
-      const allDrawNumbers = [...draw.numbers, draw.bonusNo]
+      // [수정] 보너스 번호를 제외하고 메인 번호 6개로만 미출현 기간(Gap) 계산
+      const allDrawNumbers = [...draw.numbers]
       for (const num of allDrawNumbers) {
         lastSeen.set(num, draw.drawNo)
       }
@@ -146,7 +148,7 @@ export default function AdvancedAnalysis({
         setSavedV2Numbers(v2Numbers)
         toast({
           title: "AI 추천 V2 완료",
-          description: "3/4/5쌍둥이(2등 포함) 제외 조건이 적용된 조합입니다.",
+          description: "3/4/5쌍둥이 제외 조건이 적용된 조합입니다.",
         })
       } else {
         toast({
@@ -159,7 +161,7 @@ export default function AdvancedAnalysis({
     }, 100)
   }
 
-  // AI 추천 V2 복원 핸들러 (저장 안 함)
+  // AI 추천 V2 복원 핸들러
   const handleRestoreV2Numbers = () => {
     if (savedV2Numbers) {
       setShouldLogV2(false) // 복원 시 로깅 방지
@@ -183,9 +185,7 @@ export default function AdvancedAnalysis({
     }
   }
 
-  // AI 모드로 복귀 핸들러 (부모 상태 초기화)
-  // 기존 AI 추천으로 돌아갈 때 V2/매뉴얼 모드 상태를 해제하여
-  // "AI 추천 V2 돌아가기" 버튼이 다시 보일 수 있도록 함
+  // AI 모드로 복귀 핸들러
   const handleRestoreAiMode = (numbers: number[]) => {
     setIsV2Result(false)
     setManualAnalysisNumbers(null)
@@ -269,7 +269,7 @@ export default function AdvancedAnalysis({
             analyticsData={analyticsData}
             isGenerating={isGenerating}
             onRecommendationGenerated={handleRecommendationGenerated}
-            onAnalyzeNumbers={handleRestoreAiMode} // 수정: 상태 초기화를 위한 핸들러 전달
+            onAnalyzeNumbers={handleRestoreAiMode}
             latestDrawNo={analyticsData.latestDrawNo}
             winningNumbersSet={analyticsData.winningNumbersSet}
             historyData={winningNumbers}

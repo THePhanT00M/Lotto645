@@ -11,7 +11,7 @@ interface LottoAnalysisProps {
   numbers: number[]
 }
 
-// 다중 번호 타입 정의 (types.ts와 동일하게 업데이트)
+// 다중 번호 타입 정의
 type MultipleNumberType = {
   numbers: number[]
   count: number
@@ -23,11 +23,8 @@ type MultipleNumberType = {
 }
 
 export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
-  // DB에서 가져온 당첨 번호 상태
   const [winningNumbers, setWinningNumbers] = useState<WinningLottoNumbers[]>([])
   const [isLoading, setIsLoading] = useState(true)
-
-  // 유사한 당첨 번호 상태
   const [similarDraws, setSimilarDraws] = useState<
       {
         drawNo: number
@@ -37,16 +34,12 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         matchCount: number
       }[]
   >([])
-
-  // 다중 번호 상태
   const [multipleNumbers, setMultipleNumbers] = useState<MultipleNumberType[]>([])
   const [analysisNumbers, setAnalysisNumbers] = useState<number[]>(numbers)
 
-  // Supabase에서 당첨 번호 데이터 가져오기
   useEffect(() => {
     const fetchWinningNumbers = async () => {
       setIsLoading(true)
-
       const { data, error } = await supabase
           .from("winning_numbers")
           .select("*")
@@ -58,10 +51,8 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
       } else if (data) {
         setWinningNumbers(data as WinningLottoNumbers[])
       }
-
       setIsLoading(false)
     }
-
     fetchWinningNumbers()
   }, [])
 
@@ -69,7 +60,6 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
     setAnalysisNumbers(numbers)
   }, [numbers])
 
-  // winningNumbers 상태나 analysisNumbers 상태가 변경될 때 분석 함수 재실행
   useEffect(() => {
     if (analysisNumbers.length === 6 && winningNumbers.length > 0) {
       findSimilarDraws(analysisNumbers)
@@ -78,10 +68,6 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
   }, [analysisNumbers, winningNumbers])
 
   const findSimilarDraws = (nums: number[]) => {
-    // 선택한 번호와 유사한 과거 당첨 번호 찾기 (4개 이상 일치)
-    // [수정] 유사 회차 분석에서도 보너스 번호를 포함하여 매칭 개수를 계산할지 선택 가능하지만,
-    // 보통 유사 회차는 1등 번호 기준이므로 여기서는 유지하거나 필요 시 수정 가능합니다.
-    // 현재는 1등 번호(6개) 기준으로 매칭합니다.
     const similar = winningNumbers
         .map((draw) => {
           const matchCount = nums.filter((num) => draw.numbers.includes(num)).length
@@ -92,7 +78,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
         })
         .filter((draw) => draw.matchCount >= 4)
         .sort((a, b) => b.matchCount - a.matchCount)
-        .slice(0, 5) // 상위 5개만 표시
+        .slice(0, 5)
 
     setSimilarDraws(similar)
   }
@@ -104,36 +90,29 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
     const sortedNumbers = [...selectedNumbers].sort((a, b) => a - b)
     const results: MultipleNumberType[] = []
 
-    // [중요 수정] 모든 비교 로직에서 보너스 번호 포함 (1등, 2등, 3등 통합 검색)
+    // 헬퍼 함수: 특정 조합이 과거 메인 번호(6개)와 몇 번 일치했는지 계산
+    const getAppearances = (subSet: number[]) => {
+      const appearances: { drawNo: number; date: string }[] = []
+      for (const draw of winningNumbers) {
+        // [수정] 보너스 번호를 제외한 메인 당첨 번호 6개에서만 검색
+        if (subSet.every((num) => draw.numbers.includes(num))) {
+          appearances.push({
+            drawNo: draw.drawNo,
+            date: draw.date,
+          })
+        }
+      }
+      return appearances
+    }
 
-    // 5쌍둥이 조합 생성 (6개 중 5개 선택 = 6가지 조합)
+    // 5쌍둥이 조합 생성
     for (let a = 0; a < sortedNumbers.length - 4; a++) {
       for (let b = a + 1; b < sortedNumbers.length - 3; b++) {
         for (let c = b + 1; c < sortedNumbers.length - 2; c++) {
           for (let d = c + 1; d < sortedNumbers.length - 1; d++) {
             for (let e = d + 1; e < sortedNumbers.length; e++) {
-              const quint = [
-                sortedNumbers[a],
-                sortedNumbers[b],
-                sortedNumbers[c],
-                sortedNumbers[d],
-                sortedNumbers[e],
-              ]
-
-              const appearances: { drawNo: number; date: string }[] = []
-
-              for (const draw of winningNumbers) {
-                // [수정] 당첨 번호 + 보너스 번호를 합친 배열에서 검색
-                const drawNumbersWithBonus = [...draw.numbers, draw.bonusNo]
-
-                if (quint.every((num) => drawNumbersWithBonus.includes(num))) {
-                  appearances.push({
-                    drawNo: draw.drawNo,
-                    date: draw.date,
-                  })
-                }
-              }
-
+              const quint = [sortedNumbers[a], sortedNumbers[b], sortedNumbers[c], sortedNumbers[d], sortedNumbers[e]]
+              const appearances = getAppearances(quint)
               results.push({
                 numbers: quint,
                 count: appearances.length,
@@ -146,27 +125,13 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
       }
     }
 
-    // 4쌍둥이 조합 생성 (6개 중 4개 선택 = 15가지 조합)
+    // 4쌍둥이 조합 생성
     for (let a = 0; a < sortedNumbers.length - 3; a++) {
       for (let b = a + 1; b < sortedNumbers.length - 2; b++) {
         for (let c = b + 1; c < sortedNumbers.length - 1; c++) {
           for (let d = c + 1; d < sortedNumbers.length; d++) {
             const quad = [sortedNumbers[a], sortedNumbers[b], sortedNumbers[c], sortedNumbers[d]]
-
-            const appearances: { drawNo: number; date: string }[] = []
-
-            for (const draw of winningNumbers) {
-              // [수정] 4쌍둥이도 보너스 포함 여부를 확인 (필요에 따라 제외 가능하나 일관성 유지)
-              const drawNumbersWithBonus = [...draw.numbers, draw.bonusNo]
-
-              if (quad.every((num) => drawNumbersWithBonus.includes(num))) {
-                appearances.push({
-                  drawNo: draw.drawNo,
-                  date: draw.date,
-                })
-              }
-            }
-
+            const appearances = getAppearances(quad)
             results.push({
               numbers: quad,
               count: appearances.length,
@@ -178,25 +143,12 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
       }
     }
 
-    // 3쌍둥이 조합 생성 (6개 중 3개 선택 = 20가지 조합)
+    // 3쌍둥이 조합 생성
     for (let a = 0; a < sortedNumbers.length - 2; a++) {
       for (let b = a + 1; b < sortedNumbers.length - 1; b++) {
         for (let c = b + 1; c < sortedNumbers.length; c++) {
           const triplet = [sortedNumbers[a], sortedNumbers[b], sortedNumbers[c]]
-
-          const appearances: { drawNo: number; date: string }[] = []
-
-          for (const draw of winningNumbers) {
-            const drawNumbersWithBonus = [...draw.numbers, draw.bonusNo]
-
-            if (triplet.every((num) => drawNumbersWithBonus.includes(num))) {
-              appearances.push({
-                drawNo: draw.drawNo,
-                date: draw.date,
-              })
-            }
-          }
-
+          const appearances = getAppearances(triplet)
           results.push({
             numbers: triplet,
             count: appearances.length,
@@ -207,24 +159,11 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
       }
     }
 
-    // 2쌍둥이 조합 생성 (6개 중 2개 선택 = 15가지 조합)
+    // 2쌍둥이 조합 생성
     for (let a = 0; a < sortedNumbers.length - 1; a++) {
       for (let b = a + 1; b < sortedNumbers.length; b++) {
         const pair = [sortedNumbers[a], sortedNumbers[b]]
-
-        const appearances: { drawNo: number; date: string }[] = []
-
-        for (const draw of winningNumbers) {
-          const drawNumbersWithBonus = [...draw.numbers, draw.bonusNo]
-
-          if (pair.every((num) => drawNumbersWithBonus.includes(num))) {
-            appearances.push({
-              drawNo: draw.drawNo,
-              date: draw.date,
-            })
-          }
-        }
-
+        const appearances = getAppearances(pair)
         results.push({
           numbers: pair,
           count: appearances.length,
@@ -235,7 +174,6 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
     }
 
     return results.sort((a, b) => {
-      // [수정] 5쌍둥이 정렬 순서 추가
       const typeOrder = { "5쌍둥이": 0, "4쌍둥이": 1, "3쌍둥이": 2, "2쌍둥이": 3 }
       // @ts-ignore
       if (typeOrder[a.type] !== typeOrder[b.type]) {
@@ -335,8 +273,7 @@ export default function LottoAnalysis({ numbers }: LottoAnalysisProps) {
             <AdvancedAnalysis
                 numbers={analysisNumbers}
                 userDrawnNumbers={numbers}
-                winningNumbers={winningNumbers} // [중요] 여기서 DB 데이터를 하위로 전달
-                // generatedStats 제거됨
+                winningNumbers={winningNumbers}
                 multipleNumbers={multipleNumbers}
                 similarDraws={similarDraws}
                 winningNumbersCount={winningNumbers.length}

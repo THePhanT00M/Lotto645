@@ -130,7 +130,7 @@ export default function AIRecommendation({
 
     for (let i = 0; i < totalDraws; i++) {
       const draw = sortedHistory[i]
-      const { drawNo, numbers, bonusNo, date } = draw
+      const { drawNo, numbers, date } = draw
 
       acList.push(calculateACValue(numbers))
       sumList.push(numbers.reduce((a, b) => a + b, 0))
@@ -143,7 +143,8 @@ export default function AIRecommendation({
         hotCountList.push(count)
       }
 
-      const drawNumbers = [...numbers, bonusNo]
+      // [수정] 보너스 번호를 제외하고 메인 번호 6개로만 통계 및 미출현 기간 계산
+      const drawNumbers = [...numbers]
       drawNumbers.forEach(num => {
         if (lastSeenMap.has(num)) {
           const prevDrawNo = lastSeenMap.get(num)!
@@ -172,10 +173,11 @@ export default function AIRecommendation({
       }
     }
 
+    // [수정] 이전 회차 메인 번호와 다음 회차 메인 번호 간의 상관관계만 분석
     for (let i = 0; i < sortedHistory.length - 1; i++) {
       const prev = sortedHistory[i]
       const next = sortedHistory[i+1]
-      const prevNums = [...prev.numbers, prev.bonusNo]
+      const prevNums = prev.numbers
       prevNums.forEach(prevNum => {
         if (!nextNumberProbabilities.has(prevNum)) nextNumberProbabilities.set(prevNum, new Map())
         const targetMap = nextNumberProbabilities.get(prevNum)!
@@ -280,7 +282,6 @@ export default function AIRecommendation({
       const calculatedScore = calculateScoreForNumbers(manualNumbers, true)
       setAiScore(calculatedScore)
 
-      // shouldLogV2가 true인 경우에만 로깅 수행
       if (isFilterResult && shouldLogV2) {
         const saveFilteredResult = async () => {
           try {
@@ -310,7 +311,6 @@ export default function AIRecommendation({
     }
   }, [manualNumbers, calculateScoreForNumbers, isFilterResult, shouldLogV2, latestDrawNo])
 
-  // 확률 상태 텍스트
   const getProbabilityStatus = (score: number) => {
     if (score >= 90) return { text: "매우 높음", color: "text-purple-600 dark:text-purple-400" }
     if (score >= 80) return { text: "높음", color: "text-blue-600 dark:text-blue-400" }
@@ -318,7 +318,7 @@ export default function AIRecommendation({
     return { text: "낮음", color: "text-gray-500" }
   }
 
-  // AI 추천 생성 (기존)
+  // AI 추천 생성
   const generateAIRecommendation = async () => {
     if (!historyData || historyData.length === 0) {
       toast({ title: "데이터 로딩 중", description: "잠시 후 다시 시도해주세요.", variant: "destructive" })
@@ -434,12 +434,10 @@ export default function AIRecommendation({
     if (onRecommendationGenerated) onRecommendationGenerated(finalCombination)
   }
 
-  // 생성 트리거
   useEffect(() => {
     if (isGenerating) generateAIRecommendation()
   }, [isGenerating])
 
-  // AI 추천 복원
   const handleRestoreAiNumbers = () => {
     if (savedAiNumbers.length === 6) {
       setRecommendedNumbers(savedAiNumbers)
