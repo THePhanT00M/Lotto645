@@ -21,8 +21,8 @@ const generateRandomLottoNumbers = (): number[] => {
 }
 
 // AI 추천 V2 필터링 로직 함수
-// 조건: 5쌍둥이(전체), 4쌍둥이(2년), 3쌍둥이(2개월) 제외
-// *수정됨: 보너스 번호를 포함한 2등 조건까지 검증 (예: 1등 번호 4개 + 보너스 번호 일치 시 5개 일치로 간주)
+// 조건: 5개 일치(전체), 4개 일치(2년), 3개 일치(1개월) 제외
+// *수정사항: 보너스 번호는 2등 당첨 여부 확인 시에만 사용되므로, 번호 필터링 기준에서는 메인 번호 6개와의 일치 여부만 판단하도록 수정함
 export const generateFilteredNumbers = (history: WinningLottoNumbers[]): number[] | null => {
     if (!history || history.length === 0) return null
 
@@ -30,7 +30,7 @@ export const generateFilteredNumbers = (history: WinningLottoNumbers[]): number[
     const MAX_ATTEMPTS = 50000
 
     // 기간별 비교군 데이터 분류
-    const historyLast2Months: WinningLottoNumbers[] = []
+    const historyLast1Months: WinningLottoNumbers[] = []
     const historyLast2Years: WinningLottoNumbers[] = []
     const historyAll: WinningLottoNumbers[] = [...history]
 
@@ -38,8 +38,8 @@ export const generateFilteredNumbers = (history: WinningLottoNumbers[]): number[
         const drawDate = new Date(draw.date)
         const monthsDiff = getMonthsDifference(now, drawDate)
 
-        if (monthsDiff <= 2) {
-            historyLast2Months.push(draw)
+        if (monthsDiff <= 1) {
+            historyLast1Months.push(draw)
         }
         if (monthsDiff <= 24) {
             historyLast2Years.push(draw)
@@ -51,39 +51,36 @@ export const generateFilteredNumbers = (history: WinningLottoNumbers[]): number[
         const candidate = generateRandomLottoNumbers()
         let isValid = true
 
-        // 1. 전체 기간 대상 5개 일치 여부 확인 (1등 및 2등 패턴 포함)
+        // 1. 전체 기간 대상 5개 일치 여부 확인 (메인 번호 6개 기준)
         for (const draw of historyAll) {
             const matchCount = getIntersectionCount(candidate, draw.numbers)
-            const hasBonus = candidate.includes(draw.bonusNo)
 
-            // 1등 번호와 5개 이상 일치 OR (1등 번호 4개 + 보너스 번호 일치 = 2등 번호와 5개 일치)
-            if (matchCount >= 5 || (matchCount === 4 && hasBonus)) {
+            // 메인 번호 6개 중 5개 이상 일치 시 제외 (1등, 2등, 3등 당첨 패턴 차단)
+            if (matchCount >= 5) {
                 isValid = false
                 break
             }
         }
         if (!isValid) continue
 
-        // 2. 최근 2년 대상 4개 일치 여부 확인 (1등 및 2등 패턴 포함)
+        // 2. 최근 2년 대상 4개 일치 여부 확인 (메인 번호 6개 기준)
         for (const draw of historyLast2Years) {
             const matchCount = getIntersectionCount(candidate, draw.numbers)
-            const hasBonus = candidate.includes(draw.bonusNo)
 
-            // 1등 번호와 4개 이상 일치 OR (1등 번호 3개 + 보너스 번호 일치 = 2등 번호와 4개 일치)
-            if (matchCount >= 4 || (matchCount === 3 && hasBonus)) {
+            // 메인 번호 6개 중 4개 이상 일치 시 제외 (4등 당첨 패턴 차단)
+            if (matchCount >= 4) {
                 isValid = false
                 break
             }
         }
         if (!isValid) continue
 
-        // 3. 최근 2개월 대상 3개 일치 여부 확인 (1등 및 2등 패턴 포함)
-        for (const draw of historyLast2Months) {
+        // 3. 최근 1개월 대상 3개 일치 여부 확인 (메인 번호 6개 기준)
+        for (const draw of historyLast1Months) {
             const matchCount = getIntersectionCount(candidate, draw.numbers)
-            const hasBonus = candidate.includes(draw.bonusNo)
 
-            // 1등 번호와 3개 이상 일치 OR (1등 번호 2개 + 보너스 번호 일치 = 2등 번호와 3개 일치)
-            if (matchCount >= 3 || (matchCount === 2 && hasBonus)) {
+            // 메인 번호 6개 중 3개 이상 일치 시 제외 (5등 당첨 패턴 차단)
+            if (matchCount >= 3) {
                 isValid = false
                 break
             }
