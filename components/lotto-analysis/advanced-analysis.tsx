@@ -1,17 +1,14 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { supabase } from "@/lib/supabaseClient"
 import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
 import type { MultipleNumberType, SimilarDrawType, LottoAnalytics } from "./types"
 import type { WinningLottoNumbers } from "@/types/lotto"
-import { Sparkles, SearchCheck, MousePointerClick, Filter } from "lucide-react"
+import { Sparkles, SearchCheck, MousePointerClick } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { generateFilteredNumbers } from "@/utils/lotto-filtering"
 import { useToast } from "@/hooks/use-toast"
 
-// 통계 데이터 계산 훅
 const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytics => {
   return useMemo(() => {
     const totalDraws = winningNumbers.length
@@ -27,7 +24,6 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
 
     const latestDraw = winningNumbers[totalDraws - 1]
     const latestDrawNo = latestDraw.drawNo
-    // [수정] 보너스 번호를 제외하고 메인 번호 6개만 사용하도록 수정
     const latestDrawNumbers = [...latestDraw.numbers]
 
     const winningNumbersSet = new Set(
@@ -38,7 +34,6 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
     for (let i = 1; i <= 45; i++) lastSeen.set(i, 0)
 
     winningNumbers.forEach((draw) => {
-      // [수정] 보너스 번호를 제외하고 메인 번호 6개로만 미출현 기간(Gap) 계산
       const allDrawNumbers = [...draw.numbers]
       for (const num of allDrawNumbers) {
         lastSeen.set(num, draw.drawNo)
@@ -80,22 +75,9 @@ export default function AdvancedAnalysis({
                                            getBallColor,
                                            onNumbersChange,
                                          }: AdvancedAnalysisProps) {
-  // 상태 관리
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isGeneratingV2, setIsGeneratingV2] = useState(false)
-  const [isV2Result, setIsV2Result] = useState(false)
-
-  // V2 로깅 여부 제어 플래그
-  const [shouldLogV2, setShouldLogV2] = useState(false)
-
   const [originalUserNumbers, setOriginalUserNumbers] = useState<number[]>(userDrawnNumbers)
   const [manualAnalysisNumbers, setManualAnalysisNumbers] = useState<number[] | null>(null)
-
-  // V2 추천 번호 백업 상태
-  const [savedV2Numbers, setSavedV2Numbers] = useState<number[] | null>(null)
-
-  // 사용자 레벨 상태
-  const [userLevel, setUserLevel] = useState(0)
 
   const { toast } = useToast()
   const analyticsData = useLottoAnalytics(winningNumbers)
@@ -106,88 +88,19 @@ export default function AdvancedAnalysis({
     }
   }, [userDrawnNumbers])
 
-  // 사용자 레벨 조회
-  useEffect(() => {
-    const fetchUserLevel = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data } = await supabase
-            .from("profiles")
-            .select("level")
-            .eq("id", user.id)
-            .single()
-
-        if (data) {
-          setUserLevel(data.level)
-        }
-      }
-    }
-    fetchUserLevel()
-  }, [])
-
-  // 기존 AI 추천 핸들러
   const generateAIRecommendation = async () => {
     setManualAnalysisNumbers(null)
-    setIsV2Result(false)
-    setShouldLogV2(false)
     setIsGenerating(true)
   }
 
-  // AI 추천 V2 생성 핸들러 (신규 생성)
-  const handleGenerateV2Numbers = () => {
-    setIsGeneratingV2(true)
-
-    setTimeout(() => {
-      const v2Numbers = generateFilteredNumbers(winningNumbers)
-
-      if (v2Numbers) {
-        setShouldLogV2(true) // 신규 생성 시에만 로깅
-        setIsV2Result(true)
-        onNumbersChange(v2Numbers)
-        setManualAnalysisNumbers(v2Numbers)
-        setSavedV2Numbers(v2Numbers)
-        toast({
-          title: "AI 추천 V2 완료",
-          description: "3/4/5쌍둥이 제외 조건이 적용된 조합입니다.",
-        })
-      } else {
-        toast({
-          title: "생성 실패",
-          description: "조건을 만족하는 조합을 찾지 못했습니다.",
-          variant: "destructive"
-        })
-      }
-      setIsGeneratingV2(false)
-    }, 100)
-  }
-
-  // AI 추천 V2 복원 핸들러
-  const handleRestoreV2Numbers = () => {
-    if (savedV2Numbers) {
-      setShouldLogV2(false) // 복원 시 로깅 방지
-      setIsV2Result(true)
-      onNumbersChange(savedV2Numbers)
-      setManualAnalysisNumbers(savedV2Numbers)
-      toast({
-        title: "AI 추천 V2 복원",
-        description: "이전에 생성된 V2 번호를 다시 불러왔습니다.",
-      })
-    }
-  }
-
-  // 사용자 번호 분석
   const handleAnalyzeUserNumbers = () => {
     if (originalUserNumbers.length === 6) {
-      setIsV2Result(false)
-      setShouldLogV2(false)
       onNumbersChange(originalUserNumbers)
       setManualAnalysisNumbers([...originalUserNumbers])
     }
   }
 
-  // AI 모드로 복귀 핸들러
   const handleRestoreAiMode = (numbers: number[]) => {
-    setIsV2Result(false)
     setManualAnalysisNumbers(null)
     onNumbersChange(numbers)
   }
@@ -226,7 +139,7 @@ export default function AdvancedAnalysis({
 
               <Button
                   onClick={generateAIRecommendation}
-                  disabled={isGenerating || isGeneratingV2}
+                  disabled={isGenerating}
                   className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20"
               >
                 {isGenerating ? (
@@ -241,26 +154,6 @@ export default function AdvancedAnalysis({
                     </>
                 )}
               </Button>
-
-              {userLevel >= 2 && (
-                  <Button
-                      onClick={handleGenerateV2Numbers}
-                      disabled={isGenerating || isGeneratingV2}
-                      className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20"
-                  >
-                    {isGeneratingV2 ? (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                          생성 중...
-                        </>
-                    ) : (
-                        <>
-                          <Filter className="w-4 h-4 mr-2" />
-                          AI 추천 V2
-                        </>
-                    )}
-                  </Button>
-              )}
             </div>
           </div>
         </div>
@@ -274,10 +167,6 @@ export default function AdvancedAnalysis({
             winningNumbersSet={analyticsData.winningNumbersSet}
             historyData={winningNumbers}
             manualNumbers={manualAnalysisNumbers}
-            isFilterResult={isV2Result}
-            shouldLogV2={shouldLogV2}
-            savedFilteredNumbers={savedV2Numbers}
-            onRestoreFilteredNumbers={handleRestoreV2Numbers}
         />
 
         <MultipleNumberAnalysis
