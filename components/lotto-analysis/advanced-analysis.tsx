@@ -5,10 +5,11 @@ import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
 import type { MultipleNumberType, SimilarDrawType, LottoAnalytics } from "./types"
 import type { WinningLottoNumbers } from "@/types/lotto"
-import { Sparkles, SearchCheck, MousePointerClick } from "lucide-react"
+import { Sparkles, SearchCheck, MousePointerClick, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 
+// 로또 데이터를 분석하여 최근 회차 정보 및 번호 출현 간격을 계산합니다.
 const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytics => {
   return useMemo(() => {
     const totalDraws = winningNumbers.length
@@ -77,36 +78,47 @@ export default function AdvancedAnalysis({
                                          }: AdvancedAnalysisProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [originalUserNumbers, setOriginalUserNumbers] = useState<number[]>(userDrawnNumbers)
-  const [manualAnalysisNumbers, setManualAnalysisNumbers] = useState<number[] | null>(null)
+  const [hasGenerated, setHasGenerated] = useState(false)
+  const [showAiArea, setShowAiArea] = useState(false)
+  const [aiNumbers, setAiNumbers] = useState<number[]>([])
 
   const { toast } = useToast()
   const analyticsData = useLottoAnalytics(winningNumbers)
 
+  // 사용자가 뽑은 초기 번호를 저장합니다.
   useEffect(() => {
     if (userDrawnNumbers && userDrawnNumbers.length === 6) {
       setOriginalUserNumbers([...userDrawnNumbers])
     }
   }, [userDrawnNumbers])
 
+  // AI 추천 번호 생성을 시작하며 AI 영역을 노출합니다.
   const generateAIRecommendation = async () => {
-    setManualAnalysisNumbers(null)
     setIsGenerating(true)
+    setShowAiArea(true)
+    setHasGenerated(true)
   }
 
+  // 추첨 번호 분석 버튼 클릭 시 AI 영역을 숨기고 원래 뽑은 번호로 변경합니다.
   const handleAnalyzeUserNumbers = () => {
     if (originalUserNumbers.length === 6) {
+      setShowAiArea(false)
       onNumbersChange(originalUserNumbers)
-      setManualAnalysisNumbers([...originalUserNumbers])
     }
   }
 
-  const handleRestoreAiMode = (numbers: number[]) => {
-    setManualAnalysisNumbers(null)
-    onNumbersChange(numbers)
+  // AI 추천 번호 돌아가기 버튼 클릭 시 AI 영역을 다시 노출하고 번호를 복구합니다.
+  const handleRestoreAiMode = () => {
+    setShowAiArea(true)
+    if (aiNumbers.length === 6) {
+      onNumbersChange(aiNumbers)
+    }
   }
 
+  // AI 추천이 완료되면 생성된 번호를 저장하고 상위 컴포넌트에 전달합니다.
   const handleRecommendationGenerated = (newNumbers: number[]) => {
     setIsGenerating(false)
+    setAiNumbers(newNumbers)
     onNumbersChange(newNumbers)
   }
 
@@ -127,15 +139,29 @@ export default function AdvancedAnalysis({
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <Button
-                  onClick={handleAnalyzeUserNumbers}
-                  variant="outline"
-                  disabled={originalUserNumbers.length !== 6}
-                  className="flex-1 sm:flex-none bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-              >
-                <SearchCheck className="w-4 h-4 mr-2" />
-                추첨 번호 AI 분석
-              </Button>
+              {/* AI 추천 버튼을 누른 이력이 있을 때만 분석 및 돌아가기 전환 버튼을 노출합니다. */}
+              {hasGenerated && (
+                  showAiArea ? (
+                      <Button
+                          onClick={handleAnalyzeUserNumbers}
+                          variant="outline"
+                          disabled={originalUserNumbers.length !== 6 || isGenerating}
+                          className="flex-1 sm:flex-none bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                      >
+                        <SearchCheck className="w-4 h-4 mr-2" />
+                        추첨 번호 분석
+                      </Button>
+                  ) : (
+                      <Button
+                          onClick={handleRestoreAiMode}
+                          variant="outline"
+                          className="flex-1 sm:flex-none bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                      >
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        AI 추천 번호 돌아가기
+                      </Button>
+                  )
+              )}
 
               <Button
                   onClick={generateAIRecommendation}
@@ -158,16 +184,17 @@ export default function AdvancedAnalysis({
           </div>
         </div>
 
-        <AIRecommendation
-            analyticsData={analyticsData}
-            isGenerating={isGenerating}
-            onRecommendationGenerated={handleRecommendationGenerated}
-            onAnalyzeNumbers={handleRestoreAiMode}
-            latestDrawNo={analyticsData.latestDrawNo}
-            winningNumbersSet={analyticsData.winningNumbersSet}
-            historyData={winningNumbers}
-            manualNumbers={manualAnalysisNumbers}
-        />
+        {/* 추첨 번호 분석 버튼을 누를 때 컴포넌트를 언마운트 시키지 않고 CSS로 숨겨 상태를 유지합니다. */}
+        <div className={showAiArea ? "block" : "hidden"}>
+          <AIRecommendation
+              analyticsData={analyticsData}
+              isGenerating={isGenerating}
+              onRecommendationGenerated={handleRecommendationGenerated}
+              latestDrawNo={analyticsData.latestDrawNo}
+              winningNumbersSet={analyticsData.winningNumbersSet}
+              historyData={winningNumbers}
+          />
+        </div>
 
         <MultipleNumberAnalysis
             multipleNumbers={multipleNumbers}
