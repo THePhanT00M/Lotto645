@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { LottoAnalytics } from './types'
 import { Sparkles, SearchCheck, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -21,57 +21,55 @@ interface AIRecommendationProps {
   onRecommendationGenerated?: (numbers: number[]) => void
   onAnalyzeNumbers?: (numbers: number[]) => void
   isGenerating: boolean
-  isFilterResult?: boolean
-  shouldLogV2?: boolean
-  savedFilteredNumbers?: number[] | null
-  onRestoreFilteredNumbers?: () => void
 }
 
-interface DistributionStats {
-  mean: number
-  stdDev: number
-}
-
-// AC 값 계산 함수
-const calculateACValue = (numbers: number[]): number => {
-  const diffs = new Set<number>()
-  for (let i = 0; i < numbers.length; i++) {
-    for (let j = i + 1; j < numbers.length; j++) {
-      diffs.add(Math.abs(numbers[i] - numbers[j]))
-    }
+// 가중치에 비례하여 무작위 번호를 추출하는 함수
+const weightedRandomChoice = (items: number[], weights: number[]): number => {
+  let totalWeight = weights.reduce((acc, val) => acc + val, 0)
+  if (totalWeight <= 0) {
+    const validItems = items.filter((_, idx) => weights[idx] >= 0)
+    return validItems[Math.floor(Math.random() * validItems.length)] || items[0]
   }
-  return diffs.size - (numbers.length - 1)
+  let random = Math.random() * totalWeight
+  for (let i = 0; i < items.length; i++) {
+    if (weights[i] <= 0) continue
+    random -= weights[i]
+    if (random <= 0) return items[i]
+  }
+  return items[items.length - 1]
 }
 
-// 통계 계산 함수
-const calculateStats = (values: number[]): DistributionStats => {
-  if (values.length === 0) return { mean: 0, stdDev: 0 }
-  const mean = values.reduce((a, b) => a + b, 0) / values.length
-  const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length
-  return { mean, stdDev: Math.sqrt(variance) }
-}
+// 방금 전까지 뽑힌 번호들을 바탕으로 앞으로 뽑힐 번호들의 확률을 재계산하는 함수
+const getConditionalWeights = (
+    selectedNums: Set<number>,
+    allNumbers: number[],
+    baseWeights: number[],
+    comboFreq: Record<string, number>
+) => {
+  const adjustedWeights = [...baseWeights]
 
-// 가우시안 점수 계산
-const getGaussianScore = (val: number, mean: number, stdDev: number, maxScore: number): number => {
-  if (stdDev === 0) return maxScore * 0.5
-  const z = Math.abs(val - mean) / stdDev
-  const factor = Math.exp(-0.5 * z * z)
-  return factor * maxScore
-}
+  allNumbers.forEach((num, idx) => {
+    // 이미 추첨된 번호가 다시 추첨되지 않도록 해당 번호의 확률은 0으로 만듭니다.
+    if (selectedNums.has(num)) {
+      adjustedWeights[idx] = 0
+      return
+    }
 
-// 가우시안 가중치 계산
-const getGaussianWeight = (x: number, mean: number, sigma: number = 3): number => {
-  return Math.exp(-Math.pow(x - mean, 2) / (2 * Math.pow(sigma, 2)))
-}
+    // 현재 번호가 이미 추첨된 번호들과 과거에 얼마나 자주 같이 나왔는지 확인하여 보너스 점수를 부여합니다.
+    let associationBonus = 0
+    selectedNums.forEach((picked) => {
+      const pair = [picked, num].sort((a, b) => a - b)
+      const key = `${pair[0]}-${pair[1]}`
+      if (comboFreq[key]) {
+        associationBonus += comboFreq[key]
+      }
+    })
 
-// 주차 계산
-const getWeekNumber = (dateStr: string): number => {
-  const date = new Date(dateStr);
-  const start = new Date(date.getFullYear(), 0, 1);
-  const diff = ((date.getTime() - start.getTime()) + ((start.getTimezoneOffset() - date.getTimezoneOffset()) * 60 * 1000));
-  const oneDay = 1000 * 60 * 60 * 24;
-  const day = Math.floor(diff / oneDay);
-  return Math.ceil(day / 7);
+    // 동반 출현 횟수에 가중치를 크게 두어 연관된 번호가 더 잘 뽑히게 조정합니다.
+    adjustedWeights[idx] += associationBonus * 3
+  })
+
+  return adjustedWeights
 }
 
 export default function AIRecommendation({
@@ -83,242 +81,54 @@ export default function AIRecommendation({
                                            onRecommendationGenerated,
                                            onAnalyzeNumbers,
                                            isGenerating,
-                                           isFilterResult,
-                                           shouldLogV2,
-                                           savedFilteredNumbers,
-                                           onRestoreFilteredNumbers,
                                          }: AIRecommendationProps) {
   const [recommendedNumbers, setRecommendedNumbers] = useState<number[]>([])
   const [savedAiNumbers, setSavedAiNumbers] = useState<number[]>([])
-  const [aiScore, setAiScore] = useState<number | null>(null)
   const [analysisMode, setAnalysisMode] = useState<"recommendation" | "manual">("recommendation")
   const { toast } = useToast()
 
-  // 분석 엔진
+  // 전체 당첨 데이터를 활용하여 개별 출현 횟수와 조합의 동반 출현 횟수를 파악합니다.
   const analysisEngine = useMemo(() => {
-    if (!historyData || historyData.length === 0) {
-      return {
-        nextNumberProbabilities: new Map<number, Map<number, number[]>>(),
-        seasonalHotNumbers: new Map<number, number>(),
-        seasonalMaxScore: 1,
-        numberAppearances: new Map<number, number>(),
-        gapStats: { avgGap: 0, coldAvgGap: 0, maxGap: 0 },
-        acStats: { mean: 0, stdDev: 0 },
-        sumStats: { mean: 0, stdDev: 0 },
-        hotCountStats: { mean: 0, stdDev: 0 }
-      }
+    const num_freq: Record<number, number> = {}
+    const combo_freq: Record<string, number> = {}
+
+    // 기본 출현 횟수 초기화
+    for (let i = 1; i <= 45; i++) {
+      num_freq[i] = 0
     }
 
-    const nextNumberProbabilities = new Map<number, Map<number, number[]>>()
-    const seasonalHotNumbers = new Map<number, number>()
-    const numberAppearances = new Map<number, number>()
+    if (historyData && historyData.length > 0) {
+      historyData.forEach((draw) => {
+        const nums = draw.numbers
 
-    const acList: number[] = []
-    const sumList: number[] = []
-    const hotCountList: number[] = []
-    const allGaps: number[] = []
-    const coldGaps: number[] = []
-    const lastSeenMap = new Map<number, number>()
-
-    const sortedHistory = [...historyData].sort((a, b) => a.drawNo - b.drawNo)
-    const totalDraws = sortedHistory.length;
-
-    const now = new Date();
-    const currentWeek = getWeekNumber(now.toISOString().split('T')[0]);
-
-    let maxSeasonalScore = 0;
-
-    for (let i = 0; i < totalDraws; i++) {
-      const draw = sortedHistory[i]
-      const { drawNo, numbers, date } = draw
-
-      acList.push(calculateACValue(numbers))
-      sumList.push(numbers.reduce((a, b) => a + b, 0))
-
-      if (i >= 5) {
-        const past5Draws = sortedHistory.slice(i - 5, i)
-        const hotSetAtThatTime = new Set<number>()
-        past5Draws.forEach(d => d.numbers.forEach(n => hotSetAtThatTime.add(n)))
-        const count = numbers.filter(n => hotSetAtThatTime.has(n)).length
-        hotCountList.push(count)
-      }
-
-      // [수정] 보너스 번호를 제외하고 메인 번호 6개로만 통계 및 미출현 기간 계산
-      const drawNumbers = [...numbers]
-      drawNumbers.forEach(num => {
-        if (lastSeenMap.has(num)) {
-          const prevDrawNo = lastSeenMap.get(num)!
-          const gap = drawNo - prevDrawNo
-          allGaps.push(gap)
-          if (gap >= 10) coldGaps.push(gap)
-        }
-        lastSeenMap.set(num, drawNo)
-        numberAppearances.set(num, (numberAppearances.get(num) || 0) + 1)
-      })
-
-      const drawWeek = getWeekNumber(date);
-      let weekDiff = Math.abs(currentWeek - drawWeek);
-      if (weekDiff > 26) weekDiff = 52 - weekDiff;
-
-      if (weekDiff <= 3) {
-        const recencyWeight = 1.0 + (i / totalDraws) * 2.0;
-        const precisionWeight = 1.0 - (weekDiff * 0.2);
-        const totalWeight = recencyWeight * precisionWeight;
-
-        numbers.forEach((num) => {
-          const newScore = (seasonalHotNumbers.get(num) || 0) + totalWeight;
-          seasonalHotNumbers.set(num, newScore);
-          if (newScore > maxSeasonalScore) maxSeasonalScore = newScore;
-        });
-      }
-    }
-
-    // [수정] 이전 회차 메인 번호와 다음 회차 메인 번호 간의 상관관계만 분석
-    for (let i = 0; i < sortedHistory.length - 1; i++) {
-      const prev = sortedHistory[i]
-      const next = sortedHistory[i+1]
-      const prevNums = prev.numbers
-      prevNums.forEach(prevNum => {
-        if (!nextNumberProbabilities.has(prevNum)) nextNumberProbabilities.set(prevNum, new Map())
-        const targetMap = nextNumberProbabilities.get(prevNum)!
-        next.numbers.forEach(nextNum => {
-          if (!targetMap.has(nextNum)) targetMap.set(nextNum, [])
-          targetMap.get(nextNum)!.push(next.drawNo)
+        // 개별 출현 횟수 증가
+        nums.forEach((n) => {
+          num_freq[n] = (num_freq[n] || 0) + 1
         })
+
+        // 함께 등장했던 조합을 찾아 정렬된 문자열 키로 변환하고 조합 출현 횟수를 증가시킵니다.
+        for (let i = 0; i < nums.length; i++) {
+          for (let j = i + 1; j < nums.length; j++) {
+            const pair = [nums[i], nums[j]].sort((a, b) => a - b)
+            const key = `${pair[0]}-${pair[1]}`
+            combo_freq[key] = (combo_freq[key] || 0) + 1
+          }
+        }
       })
     }
 
-    const acStats = calculateStats(acList)
-    const sumStats = calculateStats(sumList)
-    const hotCountStats = calculateStats(hotCountList)
-
-    const avgGap = allGaps.length > 0 ? allGaps.reduce((a,b) => a+b, 0) / allGaps.length : 0
-    const coldAvgGap = coldGaps.length > 0 ? coldGaps.reduce((a,b) => a+b, 0) / coldGaps.length : 0
-    const maxGap = Math.max(...allGaps, 0)
-
-    return {
-      nextNumberProbabilities,
-      seasonalHotNumbers,
-      seasonalMaxScore: maxSeasonalScore,
-      numberAppearances,
-      gapStats: { avgGap, coldAvgGap, maxGap },
-      acStats,
-      sumStats,
-      hotCountStats
-    }
+    return { num_freq, combo_freq }
   }, [historyData])
 
-  // 점수 계산
-  const calculateScoreForNumbers = useCallback((targetNumbers: number[], debug: boolean = false) => {
-    const {
-      nextNumberProbabilities, seasonalHotNumbers, seasonalMaxScore, numberAppearances,
-      gapStats, acStats, sumStats, hotCountStats
-    } = analysisEngine
-    const { latestDrawNumbers, gapMap } = analyticsData
-
-    if (sumStats.mean === 0) return 0
-
-    let score = 0
-
-    let triggerScoreRaw = 0
-    latestDrawNumbers.forEach(prevNum => {
-      const totalAppearances = numberAppearances.get(prevNum) || 1
-      const map = nextNumberProbabilities.get(prevNum)
-      if (map) {
-        targetNumbers.forEach(currNum => {
-          if (map.has(currNum)) {
-            const draws = map.get(currNum)!
-            triggerScoreRaw += (draws.length / totalAppearances) * Math.log(draws.length + 1) * 60
-          }
-        })
-      }
-    })
-    const finalTriggerScore = Math.min(25, triggerScoreRaw)
-    score += finalTriggerScore
-
-    const currentAC = calculateACValue(targetNumbers)
-    const acScore = getGaussianScore(currentAC, acStats.mean, acStats.stdDev, 15)
-    score += acScore
-
-    const currentSum = targetNumbers.reduce((a, b) => a + b, 0)
-    const sumScore = getGaussianScore(currentSum, sumStats.mean, sumStats.stdDev, 15)
-    score += sumScore
-
-    const currentHotCount = targetNumbers.filter(n => (gapMap.get(n) || 0) < 5).length
-    const balanceScore = getGaussianScore(currentHotCount, hotCountStats.mean, hotCountStats.stdDev, 10)
-    score += balanceScore
-
-    let gapScoreRaw = 0
-    targetNumbers.forEach(num => {
-      const currentGap = gapMap.get(num) || 0
-      const normalMatch = getGaussianWeight(currentGap, gapStats.avgGap, 3.0)
-
-      const coldTarget = gapStats.coldAvgGap > 10 ? gapStats.coldAvgGap : 10;
-      const coldMatch = getGaussianWeight(currentGap, coldTarget, 5.0)
-
-      const mediumMatch = (currentGap >= 5 && currentGap <= 9) ? 0.8 : 0;
-
-      gapScoreRaw += (normalMatch * 3.0) + (coldMatch * 4.0) + (mediumMatch * 2.0)
-    })
-    const finalGapScore = Math.min(25, gapScoreRaw)
-    score += finalGapScore
-
-    let seasonalRawScore = 0
-    targetNumbers.forEach(num => seasonalRawScore += (seasonalHotNumbers.get(num) || 0))
-
-    const targetSeasonalScore = seasonalMaxScore * 2.5;
-    const finalSeasonalScore = Math.min(10, (seasonalRawScore / targetSeasonalScore) * 10);
-
-    score += finalSeasonalScore
-
-    return Math.min(100, Math.floor(score))
-  }, [analysisEngine, analyticsData])
-
-  // 수동/V2 번호 입력 및 로깅 처리
+  // 수동 번호 분석 요청 시 상태를 업데이트합니다.
   useEffect(() => {
     if (manualNumbers && manualNumbers.length === 6) {
       setAnalysisMode("manual")
       setRecommendedNumbers(manualNumbers)
-      const calculatedScore = calculateScoreForNumbers(manualNumbers, true)
-      setAiScore(calculatedScore)
-
-      if (isFilterResult && shouldLogV2) {
-        const saveFilteredResult = async () => {
-          try {
-            const { data: { session } } = await supabase.auth.getSession()
-            const headers: HeadersInit = { "Content-Type": "application/json" }
-            if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`
-
-            await fetch(getApiUrl("/api/log-draw"), {
-              method: "POST", headers,
-              body: JSON.stringify({
-                numbers: manualNumbers,
-                source: "ai",
-                memo: "ai-filter",
-                score: calculatedScore,
-                userId: session?.user?.id
-              }),
-            })
-
-            if (!session) saveLottoResult(manualNumbers, true, latestDrawNo + 1)
-          } catch (e) {
-            console.error("V2 결과 저장 실패:", e)
-          }
-        }
-
-        saveFilteredResult()
-      }
     }
-  }, [manualNumbers, calculateScoreForNumbers, isFilterResult, shouldLogV2, latestDrawNo])
+  }, [manualNumbers])
 
-  const getProbabilityStatus = (score: number) => {
-    if (score >= 90) return { text: "매우 높음", color: "text-purple-600 dark:text-purple-400" }
-    if (score >= 80) return { text: "높음", color: "text-blue-600 dark:text-blue-400" }
-    if (score >= 60) return { text: "보통", color: "text-green-600 dark:text-green-400" }
-    return { text: "낮음", color: "text-gray-500" }
-  }
-
-  // AI 추천 생성
+  // 분석된 개별 출현 빈도와 연관 규칙 기반 동적 확률을 사용하여 번호를 추천합니다.
   const generateAIRecommendation = async () => {
     if (!historyData || historyData.length === 0) {
       toast({ title: "데이터 로딩 중", description: "잠시 후 다시 시도해주세요.", variant: "destructive" })
@@ -327,106 +137,41 @@ export default function AIRecommendation({
 
     setAnalysisMode("recommendation")
     setRecommendedNumbers([])
-    setAiScore(null)
     await new Promise((resolve) => setTimeout(resolve, 10))
 
-    const { latestDrawNumbers, gapMap } = analyticsData
-    const { nextNumberProbabilities, seasonalHotNumbers, numberAppearances, gapStats } = analysisEngine
+    const { num_freq, combo_freq } = analysisEngine
+    const numbers = Array.from({ length: 45 }, (_, i) => i + 1)
 
-    const probabilityMap = new Map<number, number>()
-    for(let i=1; i<=45; i++) probabilityMap.set(i, 0.8 + Math.random() * 0.4)
+    // 기본 가중치 추출
+    const baseWeights = numbers.map((n) => num_freq[n] || 1)
 
-    latestDrawNumbers.forEach(prevNum => {
-      const totalAppearances = numberAppearances.get(prevNum) || 1
-      const nextMap = nextNumberProbabilities.get(prevNum)
-      if (nextMap) {
-        nextMap.forEach((drawList, nextNum) => {
-          const w = (drawList.length / totalAppearances) * 30 * Math.log(drawList.length + 1)
-          probabilityMap.set(nextNum, (probabilityMap.get(nextNum) || 0) + w)
-        })
-      }
-    })
+    const selected = new Set<number>()
 
-    seasonalHotNumbers.forEach((score, num) => {
-      const adjustedScore = Math.min(score, 10);
-      probabilityMap.set(num, (probabilityMap.get(num) || 0) + adjustedScore * 1.2)
-    })
+    // 첫 번째 번호는 순수하게 과거 출현 횟수가 많은 번호가 유리하게끔 추첨합니다.
+    const firstPick = weightedRandomChoice(numbers, baseWeights)
+    selected.add(firstPick)
 
-    for (let i = 1; i <= 45; i++) {
-      const currentGap = gapMap.get(i) || 0
-      const hotWeight = getGaussianWeight(currentGap, gapStats.avgGap, 2.5) * 8
-
-      let coldWeight = 0
-      if (currentGap > gapStats.avgGap) {
-        coldWeight = getGaussianWeight(currentGap, gapStats.coldAvgGap, 4.0) * 12
-      }
-
-      let mediumWeight = 0
-      if (currentGap >= 5 && currentGap <= 9) {
-        mediumWeight = 6.0;
-      }
-
-      probabilityMap.set(i, (probabilityMap.get(i) || 0) + hotWeight + coldWeight + mediumWeight)
+    // 나머지 번호들은 뽑힌 번호와의 동반 출현 빈도를 반영한 새로운 확률표를 매번 생성하여 추첨합니다.
+    while (selected.size < 6) {
+      const dynamicWeights = getConditionalWeights(selected, numbers, baseWeights, combo_freq)
+      const nextPick = weightedRandomChoice(numbers, dynamicWeights)
+      selected.add(nextPick)
     }
 
-    const getWeightedRandomNumber = (excludeSet: Set<number>): number => {
-      let totalWeight = 0
-      const candidates: { num: number, weight: number }[] = []
-      probabilityMap.forEach((w, num) => {
-        if (!excludeSet.has(num)) {
-          totalWeight += w
-          candidates.push({ num, weight: w })
-        }
-      })
-      if (totalWeight === 0) return Math.floor(Math.random() * 45) + 1
-      let random = Math.random() * totalWeight
-      for (const item of candidates) {
-        random -= item.weight
-        if (random <= 0) return item.num
-      }
-      return candidates[candidates.length - 1].num
-    }
-
-    const ITERATIONS = 10000
-    const candidates: any[] = []
-    const recentDraws = historyData.slice(-104)
-
-    for (let i = 0; i < ITERATIONS; i++) {
-      const currentSet = new Set<number>()
-      while (currentSet.size < 6) currentSet.add(getWeightedRandomNumber(currentSet))
-      const currentNumbers = Array.from(currentSet).sort((a, b) => a - b)
-
-      const comboKey = currentNumbers.join("-")
-      if (winningNumbersSet.has(comboKey)) continue
-
-      let isSimilar = false
-      for(const pastDraw of recentDraws) {
-        if (currentNumbers.filter(n => pastDraw.numbers.includes(n)).length >= 4) {
-          isSimilar = true; break;
-        }
-      }
-      if (isSimilar) continue
-
-      const score = calculateScoreForNumbers(currentNumbers, false)
-      candidates.push({ combination: currentNumbers, score })
-    }
-
-    candidates.sort((a, b) => b.score - a.score)
-    const finalPick = candidates[Math.floor(Math.random() * Math.min(3, candidates.length))]
-    const finalCombination = finalPick ? finalPick.combination : Array.from({ length: 6 }, () => Math.floor(Math.random() * 45) + 1).sort((a, b) => a - b)
-    const finalScore = calculateScoreForNumbers(finalCombination, true)
+    // 여섯 개의 번호가 모두 모이면 크기 순서대로 정렬합니다.
+    const finalCombination = Array.from(selected).sort((a, b) => a - b)
 
     setRecommendedNumbers(finalCombination)
     setSavedAiNumbers(finalCombination)
-    setAiScore(finalScore)
 
+    // 생성된 결과를 DB에 기록합니다. (점수 개념이 삭제되었으므로 score는 제외 또는 null 처리)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const headers: HeadersInit = { "Content-Type": "application/json" }
       if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`
       await fetch(getApiUrl("/api/log-draw"), {
         method: "POST", headers,
-        body: JSON.stringify({ numbers: finalCombination, source: "ai", score: finalScore, userId: session?.user?.id }),
+        body: JSON.stringify({ numbers: finalCombination, source: "ai", score: null, userId: session?.user?.id }),
       })
       if (!session) saveLottoResult(finalCombination, true, latestDrawNo + 1)
     } catch (e) { console.error(e) }
@@ -434,22 +179,21 @@ export default function AIRecommendation({
     if (onRecommendationGenerated) onRecommendationGenerated(finalCombination)
   }
 
+  // 생성 트리거 발생 시 실행합니다.
   useEffect(() => {
     if (isGenerating) generateAIRecommendation()
   }, [isGenerating])
 
+  // 수동 입력 모드에서 다시 기존 AI 추천 번호로 되돌립니다.
   const handleRestoreAiNumbers = () => {
     if (savedAiNumbers.length === 6) {
       setRecommendedNumbers(savedAiNumbers)
       setAnalysisMode("recommendation")
-      const score = calculateScoreForNumbers(savedAiNumbers, true)
-      setAiScore(score)
       if (onAnalyzeNumbers) onAnalyzeNumbers(savedAiNumbers)
     }
   }
 
-  const probabilityStatus = aiScore ? getProbabilityStatus(aiScore) : { text: "-", color: "" }
-
+  // 생성 중 로딩 상태 표시
   if (isGenerating) {
     return (
         <div className="p-4 rounded-lg border bg-white dark:bg-[rgb(36,36,36)] border-gray-200 dark:border-[rgb(36,36,36)] space-y-5">
@@ -459,18 +203,13 @@ export default function AIRecommendation({
           </div>
           <div className="space-y-2">
             <div className="flex justify-between gap-3">
-              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-5 w-full" />
             </div>
-            <Skeleton className="h-4 w-2/3" />
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            <Skeleton className="h-16 rounded-lg" />
-            <Skeleton className="h-16 rounded-lg" />
           </div>
           <div className="flex justify-center py-6">
             <div className="flex gap-2">
               {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-10 rounded-full" />
+                  <Skeleton key={i} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
               ))}
             </div>
           </div>
@@ -478,6 +217,7 @@ export default function AIRecommendation({
     )
   }
 
+  // 생성된 번호가 없으면 표시하지 않습니다.
   if (recommendedNumbers.length === 0) return null
 
   const isManual = analysisMode === "manual"
@@ -492,14 +232,14 @@ export default function AIRecommendation({
                 <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
             )}
             <h3 className="font-bold text-gray-800 dark:text-gray-200">
-              {isManual ? (isFilterResult ? "AI 추천 분석 V2" : "번호 패턴 분석") : "AI 추천 분석"}
+              {isManual ? "번호 패턴 분석" : "AI 추천 번호"}
             </h3>
           </div>
         </div>
         <div>
           <div className="mt-2 relative overflow-hidden">
-            {(!isManual || isFilterResult) && (
-                <div className="absolute bottom-1/3 right-0 p-4 opacity-5">
+            {!isManual && (
+                <div className="absolute bottom-0 right-0 p-4 opacity-5">
                   <Sparkles className="w-30 h-30" />
                 </div>
             )}
@@ -507,27 +247,9 @@ export default function AIRecommendation({
             <div className="flex flex-col mb-3">
               <div className="flex justify-between items-center w-full gap-3">
                 <p className="text-sm text-gray-600 dark:text-gray-300 flex-1 leading-relaxed">
-                  지난 <span className="font-semibold text-blue-600">{latestDrawNo}회차 데이터</span>와 전체 역대 당첨 번호의 상관관계를 분석하여, <span className="font-semibold text-green-600">5등</span> 이상을 목표로 설계된 조합입니다.
+                  역대 당첨 번호 속에 숨겨진 흐름과 패턴을 AI가 다각도로 분석하여, 이번 주 당신에게 행운을 가져다줄 최적의 번호 조합을 제안합니다.
                 </p>
               </div>
-
-              {aiScore !== null && (
-                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    <div className="text-xs p-3 bg-gray-100 dark:bg-[#363636] rounded-lg text-gray-700 dark:text-gray-200">
-                      <span className="text-gray-500 dark:text-white block mb-1">패턴 매칭 점수</span>
-                      <span className="font-bold text-base text-gray-800 dark:text-gray-100">
-                        {aiScore}
-                        <span className="text-xs font-normal text-gray-400 ml-1">/ 100</span>
-                      </span>
-                    </div>
-                    <div className="text-xs p-3 bg-gray-100 dark:bg-[#363636] rounded-lg text-gray-700 dark:text-gray-200">
-                      <span className="text-gray-500 dark:text-white block mb-1">예상 적중 확률</span>
-                      <span className={`font-bold text-base ${probabilityStatus.color}`}>
-                        {probabilityStatus.text}
-                    </span>
-                    </div>
-                  </div>
-              )}
             </div>
 
             <div className="py-2">
@@ -540,7 +262,6 @@ export default function AIRecommendation({
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2 justify-start">
-            {/* AI 추천 복원 버튼 */}
             {isManual && savedAiNumbers.length === 6 && (
                 <Button
                     onClick={handleRestoreAiNumbers}
@@ -549,18 +270,6 @@ export default function AIRecommendation({
                 >
                   <RotateCcw className="w-4 h-4" />
                   AI 추천 번호 돌아가기
-                </Button>
-            )}
-
-            {/* AI 추천 V2 복원 버튼 (현재 V2 화면이 아닐 때만 표시) */}
-            {onRestoreFilteredNumbers && savedFilteredNumbers && savedFilteredNumbers.length === 6 && !isFilterResult && (
-                <Button
-                    onClick={onRestoreFilteredNumbers}
-                    variant="outline"
-                    className="bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  AI 추천 V2 돌아가기
                 </Button>
             )}
           </div>

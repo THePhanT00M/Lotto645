@@ -1,17 +1,15 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { supabase } from "@/lib/supabaseClient"
 import AIRecommendation from "./ai-recommendation"
 import MultipleNumberAnalysis from "./multiple-number-analysis"
 import type { MultipleNumberType, SimilarDrawType, LottoAnalytics } from "./types"
 import type { WinningLottoNumbers } from "@/types/lotto"
-import { Sparkles, SearchCheck, MousePointerClick, Filter } from "lucide-react"
+import { Sparkles, SearchCheck, MousePointerClick, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { generateFilteredNumbers } from "@/utils/lotto-filtering"
 import { useToast } from "@/hooks/use-toast"
 
-// 통계 데이터 계산 훅
+// 로또 데이터를 분석하여 최근 회차 정보 및 번호 출현 간격을 계산합니다.
 const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytics => {
   return useMemo(() => {
     const totalDraws = winningNumbers.length
@@ -27,7 +25,6 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
 
     const latestDraw = winningNumbers[totalDraws - 1]
     const latestDrawNo = latestDraw.drawNo
-    // [수정] 보너스 번호를 제외하고 메인 번호 6개만 사용하도록 수정
     const latestDrawNumbers = [...latestDraw.numbers]
 
     const winningNumbersSet = new Set(
@@ -38,7 +35,6 @@ const useLottoAnalytics = (winningNumbers: WinningLottoNumbers[]): LottoAnalytic
     for (let i = 1; i <= 45; i++) lastSeen.set(i, 0)
 
     winningNumbers.forEach((draw) => {
-      // [수정] 보너스 번호를 제외하고 메인 번호 6개로만 미출현 기간(Gap) 계산
       const allDrawNumbers = [...draw.numbers]
       for (const num of allDrawNumbers) {
         lastSeen.set(num, draw.drawNo)
@@ -80,120 +76,49 @@ export default function AdvancedAnalysis({
                                            getBallColor,
                                            onNumbersChange,
                                          }: AdvancedAnalysisProps) {
-  // 상태 관리
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isGeneratingV2, setIsGeneratingV2] = useState(false)
-  const [isV2Result, setIsV2Result] = useState(false)
-
-  // V2 로깅 여부 제어 플래그
-  const [shouldLogV2, setShouldLogV2] = useState(false)
-
   const [originalUserNumbers, setOriginalUserNumbers] = useState<number[]>(userDrawnNumbers)
-  const [manualAnalysisNumbers, setManualAnalysisNumbers] = useState<number[] | null>(null)
-
-  // V2 추천 번호 백업 상태
-  const [savedV2Numbers, setSavedV2Numbers] = useState<number[] | null>(null)
-
-  // 사용자 레벨 상태
-  const [userLevel, setUserLevel] = useState(0)
+  const [hasGenerated, setHasGenerated] = useState(false)
+  const [showAiArea, setShowAiArea] = useState(false)
+  const [aiNumbers, setAiNumbers] = useState<number[]>([])
 
   const { toast } = useToast()
   const analyticsData = useLottoAnalytics(winningNumbers)
 
+  // 사용자가 뽑은 초기 번호를 저장합니다.
   useEffect(() => {
     if (userDrawnNumbers && userDrawnNumbers.length === 6) {
       setOriginalUserNumbers([...userDrawnNumbers])
     }
   }, [userDrawnNumbers])
 
-  // 사용자 레벨 조회
-  useEffect(() => {
-    const fetchUserLevel = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data } = await supabase
-            .from("profiles")
-            .select("level")
-            .eq("id", user.id)
-            .single()
-
-        if (data) {
-          setUserLevel(data.level)
-        }
-      }
-    }
-    fetchUserLevel()
-  }, [])
-
-  // 기존 AI 추천 핸들러
+  // AI 추천 번호 생성을 시작하며 AI 영역을 노출합니다.
   const generateAIRecommendation = async () => {
-    setManualAnalysisNumbers(null)
-    setIsV2Result(false)
-    setShouldLogV2(false)
     setIsGenerating(true)
+    setShowAiArea(true)
+    setHasGenerated(true)
   }
 
-  // AI 추천 V2 생성 핸들러 (신규 생성)
-  const handleGenerateV2Numbers = () => {
-    setIsGeneratingV2(true)
-
-    setTimeout(() => {
-      const v2Numbers = generateFilteredNumbers(winningNumbers)
-
-      if (v2Numbers) {
-        setShouldLogV2(true) // 신규 생성 시에만 로깅
-        setIsV2Result(true)
-        onNumbersChange(v2Numbers)
-        setManualAnalysisNumbers(v2Numbers)
-        setSavedV2Numbers(v2Numbers)
-        toast({
-          title: "AI 추천 V2 완료",
-          description: "3/4/5쌍둥이 제외 조건이 적용된 조합입니다.",
-        })
-      } else {
-        toast({
-          title: "생성 실패",
-          description: "조건을 만족하는 조합을 찾지 못했습니다.",
-          variant: "destructive"
-        })
-      }
-      setIsGeneratingV2(false)
-    }, 100)
-  }
-
-  // AI 추천 V2 복원 핸들러
-  const handleRestoreV2Numbers = () => {
-    if (savedV2Numbers) {
-      setShouldLogV2(false) // 복원 시 로깅 방지
-      setIsV2Result(true)
-      onNumbersChange(savedV2Numbers)
-      setManualAnalysisNumbers(savedV2Numbers)
-      toast({
-        title: "AI 추천 V2 복원",
-        description: "이전에 생성된 V2 번호를 다시 불러왔습니다.",
-      })
-    }
-  }
-
-  // 사용자 번호 분석
+  // 추첨 번호 분석 버튼 클릭 시 AI 영역을 숨기고 원래 뽑은 번호로 변경합니다.
   const handleAnalyzeUserNumbers = () => {
     if (originalUserNumbers.length === 6) {
-      setIsV2Result(false)
-      setShouldLogV2(false)
+      setShowAiArea(false)
       onNumbersChange(originalUserNumbers)
-      setManualAnalysisNumbers([...originalUserNumbers])
     }
   }
 
-  // AI 모드로 복귀 핸들러
-  const handleRestoreAiMode = (numbers: number[]) => {
-    setIsV2Result(false)
-    setManualAnalysisNumbers(null)
-    onNumbersChange(numbers)
+  // AI 추천 번호 돌아가기 버튼 클릭 시 AI 영역을 다시 노출하고 번호를 복구합니다.
+  const handleRestoreAiMode = () => {
+    setShowAiArea(true)
+    if (aiNumbers.length === 6) {
+      onNumbersChange(aiNumbers)
+    }
   }
 
+  // AI 추천이 완료되면 생성된 번호를 저장하고 상위 컴포넌트에 전달합니다.
   const handleRecommendationGenerated = (newNumbers: number[]) => {
     setIsGenerating(false)
+    setAiNumbers(newNumbers)
     onNumbersChange(newNumbers)
   }
 
@@ -214,19 +139,33 @@ export default function AdvancedAnalysis({
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <Button
-                  onClick={handleAnalyzeUserNumbers}
-                  variant="outline"
-                  disabled={originalUserNumbers.length !== 6}
-                  className="flex-1 sm:flex-none bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-              >
-                <SearchCheck className="w-4 h-4 mr-2" />
-                추첨 번호 AI 분석
-              </Button>
+              {/* AI 추천 버튼을 누른 이력이 있을 때만 분석 및 돌아가기 전환 버튼을 노출합니다. */}
+              {hasGenerated && (
+                  showAiArea ? (
+                      <Button
+                          onClick={handleAnalyzeUserNumbers}
+                          variant="outline"
+                          disabled={originalUserNumbers.length !== 6 || isGenerating}
+                          className="flex-1 sm:flex-none bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                      >
+                        <SearchCheck className="w-4 h-4 mr-2" />
+                        추첨 번호 분석
+                      </Button>
+                  ) : (
+                      <Button
+                          onClick={handleRestoreAiMode}
+                          variant="outline"
+                          className="flex-1 sm:flex-none bg-white dark:bg-[#363636] hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 border-gray-300 dark:border-[#363636] hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                      >
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        AI 추천 번호 돌아가기
+                      </Button>
+                  )
+              )}
 
               <Button
                   onClick={generateAIRecommendation}
-                  disabled={isGenerating || isGeneratingV2}
+                  disabled={isGenerating}
                   className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20"
               >
                 {isGenerating ? (
@@ -241,44 +180,21 @@ export default function AdvancedAnalysis({
                     </>
                 )}
               </Button>
-
-              {userLevel >= 2 && (
-                  <Button
-                      onClick={handleGenerateV2Numbers}
-                      disabled={isGenerating || isGeneratingV2}
-                      className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20"
-                  >
-                    {isGeneratingV2 ? (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                          생성 중...
-                        </>
-                    ) : (
-                        <>
-                          <Filter className="w-4 h-4 mr-2" />
-                          AI 추천 V2
-                        </>
-                    )}
-                  </Button>
-              )}
             </div>
           </div>
         </div>
 
-        <AIRecommendation
-            analyticsData={analyticsData}
-            isGenerating={isGenerating}
-            onRecommendationGenerated={handleRecommendationGenerated}
-            onAnalyzeNumbers={handleRestoreAiMode}
-            latestDrawNo={analyticsData.latestDrawNo}
-            winningNumbersSet={analyticsData.winningNumbersSet}
-            historyData={winningNumbers}
-            manualNumbers={manualAnalysisNumbers}
-            isFilterResult={isV2Result}
-            shouldLogV2={shouldLogV2}
-            savedFilteredNumbers={savedV2Numbers}
-            onRestoreFilteredNumbers={handleRestoreV2Numbers}
-        />
+        {/* 추첨 번호 분석 버튼을 누를 때 컴포넌트를 언마운트 시키지 않고 CSS로 숨겨 상태를 유지합니다. */}
+        <div className={showAiArea ? "block" : "hidden"}>
+          <AIRecommendation
+              analyticsData={analyticsData}
+              isGenerating={isGenerating}
+              onRecommendationGenerated={handleRecommendationGenerated}
+              latestDrawNo={analyticsData.latestDrawNo}
+              winningNumbersSet={analyticsData.winningNumbersSet}
+              historyData={winningNumbers}
+          />
+        </div>
 
         <MultipleNumberAnalysis
             multipleNumbers={multipleNumbers}
