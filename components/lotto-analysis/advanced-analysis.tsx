@@ -162,7 +162,6 @@ export default function AdvancedAnalysis({
                       </Button>
                   )
               )}
-
               <Button
                   onClick={generateAIRecommendation}
                   disabled={isGenerating}
