@@ -393,8 +393,8 @@ export default function HistoryPage() {
                         <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
                           {item.drawNo && (
                               <span className="flex items-center text-sm font-semibold text-[#065fd4] dark:text-[#3ea6ff] bg-[#f2f8ff] dark:bg-[#263850] px-2 py-1 rounded-md border border-[#d3e3fd] dark:border-[#263850]">
-                        {item.drawNo}회차
-                      </span>
+                                {item.drawNo}회차
+                              </span>
                           )}
 
                           {rankInfo && (
