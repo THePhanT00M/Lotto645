@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     output: process.env.NEXT_PUBLIC_IS_APP === 'true' ? 'export' : undefined,
-    typescript: {
-        ignoreBuildErrors: true,
-    },
     images: {
         unoptimized: true,
     },

@@ -1,0 +1,92 @@
+"use client"
+
+import { Calendar, Database, HardDrive, Sparkles, Trash2 } from "lucide-react"
+import { RankBadge } from "@/components/common/rank-badge"
+import { Panel } from "@/components/common/panel"
+import { BallRow } from "@/components/lotto/ball-row"
+import { Button } from "@/components/ui/button"
+import type { AnalyzedEntry } from "@/hooks/use-draw-history"
+
+interface HistoryItemProps {
+  entry: AnalyzedEntry
+  onDelete: () => void
+}
+
+/** 추첨 기록 한 건. 출처·회차·당첨 결과와 번호를 함께 보여준다. */
+export default function HistoryItem({ entry, onDelete }: HistoryItemProps) {
+  const isServerRecord = entry.source === "user"
+
+  return (
+      <Panel className="relative">
+        <div className="mb-4 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div className="flex w-full items-center justify-between md:w-auto">
+            <div className="flex flex-wrap items-center gap-2">
+              {isServerRecord ? (
+                  <Tag className="border-blue-100 bg-blue-50 text-blue-700 dark:border-blue-800/50 dark:bg-blue-900/40 dark:text-blue-300">
+                    <Database className="mr-1 h-3 w-3" />내 기록
+                  </Tag>
+              ) : (
+                  <Tag className="border-amber-100 bg-amber-50 text-amber-700 dark:border-amber-800/50 dark:bg-amber-900/40 dark:text-amber-300">
+                    <HardDrive className="mr-1 h-3 w-3" />로컬 기록
+                  </Tag>
+              )}
+
+              <Tag className="text-ink border-transparent bg-black/5 dark:bg-white/10">
+                <Calendar className="text-ink-muted mr-1.5 h-3.5 w-3.5" />
+                {new Date(entry.timestamp).toLocaleString()}
+              </Tag>
+
+              {entry.isAiRecommended && (
+                  <Tag className="border-purple-100 bg-purple-50 text-purple-700 dark:border-purple-800/50 dark:bg-purple-900/30 dark:text-purple-300">
+                    <Sparkles className="mr-1 h-3 w-3" />AI 추천
+                  </Tag>
+              )}
+            </div>
+
+            <DeleteButton onClick={onDelete} className="md:hidden" />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+            {entry.drawNo && (
+                <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-1 text-sm font-semibold">
+                  {entry.drawNo}회차
+                </span>
+            )}
+            {entry.status && <RankBadge status={entry.status} showComparedDraw={entry.drawNo === undefined} />}
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+          <BallRow
+              numbers={entry.numbers}
+              size="fluid"
+              className="w-full max-w-xs gap-3"
+              ballClassName="max-w-10 shadow-sm"
+          />
+          <DeleteButton onClick={onDelete} className="hidden md:inline-flex" />
+        </div>
+      </Panel>
+  )
+}
+
+function Tag({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+      <span className={`flex items-center rounded-md border px-2 py-1 text-xs font-medium ${className}`}>
+        {children}
+      </span>
+  )
+}
+
+function DeleteButton({ onClick, className }: { onClick: () => void; className?: string }) {
+  return (
+      <Button
+          variant="ghost"
+          size="custom"
+          onClick={onClick}
+          className={`text-danger border-danger/20 hover:bg-danger/10 shrink-0 border bg-transparent px-2 py-1 text-xs ${className}`}
+      >
+        <Trash2 className="mr-1 h-3.5 w-3.5" />
+        삭제
+      </Button>
+  )
+}

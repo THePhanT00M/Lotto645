@@ -1,42 +1,28 @@
-import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { errorMessage, fail, ok } from "@/lib/api-response"
+import { getAdminClient } from "@/lib/supabase/admin"
 
 /**
- * 모든 회원에게 알림 전송 API
  * POST /api/admin/notifications
+ *
+ * 전 회원에게 같은 알림을 발송한다. 회원 수가 많아도 한 번에 처리되도록
+ * 행 삽입 대신 DB 함수(send_notification_to_all)를 호출한다.
  */
-export async function POST(req: Request) {
-    try {
-        const { title, message } = await req.json()
+export async function POST(request: Request) {
+  try {
+    const { title, message } = await request.json()
 
-        if (!title || !message) {
-            return NextResponse.json(
-                { error: '제목과 내용을 입력해주세요.' },
-                { status: 400 }
-            )
-        }
+    if (!title || !message) return fail("제목과 내용을 입력해주세요.", 400)
 
-        // SQL Editor에서 생성한 함수(rpc)를 호출합니다.
-        // 이 방식은 DB 내부에서 처리되므로 수만 명의 사용자에게도 즉시 반영됩니다.
-        const { error } = await supabaseAdmin.rpc('send_notification_to_all', {
-            notif_title: title,
-            notif_message: message,
-        })
+    const { error } = await getAdminClient().rpc("send_notification_to_all", {
+      notif_title: title,
+      notif_message: message,
+    })
 
-        if (error) {
-            console.error('알림 전송 실패:', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
-        }
+    if (error) throw error
 
-        return NextResponse.json({
-            success: true,
-            message: '모든 회원에게 알림이 전송되었습니다.'
-        })
-
-    } catch (err) {
-        return NextResponse.json(
-            { error: '서버 내부 오류가 발생했습니다.' },
-            { status: 500 }
-        )
-    }
+    return ok({ message: "모든 회원에게 알림이 전송되었습니다." })
+  } catch (error) {
+    console.error("알림 전송 실패:", errorMessage(error))
+    return fail(errorMessage(error))
+  }
 }

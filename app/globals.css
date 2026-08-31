@@ -1,117 +1,195 @@
 @import "tailwindcss";
-@config "../tailwind.config.ts";
+@plugin "tailwindcss-animate";
 
-@layer utilities {
-    .text-balance {
-        text-wrap: balance;
-    }
+/* next-themes가 <html>에 붙이는 class="dark"를 다크 변형의 기준으로 삼는다. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-noto-sans-kr), sans-serif;
+  --breakpoint-xs: 375px;
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+}
+
+/*
+ * 앱 팔레트
+ *
+ * 화면 전반에 `bg-gray-100 dark:bg-[#1e1e1e]` 식으로 흩어져 있던 색을
+ * 역할 단위 토큰으로 묶는다. 라이트/다크 값은 여기서만 갈라지므로
+ * 컴포넌트는 `bg-panel` 하나만 쓰면 된다.
+ */
+:root {
+  --canvas: #ffffff;        /* 페이지 바탕 */
+  --panel: #f2f2f2;         /* 섹션 카드 */
+  --surface: #ffffff;       /* 패널 위에 얹는 카드 */
+  --surface-2: #f2f2f2;     /* 카드 안쪽 영역 */
+  --line: #e5e5e5;          /* 구분선·테두리 */
+  --ink: #0f0f0f;           /* 본문 텍스트 */
+  --ink-muted: #606060;     /* 보조 텍스트 */
+  --accent: #065fd4;        /* 강조 (링크·선택 상태) */
+  --accent-soft: #f2f8ff;   /* 강조 배경 */
+  --accent-line: #d3e3fd;   /* 강조 테두리 */
+  --danger: #cc0000;        /* 삭제·경고 */
+  --hover: #f2f2f2;         /* 아이콘 버튼 등의 hover 배경 */
+  --auth-canvas: #f0f2f5;   /* 로그인·회원가입 배경 */
+  --auth-card: #ffffff;     /* 로그인·회원가입 카드 */
+
+  /* shadcn/ui 토큰 (HSL 채널 값) */
+  --background: 0 0% 100%;
+  --foreground: 197 37% 24%;
+  --card: 197 100% 97%;
+  --card-foreground: 215 25% 27%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 197 37% 24%;
+  --primary: 197 37% 24%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 262 83% 58%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 25% 27%;
+  --accent-hsl: 262 83% 58%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 220 13% 91%;
+  --input: 197 100% 97%;
+  --ring: 262 83% 58%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --canvas: #000000;
+  --panel: #1e1e1e;
+  --surface: #272727;
+  --surface-2: #363636;
+  --line: #3f3f3f;
+  --ink: #f1f1f1;
+  --ink-muted: #aaaaaa;
+  --accent: #3ea6ff;
+  --accent-soft: #263850;
+  --accent-line: #263850;
+  --danger: #ff4d4d;
+  --hover: #1e1e1e;
+  --auth-canvas: #0f0f0f;
+  --auth-card: #1f1f1f;
+
+  --background: 0 0% 0%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 9%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent-hsl: 0 0% 14.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 0 0% 83.1%;
+}
+
+/* CSS 변수를 유틸리티 클래스(bg-panel, text-ink ...)로 노출한다. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-danger: var(--danger);
+  --color-hover: var(--hover);
+  --color-auth-canvas: var(--auth-canvas);
+  --color-auth-card: var(--auth-card);
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent-ui: hsl(var(--accent-hsl));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+/* Tailwind v3의 container 설정(가운데 정렬·최대 폭)을 유지한다. */
+@utility container {
+  margin-inline: auto;
+  width: 100%;
+  @media (width >= 1400px) { max-width: 1400px; }
 }
 
 @layer base {
-    :root {
-        /* Safe Area 변수 추가 */
-        --sat: env(safe-area-inset-top);
-        --sab: env(safe-area-inset-bottom);
+  * {
+    border-color: var(--color-line);
+  }
 
-        /* Updated to clean modern design tokens */
-        --background: 0 0% 100%; /* Pure white background */
-        --foreground: 197 37% 24%; /* Dark cyan for text */
-        --card: 197 100% 97%; /* Light cyan for cards */
-        --card-foreground: 215 25% 27%; /* Dark slate for card text */
-        --popover: 0 0% 100%; /* White for popovers */
-        --popover-foreground: 197 37% 24%; /* Dark cyan for popover text */
-        --primary: 197 37% 24%; /* Primary cyan color */
-        --primary-foreground: 0 0% 100%; /* White text on primary */
-        --secondary: 262 83% 58%; /* Vibrant purple accent */
-        --secondary-foreground: 0 0% 100%; /* White text on secondary */
-        --muted: 210 40% 96%; /* Light gray for muted elements */
-        --muted-foreground: 215 25% 27%; /* Dark slate for muted text */
-        --accent: 262 83% 58%; /* Purple for interactive elements */
-        --accent-foreground: 0 0% 100%; /* White text on accent */
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 220 13% 91%; /* Light border color */
-        --input: 197 100% 97%; /* Light cyan for inputs */
-        --ring: 262 83% 58%; /* Purple for focus rings */
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
-        --radius: 0.5rem;
-        --sidebar-background: 0 0% 98%;
-        --sidebar-foreground: 240 5.3% 26.1%;
-        --sidebar-primary: 240 5.9% 10%;
-        --sidebar-primary-foreground: 0 0% 98%;
-        --sidebar-accent: 240 4.8% 95.9%;
-        --sidebar-accent-foreground: 240 5.9% 10%;
-        --sidebar-border: 220 13% 91%;
-        --sidebar-ring: 217.2 91.2% 59.8%;
-    }
-    .dark {
-        --background: 0 0% 0%; /* Pure black background */
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
-        --sidebar-background: 240 5.9% 10%;
-        --sidebar-foreground: 240 4.8% 95.9%;
-        --sidebar-primary: 224.3 76.3% 48%;
-        --sidebar-primary-foreground: 0 0% 100%;
-        --sidebar-accent: 240 3.7% 15.9%;
-        --sidebar-accent-foreground: 240 4.8% 95.9%;
-        --sidebar-border: 240 3.7% 15.9%;
-        --sidebar-ring: 217.2 91.2% 59.8%;
-    }
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    /* iOS 노치 대응 */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
-@layer base {
-    * {
-        @apply border-border;
-    }
-    body {
-        @apply bg-background text-foreground font-sans;
-        padding-top: var(--sat);
-        padding-bottom: var(--sab);
-        min-height: 100vh;
-        background-attachment: fixed;
-    }
+@utility text-balance {
+  text-wrap: balance;
 }
 
-/* 추가: 스크롤바 스타일링 */
+/* 인증 화면은 body까지 전용 배경으로 덮는다. (iOS safe-area 여백 포함) */
+body.auth-page {
+  background-color: var(--color-auth-canvas);
+}
+
+/* 회차 목록처럼 자체 스크롤을 갖는 영역용 스크롤바 */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
+  background: var(--color-panel);
+  border-radius: 10px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #c5c5c5;
-    border-radius: 10px;
+  background: var(--color-line);
+  border-radius: 10px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #a0a0a0;
+  background: var(--color-ink-muted);
 }
