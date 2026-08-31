@@ -40,6 +40,15 @@ const MAX_PAST_OVERLAP = 4
 /** 서로 다른 시드로 학습해 평균을 내는 신경망 수 */
 const ENSEMBLE_SIZE = 3
 
+/**
+ * 이미 많이 내보낸 번호에 매기는 감점의 크기.
+ *
+ * 당첨 확률은 어떤 번호를 골라도 같지만, 같은 번호를 고른 사람이 많으면
+ * 당첨되었을 때 나눠 갖는 몫이 줄어든다. 그래서 이미 여러 번 추천한 번호는
+ * 조금 덜 고르게 한다. 기하 적합도를 뒤집지 않도록 가중치는 작게 둔다.
+ */
+const POPULARITY_PENALTY = 0.12
+
 /** 학습에 쓰지 않고 검증과 점수 보정에 쓰는 비율 */
 const VALIDATION_RATIO = 0.2
 
@@ -57,6 +66,8 @@ export interface Recommendation {
   nearestDraw: { drawNo: number; date: string; numbers: number[]; distance: number } | null
   /** 번호가 가장 많이 겹치는 과거 회차 */
   closestPastDraw: { drawNo: number; date: string; numbers: number[]; overlap: number } | null
+  /** 이번 회차에 이미 내보내 후보에서 뺀 조합 수 */
+  avoidedCount: number
 }
 
 /** 학습 결과 요약 */
@@ -81,10 +92,20 @@ export interface EngineStats {
   trainMs: number
 }
 
+/** 이미 내보낸 추천을 피하기 위해 넘기는 정보 */
+export interface AvoidInfo {
+  /** 이번 회차에 이미 추천한 조합 키 */
+  combinations: readonly string[]
+  /** 번호별로 이미 추천된 횟수 */
+  numberCounts: Readonly<Record<number, number>>
+  /** 이번 회차의 전체 추천 수 */
+  total: number
+}
+
 export interface RecommendationEngine {
   stats: EngineStats
-  /** 조합 하나를 새로 추천한다. */
-  recommend: () => Recommendation
+  /** 조합 하나를 새로 추천한다. 이미 내보낸 조합이 있으면 함께 넘긴다. */
+  recommend: (avoid?: AvoidInfo) => Recommendation
   /** 임의의 조합을 같은 기준으로 평가한다. */
   evaluate: (numbers: readonly number[]) => Recommendation
 }
@@ -163,23 +184,38 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
   const trainMs = performance.now() - startedAt
 
   /** 과거에 이미 나온 조합은 다시 추천하지 않는다. */
-  const seen = new Set(usable.map((draw) => combinationKey(draw.numbers)))
+  const pastCombinations = new Set(usable.map((draw) => combinationKey(draw.numbers)))
 
-  const score = (vector: readonly number[]) => {
+  /**
+   * 이미 여러 번 추천된 번호일수록 커지는 감점.
+   *
+   * 한 번호가 이번 회차 추천 전부에 들어 있으면 1에 가까워진다.
+   */
+  const popularityOf = (numbers: readonly number[], avoid?: AvoidInfo): number => {
+    if (!avoid || avoid.total === 0) return 0
+
+    const used = numbers.reduce((sum, number) => sum + (avoid.numberCounts[number] ?? 0), 0)
+    return Math.min(1, used / (avoid.total * PICK_COUNT))
+  }
+
+  const score = (vector: readonly number[], numbers?: readonly number[], avoid?: AvoidInfo) => {
     const networkScore = predict(vector)
     // 마할라노비스 거리는 차원 수만큼 커지므로, 차원으로 나눠 0~1로 눌러 준다.
     const typicality = Math.exp(-mahalanobisSquared(vector, center, inverseCovariance) / (2 * FEATURE_COUNT))
+    const fit = NETWORK_WEIGHT * networkScore + (1 - NETWORK_WEIGHT) * typicality
+    const penalty = numbers ? POPULARITY_PENALTY * popularityOf(numbers, avoid) : 0
+
     return {
       networkScore,
       typicality,
-      total: NETWORK_WEIGHT * networkScore + (1 - NETWORK_WEIGHT) * typicality,
+      total: Math.max(0, fit - penalty),
     }
   }
 
-  const describe = (numbers: number[]): Recommendation => {
+  const describe = (numbers: number[], avoid?: AvoidInfo): Recommendation => {
     const features = extractFeatures(numbers)
     const vector = standardize(featureVectorOf(numbers), mean, sd)
-    const parts = score(vector)
+    const parts = score(vector, numbers, avoid)
     const closest = overlapIndex.closestDraw(numbers)
 
     return {
@@ -188,6 +224,7 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
       score: parts.total,
       networkScore: parts.networkScore,
       typicality: parts.typicality,
+      avoidedCount: avoid?.combinations.length ?? 0,
       nearestDraw: findNearestDraw(vector, usable, positives),
       closestPastDraw: closest
           ? {
@@ -212,7 +249,10 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
   const quantile = (ratio: number) =>
       pastScores[Math.min(pastScores.length - 1, Math.max(0, Math.round(ratio * (pastScores.length - 1))))]
 
-  const recommend = (): Recommendation => {
+  const recommend = (avoid?: AvoidInfo): Recommendation => {
+    // 과거 당첨 조합에 더해, 이번 회차에 이미 내보낸 조합도 건너뛴다.
+    const seen = avoid ? new Set([...pastCombinations, ...avoid.combinations]) : pastCombinations
+
     // 과거 분포의 중간 구간에서 목표 점수를 하나 뽑는다. 매번 달라져 결과가 굳지 않는다.
     const target = quantile(0.35 + Math.random() * 0.55)
     const closeness = (value: number) => -Math.abs(value - target)
@@ -222,7 +262,7 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
     while (overlapIndex.maxOverlap(current) > MAX_PAST_OVERLAP || seen.has(combinationKey(current))) {
       current = randomCombination()
     }
-    let currentScore = score(standardize(featureVectorOf(current), mean, sd)).total
+    let currentScore = score(standardize(featureVectorOf(current), mean, sd), current, avoid).total
     let best = current
     let bestGap = closeness(currentScore)
 
@@ -236,7 +276,7 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
       if (seen.has(combinationKey(candidate))) continue
       if (overlapIndex.maxOverlap(candidate) > MAX_PAST_OVERLAP) continue
 
-      const candidateScore = score(standardize(featureVectorOf(candidate), mean, sd)).total
+      const candidateScore = score(standardize(featureVectorOf(candidate), mean, sd), candidate, avoid).total
       const delta = closeness(candidateScore) - closeness(currentScore)
 
       // 나빠지는 이동도 온도에 따라 받아들여 국소 최적에 갇히지 않게 한다.
@@ -251,7 +291,7 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
       }
     }
 
-    return describe([...best].sort((a, b) => a - b))
+    return describe([...best].sort((a, b) => a - b), avoid)
   }
 
   return {

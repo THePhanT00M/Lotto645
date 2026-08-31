@@ -1,6 +1,6 @@
 import { getApiUrl } from "@/lib/api-config"
 import { supabase } from "@/lib/supabase/client"
-import type { EngineStats, Recommendation } from "./engine"
+import type { AvoidInfo, EngineStats, Recommendation } from "./engine"
 
 const ENDPOINT = "/api/ai-recommendations"
 
@@ -46,5 +46,29 @@ export const logRecommendation = async (
     })
   } catch (error) {
     console.error("AI 추천 기록 저장 실패:", error)
+  }
+}
+
+/**
+ * 이번 회차에 이미 내보낸 추천을 불러온다.
+ *
+ * 같은 조합을 다시 내지 않고, 이미 여러 번 나간 번호는 덜 고르게 하는 데 쓴다.
+ * 실패하면 회피 없이 추천하도록 null을 돌려준다.
+ */
+export const fetchAvoidInfo = async (drawNo: number): Promise<AvoidInfo | undefined> => {
+  try {
+    const response = await fetch(getApiUrl(`${ENDPOINT}/avoid?drawNo=${drawNo}`))
+    const data = await response.json()
+
+    if (!data.success) return undefined
+
+    return {
+      combinations: data.combinations ?? [],
+      numberCounts: data.numberCounts ?? {},
+      total: data.total ?? 0,
+    }
+  } catch (error) {
+    console.error("추천 회피 정보를 불러오지 못했습니다:", error)
+    return undefined
   }
 }

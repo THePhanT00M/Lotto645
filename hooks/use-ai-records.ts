@@ -16,6 +16,18 @@ export interface AiRecord {
   network_score: number
   typicality: number
   features: PatternFeatures
+  /** 추천 당시의 모델 메타데이터 */
+  model: {
+    drawCount?: number
+    featureCount?: number
+    ensembleSize?: number
+    accuracy?: number
+    trainAccuracy?: number
+    brierBefore?: number
+    brierAfter?: number
+    maxPastOverlap?: number
+  } | null
+  model_version: string | null
   max_past_overlap: number | null
   matched_count: number | null
   bonus_matched: boolean | null

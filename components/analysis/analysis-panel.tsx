@@ -10,7 +10,7 @@ import { Panel, Surface } from "@/components/common/panel"
 import { SectionHeading } from "@/components/common/page-header"
 import { Button } from "@/components/ui/button"
 import { findMultiples } from "@/lib/lotto/analytics"
-import { logRecommendation } from "@/lib/lotto/ai-log"
+import { fetchAvoidInfo, logRecommendation } from "@/lib/lotto/ai-log"
 import { recordDraw } from "@/lib/lotto/draw-log"
 import { buildEngine, type EngineStats, type Recommendation, type RecommendationEngine } from "@/lib/lotto/engine"
 import { useWinningDraws } from "@/hooks/use-winning-draws"
@@ -51,15 +51,20 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
     // 상태 반영 뒤 계산해야 스켈레톤이 실제로 그려진다.
     await new Promise((resolve) => setTimeout(resolve, GENERATE_DELAY_MS))
 
+    const targetDrawNo = latestDrawNo + 1
+
+    // 이번 회차에 이미 내보낸 조합을 받아 두면 같은 번호를 다시 추천하지 않는다.
+    const avoid = await fetchAvoidInfo(targetDrawNo)
+
+    // 학습은 한 번만 하고, 회피 목록은 추천할 때마다 새로 넘긴다.
     engineRef.current ??= buildEngine(draws)
     const engine = engineRef.current
-    const result = engine.recommend()
+    const result = engine.recommend(avoid)
 
     setRecommendation(result)
     setStats(engine.stats)
     setIsGenerating(false)
 
-    const targetDrawNo = latestDrawNo + 1
     void recordDraw({ numbers: result.numbers, source: "ai", drawNo: targetDrawNo })
     // 추천 근거를 함께 남겨 두면 나중에 이 기록만으로 다시 학습할 수 있다.
     void logRecommendation(result, engine.stats, targetDrawNo)
