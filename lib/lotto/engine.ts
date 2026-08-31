@@ -1,7 +1,7 @@
 import { applyCalibration, brierScore, fitCalibration } from "./calibration"
 import { combinationKey } from "./combinations"
 import { ALL_NUMBERS, PICK_COUNT } from "./constants"
-import { createDecoy } from "./decoys"
+import { createDecoySet } from "./decoys"
 import { extractFeatures, featureVectorOf, FEATURE_COUNT, type PatternFeatures } from "./features"
 import {
   covarianceMatrix,
@@ -37,8 +37,13 @@ const NETWORK_WEIGHT = 0.6
  */
 const MAX_PAST_OVERLAP = 4
 
-/** 서로 다른 시드로 학습해 평균을 내는 신경망 수 */
-const ENSEMBLE_SIZE = 3
+/**
+ * 서로 다른 시드로 학습해 평균을 내는 신경망 수
+ *
+ * 학습 한 번이 70ms 남짓으로 줄어, 셋에서 다섯으로 늘려도 예전보다 빠르다.
+ * 평균을 내는 개수가 늘수록 초기값에 따른 점수 흔들림이 줄어든다.
+ */
+const ENSEMBLE_SIZE = 5
 
 /**
  * 이미 많이 내보낸 번호에 매기는 감점의 크기.
@@ -131,10 +136,9 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
 
   // 실제 당첨도 무작위 추첨이라 아무 조합이나 반대편에 세우면 배울 것이 없다.
   // 사람이 손으로 찍기 쉬운 규칙적인 모양을 반대편 예시로 쓴다.
-  const negatives: number[][] = []
-  for (let i = 0; i < DECOY_SAMPLES; i++) {
-    negatives.push(standardize(featureVectorOf(createDecoy()), mean, sd))
-  }
+  const negatives = createDecoySet(DECOY_SAMPLES).map((numbers) =>
+      standardize(featureVectorOf(numbers), mean, sd),
+  )
 
   // 표준화한 뒤라 중심은 원점에 가깝지만, 정확한 평균으로 다시 잡아준다.
   const center = meanVector(positives)
