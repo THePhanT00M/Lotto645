@@ -1,7 +1,7 @@
 "use client"
 
 import { Info, MousePointerClick, RotateCcw, SearchCheck, Sparkles } from "lucide-react"
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import AIRecommendation from "@/components/analysis/ai-recommendation"
 import { AnalysisSkeleton } from "@/components/analysis/analysis-skeleton"
 import MultipleNumberAnalysis from "@/components/analysis/multiple-number-analysis"
@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button"
 import { findMultiples } from "@/lib/lotto/analytics"
 import { fetchAvoidInfo, logRecommendation } from "@/lib/lotto/ai-log"
 import { recordDraw } from "@/lib/lotto/draw-log"
-import { buildEngine, type EngineStats, type Recommendation, type RecommendationEngine } from "@/lib/lotto/engine"
+import type { EngineStats, Recommendation } from "@/lib/lotto/engine"
+import { useRecommendationEngine } from "@/hooks/use-recommendation-engine"
 import { useWinningDraws } from "@/hooks/use-winning-draws"
 
 /** 스켈레톤이 화면에 그려질 틈을 주는 최소 지연 */
@@ -37,8 +38,8 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
   const [stats, setStats] = useState<EngineStats | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  /** 학습에 시간이 걸리므로 첫 추천 때 한 번만 만들고 이후에는 다시 쓴다. */
-  const engineRef = useRef<RecommendationEngine | null>(null)
+  // 학습은 워커에서 한 번만 하고, 이후 추천은 그 엔진을 다시 쓴다.
+  const engine = useRecommendationEngine(draws)
 
   const aiNumbers = recommendation?.numbers ?? []
   const analyzed = target === "ai" && aiNumbers.length > 0 ? aiNumbers : numbers
@@ -56,18 +57,20 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
     // 이번 회차에 이미 내보낸 조합을 받아 두면 같은 번호를 다시 추천하지 않는다.
     const avoid = await fetchAvoidInfo(targetDrawNo)
 
-    // 학습은 한 번만 하고, 회피 목록은 추천할 때마다 새로 넘긴다.
-    engineRef.current ??= buildEngine(draws)
-    const engine = engineRef.current
-    const result = engine.recommend(avoid)
+    try {
+      const { recommendation: result, stats: engineStats } = await engine.recommend(avoid)
 
-    setRecommendation(result)
-    setStats(engine.stats)
-    setIsGenerating(false)
+      setRecommendation(result)
+      setStats(engineStats)
 
-    void recordDraw({ numbers: result.numbers, source: "ai", drawNo: targetDrawNo })
-    // 추천 근거를 함께 남겨 두면 나중에 이 기록만으로 다시 학습할 수 있다.
-    void logRecommendation(result, engine.stats, targetDrawNo)
+      void recordDraw({ numbers: result.numbers, source: "ai", drawNo: targetDrawNo })
+      // 추천 근거를 함께 남겨 두면 나중에 이 기록만으로 다시 학습할 수 있다.
+      void logRecommendation(result, engineStats, targetDrawNo)
+    } catch (error) {
+      console.error("추천을 만들지 못했습니다:", error)
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   return (
