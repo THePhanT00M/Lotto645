@@ -49,7 +49,7 @@ export default function AdminNotificationPage() {
   }
 
   return (
-      <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <PageHeader icon={Send} title="알림 발송 관리" description="선택한 회원에게 알림을 일괄 발송합니다." />
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">

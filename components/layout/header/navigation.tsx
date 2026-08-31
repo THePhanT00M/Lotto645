@@ -62,7 +62,7 @@ export default function Navigation({
         {showMobileMenu && (
             <div className="bg-canvas fixed inset-0 z-50 flex flex-col lg:hidden">
               <div className="border-line border-b pt-[env(safe-area-inset-top)]">
-                <div className="container mx-auto flex items-center justify-between px-4 py-4">
+                <div className="mx-auto flex w-full 2xl:max-w-shell items-center justify-between px-4 py-4">
                   <Logo />
                   <div className="relative flex items-center gap-2">
                     {isLoggedIn && <ProfileDropdown userData={userData} onLogout={onLogout} />}
@@ -78,7 +78,7 @@ export default function Navigation({
                 </div>
               </div>
 
-              <nav className="container mx-auto flex-1 space-y-1 overflow-y-auto p-4 sm:p-6">
+              <nav className="mx-auto w-full 2xl:max-w-shell flex-1 space-y-1 overflow-y-auto p-4 sm:p-6">
                 {NAV_LINKS.map((link) => (
                     <Link
                         key={link.href}

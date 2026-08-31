@@ -30,7 +30,7 @@ export default function AdminStatsPage() {
   const drawNo = latestDraw?.drawNo
 
   return (
-      <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <PageHeader
             icon={BarChart3}
             title="관리자 통계 대시보드"
@@ -146,7 +146,7 @@ const TAB_TRIGGER_CLASS =
 
 function StatsSkeleton() {
   return (
-      <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <div className="space-y-2">
           <Skeleton className="h-7 w-64" />
           <Skeleton className="h-6 w-80" />
@@ -171,7 +171,7 @@ function StatsSkeleton() {
 
 function StatsError({ message }: { message: string }) {
   return (
-      <div className="container mx-auto flex min-h-[50vh] items-center justify-center p-6">
+      <div className="mx-auto w-full max-w-shell flex min-h-[50vh] items-center justify-center p-6">
         <div className="flex flex-col items-center rounded-lg border border-red-200 bg-[#fff0f0] p-8 dark:border-[#5c2b2b] dark:bg-[#3e1b1b]">
           <BarChart3 className="text-danger mb-4 h-16 w-16" />
           <h2 className="text-danger text-xl font-bold">데이터 로딩 실패</h2>

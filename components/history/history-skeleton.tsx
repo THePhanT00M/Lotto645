@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 /** 기록 목록을 불러오는 동안 보여주는 자리표시자. */
 export default function HistorySkeleton() {
   return (
-      <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton className="h-8 w-48" />

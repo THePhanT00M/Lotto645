@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
  */
 export default function FaqPage() {
   return (
-      <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <PageHeader
             icon={HelpCircle}
             title="자주 묻는 질문 (FAQ)"

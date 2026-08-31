@@ -27,7 +27,7 @@ export default function HomePage() {
   const resetNumbers = () => setDrawnNumbers([])
 
   return (
-      <div className="container mx-auto max-w-5xl px-4 py-6">
+      <div className="mx-auto w-full max-w-5xl px-4 py-6">
         <div className="space-y-8">
           <Panel>
             <Tabs defaultValue="machine" className="w-full">

@@ -50,7 +50,7 @@ export default function UpdateDrawPage() {
   const isLoading = state.kind === "loading"
 
   return (
-      <div className="container mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-2xl space-y-6 p-4 sm:p-6">
         <PageHeader
             icon={DatabaseZap}
             title="당첨 번호 업데이트"

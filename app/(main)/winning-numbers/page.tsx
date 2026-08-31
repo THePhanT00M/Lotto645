@@ -29,7 +29,7 @@ export default function WinningNumbersPage() {
   if (browser.isInitialLoading) return <WinningSkeleton />
 
   return (
-      <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <PageHeader icon={Trophy} title="역대 당첨번호" description="원하는 회차로 이동하여 당첨 번호를 확인하세요." />
 
         {browser.currentDraw && (

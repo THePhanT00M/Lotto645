@@ -8,6 +8,15 @@
   --font-sans: var(--font-noto-sans-kr), sans-serif;
   --breakpoint-xs: 375px;
 
+  /*
+   * 화면 전체를 감싸는 최대 폭(max-w-shell).
+   *
+   * Tailwind의 container 유틸리티는 브레이크포인트마다 그 값을 max-width로
+   * 잡아서, xs(375px)가 있으면 모바일에서 헤더가 375px로 좁아진다.
+   * 폭 제한은 이 토큰으로 명시하고, 2xl 이상에서만 적용한다.
+   */
+  --container-shell: 1400px;
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
@@ -144,13 +153,6 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
-}
-
-/* Tailwind v3의 container 설정(가운데 정렬·최대 폭)을 유지한다. */
-@utility container {
-  margin-inline: auto;
-  width: 100%;
-  @media (width >= 1400px) { max-width: 1400px; }
 }
 
 @layer base {
