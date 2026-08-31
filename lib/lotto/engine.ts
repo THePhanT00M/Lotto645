@@ -1,3 +1,4 @@
+import { applyCalibration, brierScore, fitCalibration } from "./calibration"
 import { combinationKey } from "./combinations"
 import { ALL_NUMBERS, PICK_COUNT } from "./constants"
 import { createDecoy } from "./decoys"
@@ -39,6 +40,9 @@ const MAX_PAST_OVERLAP = 4
 /** 서로 다른 시드로 학습해 평균을 내는 신경망 수 */
 const ENSEMBLE_SIZE = 3
 
+/** 학습에 쓰지 않고 검증과 점수 보정에 쓰는 비율 */
+const VALIDATION_RATIO = 0.2
+
 /** 조합 하나에 대한 평가 */
 export interface Recommendation {
   numbers: number[]
@@ -70,6 +74,9 @@ export interface EngineStats {
   ensembleSize: number
   /** 과거 회차와 허용하는 최대 겹침 */
   maxPastOverlap: number
+  /** 보정 전후의 Brier 점수. 낮을수록 점수가 실제 비율에 가깝다. */
+  brierBefore: number
+  brierAfter: number
   /** 학습에 걸린 시간(ms) */
   trainMs: number
 }
@@ -112,16 +119,45 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
   const center = meanVector(positives)
   const inverseCovariance = invert(covarianceMatrix(positives, center)) ?? identity(FEATURE_COUNT)
 
+  // 검증과 점수 보정에 쓸 몫을 앙상블 전체가 공유하도록 여기서 한 번만 떼어 둔다.
+  const split = <T,>(rows: readonly T[]) => {
+    const holdout = Math.floor(rows.length * VALIDATION_RATIO)
+    return { train: rows.slice(holdout), valid: rows.slice(0, holdout) }
+  }
+
+  const positiveSplit = split(positives)
+  const negativeSplit = split(negatives)
+
   // 한 번만 학습하면 초기값에 따라 점수가 흔들린다. 시드를 달리해 여러 번 학습하고 평균을 낸다.
   const networks = Array.from({ length: ENSEMBLE_SIZE }, (_, i) =>
-      trainNetwork(positives, negatives, { seed: 20260831 + i * 7919 }),
+      trainNetwork(positiveSplit.train, negativeSplit.train, {
+        seed: 20260831 + i * 7919,
+        validationRatio: 0,
+      }),
   )
 
-  const predict = (vector: readonly number[]) =>
+  const rawPredict = (vector: readonly number[]) =>
       networks.reduce((sum, net) => sum + net.predict(vector), 0) / networks.length
 
   const average = (pick: (net: (typeof networks)[number]) => number) =>
       networks.reduce((sum, net) => sum + pick(net), 0) / networks.length
+
+  // 검증 몫으로 눈금을 다시 매긴다. 학습에 쓴 데이터로 맞추면 보정이 의미를 잃는다.
+  const validationInputs = [...positiveSplit.valid, ...negativeSplit.valid]
+  const validationLabels = [
+    ...positiveSplit.valid.map(() => 1),
+    ...negativeSplit.valid.map(() => 0),
+  ]
+  const validationRaw = validationInputs.map(rawPredict)
+  const calibration = fitCalibration(validationRaw, validationLabels)
+
+  const predict = (vector: readonly number[]) => applyCalibration(rawPredict(vector), calibration)
+
+  const validationAccuracy =
+      validationLabels.length === 0
+          ? average((net) => net.accuracy)
+          : validationRaw.filter((p, i) => (p >= 0.5 ? 1 : 0) === validationLabels[i]).length /
+            validationLabels.length
 
   const overlapIndex = buildOverlapIndex(usable)
   const trainMs = performance.now() - startedAt
@@ -222,11 +258,13 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
     stats: {
       drawCount: usable.length,
       featureCount: FEATURE_COUNT,
-      accuracy: average((net) => net.validationAccuracy),
+      accuracy: validationAccuracy,
       trainAccuracy: average((net) => net.accuracy),
       loss: average((net) => net.loss),
       ensembleSize: ENSEMBLE_SIZE,
       maxPastOverlap: MAX_PAST_OVERLAP,
+      brierBefore: brierScore(validationRaw, validationLabels),
+      brierAfter: brierScore(validationRaw.map((p) => applyCalibration(p, calibration)), validationLabels),
       trainMs,
     },
     recommend,

@@ -60,7 +60,7 @@ export default function AIRecommendation({ recommendation, stats, isGenerating }
             <ScoreBar
                 icon={Brain}
                 label="패턴 판별 점수"
-                hint="규칙적으로 찍은 조합과 실제 당첨 조합을 가르도록 학습한 신경망의 출력"
+                hint="규칙적으로 찍은 조합과 실제 당첨 조합을 가르도록 학습한 신경망의 출력. 검증 데이터로 눈금을 다시 매겨 실제 비율에 가깝게 보정한 값입니다."
                 value={networkScore}
             />
             <ScoreBar
@@ -114,6 +114,9 @@ export default function AIRecommendation({ recommendation, stats, isGenerating }
           </span>
           <span>
             검증 정확도 {(stats.accuracy * 100).toFixed(1)}% (학습 {(stats.trainAccuracy * 100).toFixed(1)}%)
+          </span>
+          <span>
+            점수 보정 Brier {stats.brierBefore.toFixed(3)} → {stats.brierAfter.toFixed(3)}
           </span>
           <span>학습 {Math.round(stats.trainMs)}ms</span>
           <span>· 과거 데이터 기반 예측이며 당첨을 보장하지 않습니다.</span>

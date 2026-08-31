@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache"
 import { errorMessage, fail, ok } from "@/lib/api-response"
+import { matchDraw } from "@/lib/lotto/rank"
 import { getAdminClient } from "@/lib/supabase/admin"
 
 /** 동행복권 회차 조회 API */
@@ -81,9 +82,15 @@ export async function GET() {
       throw new Error(`DB 삽입 실패: ${insertError.message}`)
     }
 
+    const scored = await scorePendingRecommendations(supabase, record)
+
     REVALIDATE_PATHS.forEach((path) => revalidatePath(path))
 
-    return ok({ message: `${record.drawNo}회 당첨 번호가 성공적으로 DB에 삽입되었습니다.`, data: record })
+    return ok({
+      message: `${record.drawNo}회 당첨 번호가 성공적으로 DB에 삽입되었습니다.`,
+      data: record,
+      scoredRecommendations: scored,
+    })
   } catch (error) {
     console.error("Update Draw API Error:", errorMessage(error))
     return fail(errorMessage(error))
@@ -92,3 +99,50 @@ export async function GET() {
 
 /** "YYYYMMDD" → "YYYY-MM-DD" */
 const formatDate = (raw: string): string => `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
+
+/**
+ * 이번 회차를 겨냥했던 AI 추천 기록을 새 당첨 번호와 대조해 채점한다.
+ *
+ * 채점 실패가 당첨 번호 삽입 성공을 가리지 않도록 따로 감싼다.
+ */
+const scorePendingRecommendations = async (
+    supabase: ReturnType<typeof getAdminClient>,
+    draw: { drawNo: number; numbers: number[]; bonusNo: number; date: string },
+): Promise<number> => {
+  try {
+    const { data: records, error } = await supabase
+        .from("ai_recommendations")
+        .select("id, numbers")
+        .eq("draw_no", draw.drawNo)
+        .is("scored_at", null)
+
+    if (error) throw error
+    if (!records || records.length === 0) return 0
+
+    const scoredAt = new Date().toISOString()
+    let scored = 0
+
+    for (const record of records) {
+      const numbers = Array.isArray(record.numbers) ? (record.numbers as number[]) : []
+      const match = matchDraw(numbers, draw)
+
+      const { error: updateError } = await supabase
+          .from("ai_recommendations")
+          .update({
+            matched_count: match.matchCount,
+            bonus_matched: match.bonusMatch,
+            prize_rank: match.rank,
+            scored_at: scoredAt,
+          })
+          .eq("id", record.id)
+
+      if (updateError) throw updateError
+      scored++
+    }
+
+    return scored
+  } catch (error) {
+    console.error("AI 추천 채점 실패:", errorMessage(error))
+    return 0
+  }
+}
