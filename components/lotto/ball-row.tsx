@@ -31,7 +31,7 @@ export function BallRow({ numbers, size = "md", bonusNo, slots, className, ballC
 
         {bonusNo !== undefined && (
             <>
-              <span className="text-ink-muted mx-1 font-medium">+</span>
+              <span className="text-ink-muted mx-1 shrink-0 font-medium">+</span>
               <Ball number={bonusNo} size={size} className={ballClassName} />
             </>
         )}
