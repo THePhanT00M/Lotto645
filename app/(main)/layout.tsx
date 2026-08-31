@@ -1,73 +1,49 @@
-import type React from "react"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import { cookies } from "next/headers"
-import { createServerClient } from "@supabase/ssr"
+import type { ReactNode } from "react"
+import Footer from "@/components/layout/footer"
+import Header from "@/components/layout/header"
+import type { UserData } from "@/hooks/use-header-data"
+import { createServerSupabase } from "@/lib/supabase/server"
 
-export default async function MainLayout({
-                                             children,
-                                         }: {
-    children: React.ReactNode
-}) {
-    const cookieStore = await cookies()
+/**
+ * 헤더·푸터가 붙는 일반 화면 레이아웃.
+ *
+ * 로그인 정보와 안 읽은 알림 수를 서버에서 미리 조회해 헤더에 넘겨,
+ * 첫 화면에서 로그인 상태가 늦게 반영되는 깜빡임을 막는다.
+ */
+export default async function MainLayout({ children }: { children: ReactNode }) {
+  const supabase = await createServerSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
 
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                getAll() {
-                    return cookieStore.getAll()
-                },
-                setAll(cookiesToSet) {
-                    try {
-                        cookiesToSet.forEach(({ name, value, options }) =>
-                            cookieStore.set(name, value, options)
-                        )
-                    } catch {
-                        // 서버 컴포넌트에서의 set은 미들웨어 처리가 권장되므로 무시 가능합니다.
-                    }
-                },
-            },
-        }
-    )
+  let userData: UserData | null = null
+  let unreadCount = 0
 
-    const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const [{ data: profile }, { count }] = await Promise.all([
+      supabase.from("profiles").select("nickname, role, level, avatar_url, phone_number").eq("id", user.id).single(),
+      supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("is_read", false),
+    ])
 
-    let initialUnreadCount = 0
-    let userData = null
-
-    if (user) {
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("nickname, role, level, avatar_url, phone_number")
-            .eq("id", user.id)
-            .single()
-
-        userData = {
-            id: user.id,
-            name: profile?.nickname || user.user_metadata?.full_name || user.user_metadata?.name || "사용자",
-            email: user.email || "",
-            avatarUrl: profile?.avatar_url || user.user_metadata?.avatar_url || null,
-            role: profile?.role || 'user',
-            level: profile?.level || 0,
-            phoneNumber: profile?.phone_number || ""
-        }
-
-        const { count } = await supabase
-            .from("notifications")
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .eq("is_read", false)
-
-        initialUnreadCount = count || 0
+    userData = {
+      id: user.id,
+      name: profile?.nickname || user.user_metadata?.full_name || user.user_metadata?.name || "사용자",
+      email: user.email ?? "",
+      avatarUrl: profile?.avatar_url ?? user.user_metadata?.avatar_url ?? null,
+      role: profile?.role ?? "user",
+      level: profile?.level ?? 0,
+      phoneNumber: profile?.phone_number ?? "",
     }
+    unreadCount = count ?? 0
+  }
 
-    return (
-        <>
-            <Header initialUser={userData} initialUnreadCount={initialUnreadCount} />
-            <main className="flex-1 bg-white dark:bg-black">{children}</main>
-            <Footer />
-        </>
-    )
+  return (
+      <>
+        <Header initialUser={userData} initialUnreadCount={unreadCount} />
+        <main className="bg-canvas flex-1">{children}</main>
+        <Footer />
+      </>
+  )
 }

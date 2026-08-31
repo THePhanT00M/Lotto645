@@ -1,178 +1,147 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import {
-  Info,
-  AlertTriangle,
-  Trophy,
-  MousePointerClick,
-  Shuffle,
-  CheckCircle2
-} from "lucide-react"
-import LottoMachine from "@/components/lotto-machine"
-import NumberSelector from "@/components/number-selector"
-import LottoAnalysis from "@/components/lotto-analysis"
+import { AlertTriangle, CheckCircle2, Info, MousePointerClick, Shuffle, Trophy } from "lucide-react"
+import { useState } from "react"
+import AnalysisPanel from "@/components/analysis/analysis-panel"
+import { Panel, Surface } from "@/components/common/panel"
+import { SectionHeading } from "@/components/common/page-header"
+import LottoMachine from "@/components/lotto/machine"
+import NumberSelector from "@/components/lotto/number-selector"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { supabase } from "@/lib/supabaseClient" // [추가] supabase import
+import { useUpcomingDrawNo } from "@/hooks/use-winning-draws"
+import { FIRST_PRIZE_ODDS, PICK_COUNT } from "@/lib/lotto/constants"
 
-export default function Home() {
-  // 1. 상태 초기화
+/**
+ * 메인 화면
+ *
+ * 구성
+ *   - 로또 추첨기 : 공이 도는 추첨통을 시뮬레이션해 완전 무작위로 6개를 뽑는다.
+ *   - 수동 추첨기 : 번호를 직접 고르거나 일부만 고정하고 나머지를 자동으로 채운다.
+ *   - 번호 분석   : 6개가 채워지면 과거 당첨 이력과 대조하고 AI 추천을 받을 수 있다.
+ */
+export default function HomePage() {
   const [drawnNumbers, setDrawnNumbers] = useState<number[]>([])
-  const [activeTab, setActiveTab] = useState("machine")
+  // 지금 뽑는 번호가 어느 회차를 겨냥하는지 기록에 남기기 위해 한 번만 조회한다.
+  const upcomingDrawNo = useUpcomingDrawNo()
 
-  // [추가] 목표 회차(다음 회차) 상태 관리 (부모에서 한 번만 호출)
-  const [targetDrawNo, setTargetDrawNo] = useState<number | undefined>(undefined)
-
-  // [추가] 컴포넌트 마운트 시 최신 회차 정보 가져오기 (1회만 실행)
-  useEffect(() => {
-    const fetchTargetDrawNo = async () => {
-      try {
-        const { data, error } = await supabase
-            .from("winning_numbers")
-            .select("drawNo")
-            .order("drawNo", { ascending: false })
-            .limit(1)
-            .single()
-
-        if (data) {
-          setTargetDrawNo(data.drawNo + 1) // 다음 회차 = 최신 회차 + 1
-        }
-      } catch (e) {
-        console.error("Failed to fetch latest draw number:", e)
-      }
-    }
-    fetchTargetDrawNo()
-  }, [])
-
-  // 2. 추첨 완료 핸들러
-  const handleDrawComplete = (numbers: number[]) => {
-    setDrawnNumbers(numbers)
-  }
-
-  // 3. 초기화 핸들러
-  const handleReset = () => {
-    setDrawnNumbers([])
-  }
+  const resetNumbers = () => setDrawnNumbers([])
 
   return (
-      <div className="container mx-auto px-4 py-6 max-w-5xl">
+      <div className="container mx-auto max-w-5xl px-4 py-6">
         <div className="space-y-8">
-
-          {/* 4. 메인 추첨기 섹션 */}
-          <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f]">
-            <Tabs defaultValue="machine" className="w-full" onValueChange={(value) => setActiveTab(value)}>
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-200 dark:bg-[#262626] p-1 rounded-lg">
-                <TabsTrigger
-                    value="machine"
-                    className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[#a3a3a3] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white transition-all"
-                >
-                  <Shuffle className="w-4 h-4" />
+          <Panel>
+            <Tabs defaultValue="machine" className="w-full">
+              <TabsList className="mb-6 grid w-full grid-cols-2 rounded-lg bg-gray-200 p-1 dark:bg-[#262626]">
+                <TabsTrigger value="machine" className={TAB_TRIGGER_CLASS}>
+                  <Shuffle className="h-4 w-4" />
                   로또 추첨기
                 </TabsTrigger>
-                <TabsTrigger
-                    value="selector"
-                    className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-gray-500 dark:text-[#a3a3a3] data-[state=active]:dark:bg-black data-[state=active]:dark:text-white transition-all"
-                >
-                  <MousePointerClick className="w-4 h-4" />
+                <TabsTrigger value="selector" className={TAB_TRIGGER_CLASS}>
+                  <MousePointerClick className="h-4 w-4" />
                   수동 추첨기
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="machine" className="flex flex-col items-center mt-2">
-                {/* [수정] targetDrawNo prop 전달 */}
+              <TabsContent value="machine" className="mt-2 flex flex-col items-center">
                 <LottoMachine
-                    onDrawComplete={handleDrawComplete}
-                    onReset={handleReset}
-                    targetDrawNo={targetDrawNo}
+                    onDrawComplete={setDrawnNumbers}
+                    onReset={resetNumbers}
+                    targetDrawNo={upcomingDrawNo}
                 />
               </TabsContent>
 
               <TabsContent value="selector" className="mt-2">
-                {/* [수정] targetDrawNo prop 전달 */}
                 <NumberSelector
-                    onSelectComplete={handleDrawComplete}
-                    onReset={handleReset}
+                    onSelectComplete={setDrawnNumbers}
+                    onReset={resetNumbers}
                     drawnNumbers={drawnNumbers}
-                    targetDrawNo={targetDrawNo}
+                    targetDrawNo={upcomingDrawNo}
                 />
               </TabsContent>
             </Tabs>
-          </div>
+          </Panel>
 
-          {/* 5. 분석 섹션 */}
-          {drawnNumbers.length === 6 && (
-              <LottoAnalysis
-                  numbers={drawnNumbers}
-                  key={drawnNumbers.join("-")}
-              />
+          {drawnNumbers.length === PICK_COUNT && (
+              <AnalysisPanel numbers={drawnNumbers} key={drawnNumbers.join("-")} />
           )}
 
-          {/* 6. 로또 정보 및 안내 섹션 */}
-          <div className="bg-gray-100 dark:bg-[#1e1e1e] rounded-xl p-5 border border-[#e5e5e5] dark:border-[#3f3f3f] space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h2 className="text-xl font-bold text-[#0f0f0f] dark:text-[#f1f1f1]">로또 정보</h2>
-            </div>
+          <LottoGuide />
+        </div>
+      </div>
+  )
+}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 기본 정보 카드 */}
-              <div className="bg-white dark:bg-[#262626] rounded-lg p-4 border border-[#e5e5e5] dark:border-[#3f3f3f] space-y-3">
-                <h3 className="text-md font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  기본 정보
-                </h3>
-                <ul className="space-y-2 text-sm text-[#606060] dark:text-[#aaaaaa]">
-                  <li className="flex items-start gap-2">
-                    <span className="block mt-1 w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-600 flex-shrink-0" />
-                    <span>로또 6/45는 1부터 45까지의 숫자 중 6개를 선택하는 복권입니다.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="block mt-1 w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-600 flex-shrink-0" />
-                    <span>당첨번호는 매주 <strong>토요일 저녁</strong>에 추첨됩니다.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="block mt-1 w-1 h-1 rounded-full bg-gray-400 dark:bg-gray-600 flex-shrink-0" />
-                    <span className="flex items-center gap-1">
-                    1등 당첨 확률:
-                    <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded text-xs font-medium flex items-center">
-                      <Trophy className="w-3 h-3 mr-1" /> 1 / 8,145,060
-                    </span>
+const TAB_TRIGGER_CLASS =
+    "text-ink-muted flex items-center justify-center gap-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm dark:data-[state=active]:bg-black dark:data-[state=active]:text-white"
+
+/** 로또 규칙과 추첨기 사용법 안내. */
+function LottoGuide() {
+  return (
+      <Panel className="space-y-4">
+        <SectionHeading icon={Info} title="로또 정보" />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Surface className="space-y-3">
+            <h3 className="text-ink flex items-center gap-2 font-semibold">
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+              기본 정보
+            </h3>
+            <ul className="text-ink-muted space-y-2 text-sm">
+              <GuideItem>로또 6/45는 1부터 45까지의 숫자 중 6개를 선택하는 복권입니다.</GuideItem>
+              <GuideItem>
+                당첨번호는 매주 <strong>토요일 저녁</strong>에 추첨됩니다.
+              </GuideItem>
+              <GuideItem>
+                <span className="flex flex-wrap items-center gap-1">
+                  1등 당첨 확률:
+                  <span className="flex items-center rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
+                    <Trophy className="mr-1 h-3 w-3" /> 1 / {FIRST_PRIZE_ODDS.toLocaleString()}
                   </span>
-                  </li>
-                </ul>
-              </div>
+                </span>
+              </GuideItem>
+            </ul>
+          </Surface>
 
-              {/* 이용 안내 카드 */}
-              <div className="bg-white dark:bg-[#262626] rounded-lg p-4 border border-[#e5e5e5] dark:border-[#3f3f3f] space-y-3">
-                <h3 className="text-md font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] flex items-center gap-2">
-                  <MousePointerClick className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                  이용 안내
-                </h3>
-                <div className="space-y-3 text-sm text-[#606060] dark:text-[#aaaaaa]">
-                  <div>
-                    <span className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] block mb-1">로또 추첨기</span>
-                    <p className="leading-relaxed">물리적 추첨 방식을 시뮬레이션하여 완전히 랜덤한 번호를 생성합니다.</p>
-                  </div>
-                  <div className="border-t border-[#e5e5e5] dark:border-[#3f3f3f] pt-3">
-                    <span className="font-semibold text-[#0f0f0f] dark:text-[#f1f1f1] block mb-1">수동 추첨기</span>
-                    <p className="leading-relaxed">원하는 번호를 직접 선택하거나, 특정 번호를 고정/제외하고 나머지를 자동 생성할 수 있습니다.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 주의사항 */}
-            <div className="bg-[#fff0f0] dark:bg-[#2a1515] p-4 rounded-lg flex items-start gap-3 text-sm text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50">
-              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <Surface className="space-y-3">
+            <h3 className="text-ink flex items-center gap-2 font-semibold">
+              <MousePointerClick className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              이용 안내
+            </h3>
+            <div className="text-ink-muted space-y-3 text-sm">
               <div>
-                <p className="font-semibold text-red-700 dark:text-red-300">주의사항</p>
-                <p className="mt-1 opacity-90">
-                  복권 구매는 <strong className="underline decoration-red-400 underline-offset-2">만 19세 이상만</strong> 가능합니다. 과도한 복권 몰입은 도박 중독을 유발할 수 있으니 건전한 여가 생활로 즐겨주세요.
+                <span className="text-ink mb-1 block font-semibold">로또 추첨기</span>
+                <p className="leading-relaxed">물리적 추첨 방식을 시뮬레이션하여 완전히 랜덤한 번호를 생성합니다.</p>
+              </div>
+              <div className="border-line border-t pt-3">
+                <span className="text-ink mb-1 block font-semibold">수동 추첨기</span>
+                <p className="leading-relaxed">
+                  원하는 번호를 직접 선택하거나, 특정 번호를 고정/제외하고 나머지를 자동 생성할 수 있습니다.
                 </p>
               </div>
             </div>
+          </Surface>
+        </div>
+
+        <div className="flex items-start gap-3 rounded-lg border border-red-100 bg-[#fff0f0] p-4 text-sm text-red-600 dark:border-red-900/50 dark:bg-[#2a1515] dark:text-red-400">
+          <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-red-700 dark:text-red-300">주의사항</p>
+            <p className="mt-1 opacity-90">
+              복권 구매는{" "}
+              <strong className="underline decoration-red-400 underline-offset-2">만 19세 이상만</strong> 가능합니다.
+              과도한 복권 몰입은 도박 중독을 유발할 수 있으니 건전한 여가 생활로 즐겨주세요.
+            </p>
           </div>
         </div>
-      </div>
+      </Panel>
+  )
+}
+
+function GuideItem({ children }: { children: React.ReactNode }) {
+  return (
+      <li className="flex items-start gap-2">
+        <span className="mt-1 block h-1 w-1 flex-shrink-0 rounded-full bg-gray-400 dark:bg-gray-600" />
+        <span>{children}</span>
+      </li>
   )
 }

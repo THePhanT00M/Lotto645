@@ -1,122 +1,107 @@
-import { NextResponse, NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { UAParser } from "ua-parser-js";
+import type { NextRequest } from "next/server"
+import { UAParser } from "ua-parser-js"
+import { errorMessage, fail, ok } from "@/lib/api-response"
+import { PICK_COUNT } from "@/lib/lotto/constants"
+import { getAdminClient } from "@/lib/supabase/admin"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
-
-interface RequestBody {
-  numbers: number[];
-  source: 'manual' | 'machine' | 'ai';
-  score?: number;
-  userId?: string;
-  memo?: string;
+interface LogDrawBody {
+  numbers: number[]
+  source: "manual" | "machine" | "ai"
+  score?: number
+  userId?: string
+  memo?: string
 }
 
 /**
- * POST: 번호 생성 기록 저장
+ * POST /api/log-draw
+ *
+ * 생성된 번호를 기록한다. 회차 번호는 클라이언트를 믿지 않고 서버에서
+ * 최신 회차 + 1로 정한다. 비로그인 사용자의 기록도 통계를 위해 남긴다.
  */
 export async function POST(request: NextRequest) {
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return NextResponse.json(
-        { success: false, message: "서버 구성 오류" },
-        { status: 500 }
-    );
-  }
-
   try {
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    });
+    const supabase = getAdminClient()
+    const body: LogDrawBody = await request.json()
 
-    const { data: latestDraw } = await supabaseAdmin
+    if (!Array.isArray(body.numbers) || body.numbers.length !== PICK_COUNT || !body.source) {
+      return fail("필수 데이터 누락", 400)
+    }
+
+    const { data: latestDraw } = await supabase
         .from("winning_numbers")
         .select("drawNo")
         .order("drawNo", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle()
 
-    const targetDrawNo = (latestDraw?.drawNo || 0) + 1;
-    const body: RequestBody = await request.json();
+    const userId = await resolveUserId(request, body.userId)
+    const parsedUa = new UAParser(request.headers.get("user-agent") ?? "unknown").getResult()
 
-    if (!body.numbers || body.numbers.length !== 6 || !body.source) {
-      return NextResponse.json({ success: false, message: "필수 데이터 누락" }, { status: 400 });
-    }
-
-    let userId = body.userId || null;
-    const authHeader = request.headers.get("Authorization");
-
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.split(" ")[1];
-      const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-      if (user) userId = user.id;
-    }
-
-    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? request.headers.get('x-real-ip') ?? null;
-    const uaString = request.headers.get('user-agent') || "unknown";
-    const parser = new UAParser(uaString);
-    const deviceInfo = JSON.stringify(parser.getResult());
-
-    const dataToInsert: any = {
+    const { error } = await supabase.from("generated_numbers").insert({
       numbers: body.numbers,
       source: body.source,
       memo: body.memo,
-      draw_no: targetDrawNo,
-      ip_address: clientIp,
-      device_info: deviceInfo,
+      draw_no: (latestDraw?.drawNo ?? 0) + 1,
+      ip_address: readClientIp(request),
+      device_info: JSON.stringify(parsedUa),
       user_id: userId,
-      is_deleted: 'N', // 기본값 명시
-    };
-    if (body.score !== undefined) dataToInsert.score = body.score;
+      is_deleted: "N",
+      ...(body.score !== undefined && { score: body.score }),
+    })
 
-    const { error: insertError } = await supabaseAdmin.from("generated_numbers").insert(dataToInsert);
-    if (insertError) throw insertError;
+    if (error) throw error
 
-    return NextResponse.json({ success: true, message: "기록되었습니다.", isGuest: !userId });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return ok({ message: "기록되었습니다.", isGuest: !userId })
+  } catch (error) {
+    return fail(errorMessage(error))
   }
 }
 
 /**
- * DELETE: 서버 기록 삭제 (Soft Delete)
- * 실제 삭제 대신 is_deleted 플래그와 deleted_at 시간을 업데이트합니다.
+ * DELETE /api/log-draw
+ *
+ * 본인 기록을 소프트 삭제한다. 통계 집계를 위해 행은 남기고 플래그만 바꾼다.
  */
 export async function DELETE(request: NextRequest) {
-  if (!supabaseUrl || !supabaseServiceKey) return NextResponse.json({ success: false }, { status: 500 });
-
   try {
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    const supabase = getAdminClient()
+    const token = readBearerToken(request)
+    if (!token) return fail("인증 필요", 401)
 
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader) return NextResponse.json({ success: false, message: "인증 필요" }, { status: 401 });
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    if (authError || !user) return fail("권한 없음", 401)
 
-    const token = authHeader.split(" ")[1];
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    const { id } = await request.json()
+    if (!id) return fail("ID 누락", 400)
 
-    if (authError || !user) return NextResponse.json({ success: false, message: "권한 없음" }, { status: 401 });
-
-    const { id } = await request.json();
-    if (!id) return NextResponse.json({ success: false, message: "ID 누락" }, { status: 400 });
-
-    // [Soft Delete 적용]
-    // 본인의 기록만 삭제 처리 가능하도록 user_id 조건 유지
-    // is_deleted를 'Y'로 변경하고, deleted_at에 현재 시간을 기록
-    const { error: updateError } = await supabaseAdmin
+    const { error } = await supabase
         .from("generated_numbers")
-        .update({
-          is_deleted: 'Y',
-          deleted_at: new Date().toISOString()
-        })
+        .update({ is_deleted: "Y", deleted_at: new Date().toISOString() })
         .eq("id", id)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
 
-    if (updateError) throw updateError;
+    if (error) throw error
 
-    return NextResponse.json({ success: true, message: "삭제되었습니다." });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return ok({ message: "삭제되었습니다." })
+  } catch (error) {
+    return fail(errorMessage(error))
   }
 }
+
+/** 토큰이 있으면 토큰의 사용자를, 없으면 요청 본문의 값을 쓴다. */
+const resolveUserId = async (request: NextRequest, fallback?: string): Promise<string | null> => {
+  const token = readBearerToken(request)
+  if (!token) return fallback ?? null
+
+  const { data: { user } } = await getAdminClient().auth.getUser(token)
+  return user?.id ?? fallback ?? null
+}
+
+const readBearerToken = (request: NextRequest): string | null => {
+  const header = request.headers.get("Authorization")
+  return header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : null
+}
+
+/** 프록시를 거친 요청에서 원 클라이언트 IP를 찾는다. */
+const readClientIp = (request: NextRequest): string | null =>
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? request.headers.get("x-real-ip")

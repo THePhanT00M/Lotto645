@@ -1,28 +1,22 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 
-export const useMobile = (): boolean => {
+/** 모바일로 취급하는 최대 너비 */
+const MOBILE_BREAKPOINT = 768
+
+/** 화면 폭이 모바일 기준 미만인지 알려준다. */
+export function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768) // Adjust breakpoint as needed
-    }
+    const query = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const update = () => setIsMobile(query.matches)
 
-    // Set initial value
-    handleResize()
-
-    // Listen for window resize events
-    window.addEventListener("resize", handleResize)
-
-    // Clean up event listener on unmount
-    return () => {
-      window.removeEventListener("resize", handleResize)
-    }
+    update()
+    query.addEventListener("change", update)
+    return () => query.removeEventListener("change", update)
   }, [])
 
   return isMobile
 }
-
-export const useIsMobile = useMobile
