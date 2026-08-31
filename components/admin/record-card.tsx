@@ -1,0 +1,226 @@
+"use client"
+
+import { ChevronDown, Download } from "lucide-react"
+import { useRef, useState } from "react"
+import PaperPattern from "@/components/analysis/paper-pattern"
+import { rankStyle } from "@/components/common/rank-badge"
+import { Ball } from "@/components/lotto/ball"
+import { Button } from "@/components/ui/button"
+import type { AiRecord } from "@/hooks/use-ai-records"
+import { FEATURE_KEYS, FEATURE_LABELS } from "@/lib/lotto/features"
+import { rankLabel } from "@/lib/lotto/rank"
+import { cn } from "@/lib/utils"
+
+/** 내려받을 스냅샷 이미지의 가로 크기 */
+const SNAPSHOT_WIDTH = 720
+
+interface RecordCardProps {
+  record: AiRecord
+}
+
+/**
+ * 추천 기록 한 건.
+ *
+ * 접혀 있을 때는 번호와 결과만 보이고, 펼치면 저장해 둔 기하 특징으로
+ * 그 추천이 용지에서 어떤 모양이었는지 다시 그려 준다.
+ */
+export default function RecordCard({ record }: RecordCardProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const snapshotRef = useRef<HTMLDivElement>(null)
+
+  return (
+      <div className="bg-surface border-line overflow-hidden rounded-lg border">
+        <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            aria-expanded={isOpen}
+            className="hover:bg-hover flex w-full flex-col gap-3 p-3 text-left transition-colors sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <ChevronDown className={cn("text-ink-muted h-4 w-4 shrink-0 transition-transform", isOpen && "rotate-180")} />
+            <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-1 text-xs font-semibold">
+              {record.draw_no}회
+            </span>
+            <div className="flex flex-wrap gap-1">
+              {record.numbers.map((number) => (
+                  <Ball key={number} number={number} size="xs" />
+              ))}
+            </div>
+          </div>
+
+          <div className="text-ink-muted flex flex-wrap items-center gap-3 pl-7 text-xs sm:pl-0">
+            <span>점수 {(record.score * 100).toFixed(1)}%</span>
+            <span>겹침 {record.max_past_overlap ?? "-"}개</span>
+            {record.scored_at ? (
+                <span className={cn("rounded-md border px-2 py-0.5 font-semibold", rankStyle(record.prize_rank))}>
+                  {record.matched_count}개 · {rankLabel(record.prize_rank)}
+                </span>
+            ) : (
+                <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-0.5">
+                  채점 대기
+                </span>
+            )}
+          </div>
+        </button>
+
+        {isOpen && (
+            <div className="border-line grid grid-cols-1 gap-4 border-t p-4 md:grid-cols-2">
+              <div className="bg-surface-2 rounded-lg p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <h4 className="text-ink text-sm font-semibold">용지 스냅샷</h4>
+                  <SnapshotButton target={snapshotRef} record={record} />
+                </div>
+                <div ref={snapshotRef} className="bg-surface rounded-md p-2">
+                  <PaperPattern numbers={record.numbers} className="mx-auto w-full max-w-[320px]" />
+                </div>
+                <p className="text-ink-muted mt-2 text-center text-xs">
+                  {new Date(record.created_at).toLocaleString()} 추천
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="bg-surface-2 rounded-lg p-3">
+                  <h4 className="text-ink mb-2 text-sm font-semibold">추천 당시 점수</h4>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                    <Row label="최종 점수" value={`${(record.score * 100).toFixed(1)}%`} />
+                    <Row label="패턴 판별" value={`${(record.network_score * 100).toFixed(1)}%`} />
+                    <Row label="분포 적합도" value={`${(record.typicality * 100).toFixed(1)}%`} />
+                    <Row label="과거 최대 겹침" value={`${record.max_past_overlap ?? "-"}개`} />
+                  </dl>
+                </div>
+
+                {record.model && (
+                    <div className="bg-surface-2 rounded-lg p-3">
+                      <h4 className="text-ink mb-2 text-sm font-semibold">모델</h4>
+                      <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                        <Row label="학습 회차" value={`${record.model.drawCount?.toLocaleString() ?? "-"}회`} />
+                        <Row label="앙상블" value={`${record.model.ensembleSize ?? "-"}개`} />
+                        <Row
+                            label="검증 정확도"
+                            value={record.model.accuracy != null ? `${(record.model.accuracy * 100).toFixed(1)}%` : "-"}
+                        />
+                        <Row
+                            label="보정 Brier"
+                            value={
+                              record.model.brierAfter != null
+                                  ? `${record.model.brierBefore?.toFixed(3) ?? "-"} → ${record.model.brierAfter.toFixed(3)}`
+                                  : "-"
+                            }
+                        />
+                      </dl>
+                    </div>
+                )}
+
+                <div className="bg-surface-2 rounded-lg p-3">
+                  <h4 className="text-ink mb-2 text-sm font-semibold">기하 특징 {FEATURE_KEYS.length}가지</h4>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    {FEATURE_KEYS.map((key) => (
+                        <Row key={key} label={FEATURE_LABELS[key]} value={formatFeature(record.features?.[key])} />
+                    ))}
+                  </dl>
+                </div>
+              </div>
+            </div>
+        )}
+      </div>
+  )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+      <>
+        <dt className="text-ink-muted truncate">{label}</dt>
+        <dd className="text-ink text-right font-medium">{value}</dd>
+      </>
+  )
+}
+
+const formatFeature = (value: number | undefined): string => {
+  if (value === undefined) return "-"
+  return Number.isInteger(value) ? String(value) : value.toFixed(2)
+}
+
+/**
+ * 용지 스냅샷을 PNG로 내려받는다.
+ *
+ * SVG를 그대로 저장하면 CSS 변수로 잡은 색이 빠지므로, 계산된 색을 인라인으로
+ * 옮겨 붙인 뒤 캔버스에 그려 내보낸다.
+ */
+function SnapshotButton({ target, record }: { target: React.RefObject<HTMLDivElement | null>; record: AiRecord }) {
+  const [isSaving, setIsSaving] = useState(false)
+
+  const save = async () => {
+    const svg = target.current?.querySelector("svg")
+    if (!svg) return
+
+    setIsSaving(true)
+    try {
+      const clone = svg.cloneNode(true) as SVGSVGElement
+      inlineComputedColors(svg, clone)
+
+      const viewBox = svg.viewBox.baseVal
+      const ratio = viewBox.height / viewBox.width
+      const width = SNAPSHOT_WIDTH
+      const height = Math.round(width * ratio)
+
+      clone.setAttribute("width", String(width))
+      clone.setAttribute("height", String(height))
+
+      const source = new XMLSerializer().serializeToString(clone)
+      const image = new Image()
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(source)}`
+      await image.decode()
+
+      const canvas = document.createElement("canvas")
+      canvas.width = width
+      canvas.height = height
+
+      const context = canvas.getContext("2d")
+      if (!context) return
+
+      // 배경이 비면 어두운 화면에서 글씨가 보이지 않는다.
+      context.fillStyle = "#ffffff"
+      context.fillRect(0, 0, width, height)
+      context.drawImage(image, 0, 0, width, height)
+
+      const link = document.createElement("a")
+      link.href = canvas.toDataURL("image/png")
+      link.download = `lotto-${record.draw_no}회-${record.numbers.join("-")}.png`
+      link.click()
+    } catch (error) {
+      console.error("스냅샷 저장 실패:", error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  return (
+      <Button
+          variant="ghost"
+          size="custom"
+          onClick={save}
+          disabled={isSaving}
+          className="text-ink-muted hover:text-ink h-7 px-2 text-xs"
+      >
+        <Download className="mr-1 h-3.5 w-3.5" />
+        PNG
+      </Button>
+  )
+}
+
+/** 원본에서 계산된 색을 복제본의 같은 자리에 인라인으로 적어 넣는다. */
+const inlineComputedColors = (source: SVGSVGElement, clone: SVGSVGElement) => {
+  const sourceNodes = source.querySelectorAll("*")
+  const cloneNodes = clone.querySelectorAll("*")
+
+  sourceNodes.forEach((node, index) => {
+    const style = getComputedStyle(node)
+    const target = cloneNodes[index] as SVGElement | undefined
+    if (!target) return
+
+    target.setAttribute("fill", style.fill)
+    target.setAttribute("stroke", style.stroke)
+    if (style.strokeWidth) target.setAttribute("stroke-width", style.strokeWidth)
+    target.removeAttribute("class")
+  })
+}

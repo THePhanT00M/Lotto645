@@ -1,19 +1,16 @@
 "use client"
 
 import { Database, Download, FlaskConical, RefreshCw, Target, Trophy } from "lucide-react"
+import RecordCard from "@/components/admin/record-card"
 import { StatTile } from "@/components/admin/stat-tiles"
 import { EmptyState } from "@/components/common/empty-state"
 import { Notice } from "@/components/common/notice"
 import { PageHeader } from "@/components/common/page-header"
 import { Panel } from "@/components/common/panel"
-import { Ball } from "@/components/lotto/ball"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { toCsv, useAiRecords, type AiRecord, type MatchBucket } from "@/hooks/use-ai-records"
+import { toCsv, useAiRecords, type MatchBucket } from "@/hooks/use-ai-records"
 import { FEATURE_LABELS } from "@/lib/lotto/features"
-import { rankLabel } from "@/lib/lotto/rank"
-import { rankStyle } from "@/components/common/rank-badge"
-import { cn } from "@/lib/utils"
 
 /**
  * AI 추천 데이터 (관리자)
@@ -102,13 +99,19 @@ export default function AiLabPage() {
         </Panel>
 
         <Panel className="space-y-4">
-          <h3 className="text-ink text-xl font-bold">최근 기록</h3>
+          <div>
+            <h3 className="text-ink text-xl font-bold">최근 기록</h3>
+            <p className="text-ink-muted mt-1 text-sm">
+              기록을 누르면 그때의 용지 모양과 기하 특징이 펼쳐집니다.
+            </p>
+          </div>
+
           {records.length === 0 ? (
               <EmptyState icon={Database} message="아직 수집된 추천 기록이 없습니다." />
           ) : (
               <div className="space-y-2">
                 {records.slice(0, 30).map((record) => (
-                    <RecordRow key={record.id} record={record} />
+                    <RecordCard key={record.id} record={record} />
                 ))}
               </div>
           )}
@@ -160,37 +163,6 @@ function MatchDistribution({ buckets }: { buckets: MatchBucket[] }) {
 
         <p className="text-ink-muted text-xs">주황색 눈금은 무작위로 찍었을 때의 기대 비율입니다.</p>
       </Panel>
-  )
-}
-
-function RecordRow({ record }: { record: AiRecord }) {
-  return (
-      <div className="bg-surface border-line flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-1 text-xs font-semibold">
-            {record.draw_no}회
-          </span>
-          <div className="flex flex-wrap gap-1">
-            {record.numbers.map((number) => (
-                <Ball key={number} number={number} size="xs" />
-            ))}
-          </div>
-        </div>
-
-        <div className="text-ink-muted flex flex-wrap items-center gap-3 text-xs">
-          <span>점수 {(record.score * 100).toFixed(1)}%</span>
-          <span>겹침 {record.max_past_overlap ?? "-"}개</span>
-          {record.scored_at ? (
-              <span className={cn("rounded-md border px-2 py-0.5 font-semibold", rankStyle(record.prize_rank))}>
-                {record.matched_count}개 · {rankLabel(record.prize_rank)}
-              </span>
-          ) : (
-              <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-0.5">
-                채점 대기
-              </span>
-          )}
-        </div>
-      </div>
   )
 }
 

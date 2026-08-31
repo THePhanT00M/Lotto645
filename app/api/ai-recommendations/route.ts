@@ -66,7 +66,9 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase
         .from(TABLE)
-        .select("id, created_at, draw_no, numbers, score, network_score, typicality, features, max_past_overlap, matched_count, bonus_matched, prize_rank, scored_at")
+        .select(
+            "id, created_at, draw_no, numbers, score, network_score, typicality, features, model, max_past_overlap, matched_count, bonus_matched, prize_rank, scored_at",
+        )
         .order("created_at", { ascending: false })
         .limit(Math.min(1000, Math.max(1, limit)))
 
