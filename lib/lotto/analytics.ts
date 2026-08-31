@@ -1,52 +1,6 @@
 import { combinationKey, combinations } from "./combinations"
-import { ALL_NUMBERS, PICK_COUNT } from "./constants"
+import { PICK_COUNT } from "./constants"
 import type { WinningLottoNumbers } from "./types"
-
-/** 과거 당첨 데이터에서 뽑아낸 분석 지표 모음 */
-export interface LottoAnalytics {
-  /** 번호별 총 출현 횟수 */
-  frequencyMap: ReadonlyMap<number, number>
-  /** 두 번호가 함께 나온 횟수 (키: "3-17" 형태의 오름차순 페어) */
-  pairFrequency: ReadonlyMap<string, number>
-  /** 최신 회차 번호 */
-  latestDrawNo: number
-}
-
-const EMPTY_ANALYTICS: LottoAnalytics = {
-  frequencyMap: new Map(),
-  pairFrequency: new Map(),
-  latestDrawNo: 0,
-}
-
-/**
- * 전체 당첨 이력을 한 번 순회하며 추천에 필요한 지표를 계산한다.
- *
- * 번호별 출현 횟수와 두 번호의 동반 출현 횟수를 따로 순회하던 것을 한 패스로 합쳤다.
- */
-export const buildAnalytics = (draws: readonly WinningLottoNumbers[]): LottoAnalytics => {
-  if (draws.length === 0) return EMPTY_ANALYTICS
-
-  const frequencyMap = new Map<number, number>(ALL_NUMBERS.map((n) => [n, 0]))
-  const pairFrequency = new Map<string, number>()
-
-  let latestDrawNo = 0
-
-  for (const draw of draws) {
-    // 이력이 회차순으로 정렬돼 있다고 가정하지 않는다.
-    if (draw.drawNo > latestDrawNo) latestDrawNo = draw.drawNo
-
-    for (const number of draw.numbers) {
-      frequencyMap.set(number, (frequencyMap.get(number) ?? 0) + 1)
-    }
-
-    for (const [a, b] of combinations(draw.numbers, 2)) {
-      const key = combinationKey([a, b])
-      pairFrequency.set(key, (pairFrequency.get(key) ?? 0) + 1)
-    }
-  }
-
-  return { frequencyMap, pairFrequency, latestDrawNo }
-}
 
 /** 특정 조합이 등장했던 회차 */
 export interface Appearance {

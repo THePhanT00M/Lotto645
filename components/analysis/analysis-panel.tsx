@@ -1,7 +1,7 @@
 "use client"
 
 import { Info, MousePointerClick, RotateCcw, SearchCheck, Sparkles } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import AIRecommendation from "@/components/analysis/ai-recommendation"
 import { AnalysisSkeleton } from "@/components/analysis/analysis-skeleton"
 import MultipleNumberAnalysis from "@/components/analysis/multiple-number-analysis"
@@ -11,11 +11,11 @@ import { SectionHeading } from "@/components/common/page-header"
 import { Button } from "@/components/ui/button"
 import { findMultiples } from "@/lib/lotto/analytics"
 import { recordDraw } from "@/lib/lotto/draw-log"
-import { recommendNumbers } from "@/lib/lotto/recommend"
+import { buildEngine, type EngineStats, type Recommendation, type RecommendationEngine } from "@/lib/lotto/engine"
 import { useWinningDraws } from "@/hooks/use-winning-draws"
 
-/** 스켈레톤이 한 프레임 이상 보이도록 두는 최소 지연 */
-const GENERATE_DELAY_MS = 10
+/** 스켈레톤이 화면에 그려질 틈을 주는 최소 지연 */
+const GENERATE_DELAY_MS = 30
 
 /** 지금 분석 중인 번호가 어디서 왔는지 */
 type AnalysisTarget = "user" | "ai"
@@ -29,12 +29,17 @@ interface AnalysisPanelProps {
  * 뽑은 번호를 과거 당첨 이력과 대조하고, AI 추천 번호로 갈아 끼워 볼 수 있는 패널.
  */
 export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
-  const { draws, analytics, isLoading } = useWinningDraws()
+  const { draws, latestDrawNo, isLoading } = useWinningDraws()
 
   const [target, setTarget] = useState<AnalysisTarget>("user")
-  const [aiNumbers, setAiNumbers] = useState<number[]>([])
+  const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
+  const [stats, setStats] = useState<EngineStats | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
+  /** 학습에 시간이 걸리므로 첫 추천 때 한 번만 만들고 이후에는 다시 쓴다. */
+  const engineRef = useRef<RecommendationEngine | null>(null)
+
+  const aiNumbers = recommendation?.numbers ?? []
   const analyzed = target === "ai" && aiNumbers.length > 0 ? aiNumbers : numbers
   const multiples = useMemo(() => findMultiples(analyzed, draws), [analyzed, draws])
 
@@ -45,11 +50,15 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
     // 상태 반영 뒤 계산해야 스켈레톤이 실제로 그려진다.
     await new Promise((resolve) => setTimeout(resolve, GENERATE_DELAY_MS))
 
-    const recommended = recommendNumbers(analytics)
-    setAiNumbers(recommended)
+    engineRef.current ??= buildEngine(draws)
+    const engine = engineRef.current
+    const result = engine.recommend()
+
+    setRecommendation(result)
+    setStats(engine.stats)
     setIsGenerating(false)
 
-    void recordDraw({ numbers: recommended, source: "ai", drawNo: analytics.latestDrawNo + 1 })
+    void recordDraw({ numbers: result.numbers, source: "ai", drawNo: latestDrawNo + 1 })
   }
 
   return (
@@ -73,7 +82,7 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
                   </div>
 
                   <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
-                    {aiNumbers.length > 0 &&
+                    {recommendation &&
                         (target === "ai" ? (
                             <ToggleButton icon={SearchCheck} onClick={() => setTarget("user")} disabled={isGenerating}>
                               추첨 번호 분석
@@ -98,7 +107,7 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
 
               {/* 추첨 번호 분석으로 전환해도 추천 결과는 유지되도록 언마운트하지 않는다. */}
               <div className={target === "ai" ? "block" : "hidden"}>
-                <AIRecommendation numbers={aiNumbers} isGenerating={isGenerating} />
+                <AIRecommendation recommendation={recommendation} stats={stats} isGenerating={isGenerating} />
               </div>
 
               <MultipleNumberAnalysis multiples={multiples} />
