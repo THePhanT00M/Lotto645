@@ -10,7 +10,8 @@ import {
   standardDeviation,
   standardize,
 } from "./matrix"
-import { trainNetwork, type PatternNetwork } from "./neural"
+import { trainNetwork } from "./neural"
+import { buildOverlapIndex } from "./overlap"
 import { getRandomInt, pickUnique } from "./random"
 import type { WinningLottoNumbers } from "./types"
 
@@ -27,6 +28,17 @@ const END_TEMPERATURE = 0.01
 /** 신경망 점수와 분포 적합도를 섞는 비율 */
 const NETWORK_WEIGHT = 0.6
 
+/**
+ * 과거 어느 회차와도 이 개수를 넘게 겹치지 않도록 한다.
+ *
+ * 1,239회를 서로 견주면 5개 겹침은 21건, 6개(완전 일치)는 한 번도 없었다.
+ * 애초에 드물게 일어나는 일이라, 막아도 고를 수 있는 조합은 거의 줄지 않는다.
+ */
+const MAX_PAST_OVERLAP = 4
+
+/** 서로 다른 시드로 학습해 평균을 내는 신경망 수 */
+const ENSEMBLE_SIZE = 3
+
 /** 조합 하나에 대한 평가 */
 export interface Recommendation {
   numbers: number[]
@@ -39,6 +51,8 @@ export interface Recommendation {
   typicality: number
   /** 용지 모양이 가장 비슷한 과거 회차 */
   nearestDraw: { drawNo: number; date: string; numbers: number[]; distance: number } | null
+  /** 번호가 가장 많이 겹치는 과거 회차 */
+  closestPastDraw: { drawNo: number; date: string; numbers: number[]; overlap: number } | null
 }
 
 /** 학습 결과 요약 */
@@ -47,9 +61,15 @@ export interface EngineStats {
   drawCount: number
   /** 특징 차원 */
   featureCount: number
-  /** 신경망 학습 정확도 */
+  /** 학습에 쓰지 않은 데이터에 대한 정확도 */
   accuracy: number
+  /** 학습 데이터에 대한 정확도. 검증 정확도와 크게 벌어지면 과적합이다. */
+  trainAccuracy: number
   loss: number
+  /** 평균을 낸 신경망 수 */
+  ensembleSize: number
+  /** 과거 회차와 허용하는 최대 겹침 */
+  maxPastOverlap: number
   /** 학습에 걸린 시간(ms) */
   trainMs: number
 }
@@ -92,14 +112,25 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
   const center = meanVector(positives)
   const inverseCovariance = invert(covarianceMatrix(positives, center)) ?? identity(FEATURE_COUNT)
 
-  const network = trainNetwork(positives, negatives)
+  // 한 번만 학습하면 초기값에 따라 점수가 흔들린다. 시드를 달리해 여러 번 학습하고 평균을 낸다.
+  const networks = Array.from({ length: ENSEMBLE_SIZE }, (_, i) =>
+      trainNetwork(positives, negatives, { seed: 20260831 + i * 7919 }),
+  )
+
+  const predict = (vector: readonly number[]) =>
+      networks.reduce((sum, net) => sum + net.predict(vector), 0) / networks.length
+
+  const average = (pick: (net: (typeof networks)[number]) => number) =>
+      networks.reduce((sum, net) => sum + pick(net), 0) / networks.length
+
+  const overlapIndex = buildOverlapIndex(usable)
   const trainMs = performance.now() - startedAt
 
   /** 과거에 이미 나온 조합은 다시 추천하지 않는다. */
   const seen = new Set(usable.map((draw) => combinationKey(draw.numbers)))
 
   const score = (vector: readonly number[]) => {
-    const networkScore = network.predict(vector)
+    const networkScore = predict(vector)
     // 마할라노비스 거리는 차원 수만큼 커지므로, 차원으로 나눠 0~1로 눌러 준다.
     const typicality = Math.exp(-mahalanobisSquared(vector, center, inverseCovariance) / (2 * FEATURE_COUNT))
     return {
@@ -113,6 +144,7 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
     const features = extractFeatures(numbers)
     const vector = standardize(featureVectorOf(numbers), mean, sd)
     const parts = score(vector)
+    const closest = overlapIndex.closestDraw(numbers)
 
     return {
       numbers,
@@ -121,6 +153,14 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
       networkScore: parts.networkScore,
       typicality: parts.typicality,
       nearestDraw: findNearestDraw(vector, usable, positives),
+      closestPastDraw: closest
+          ? {
+            drawNo: closest.draw.drawNo,
+            date: closest.draw.date,
+            numbers: closest.draw.numbers,
+            overlap: closest.overlap,
+          }
+          : null,
     }
   }
 
@@ -141,7 +181,11 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
     const target = quantile(0.35 + Math.random() * 0.55)
     const closeness = (value: number) => -Math.abs(value - target)
 
+    // 시작점부터 제약을 지켜야 결과가 제약 밖에서 끝나지 않는다.
     let current = randomCombination()
+    while (overlapIndex.maxOverlap(current) > MAX_PAST_OVERLAP || seen.has(combinationKey(current))) {
+      current = randomCombination()
+    }
     let currentScore = score(standardize(featureVectorOf(current), mean, sd)).total
     let best = current
     let bestGap = closeness(currentScore)
@@ -152,7 +196,9 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
           START_TEMPERATURE * Math.pow(END_TEMPERATURE / START_TEMPERATURE, step / ANNEAL_STEPS)
 
       const candidate = mutate(current)
+      // 이미 나온 조합은 물론, 과거 회차를 거의 그대로 베낀 조합도 넘긴다.
       if (seen.has(combinationKey(candidate))) continue
+      if (overlapIndex.maxOverlap(candidate) > MAX_PAST_OVERLAP) continue
 
       const candidateScore = score(standardize(featureVectorOf(candidate), mean, sd)).total
       const delta = closeness(candidateScore) - closeness(currentScore)
@@ -176,8 +222,11 @@ export function buildEngine(draws: readonly WinningLottoNumbers[]): Recommendati
     stats: {
       drawCount: usable.length,
       featureCount: FEATURE_COUNT,
-      accuracy: network.accuracy,
-      loss: network.loss,
+      accuracy: average((net) => net.validationAccuracy),
+      trainAccuracy: average((net) => net.accuracy),
+      loss: average((net) => net.loss),
+      ensembleSize: ENSEMBLE_SIZE,
+      maxPastOverlap: MAX_PAST_OVERLAP,
       trainMs,
     },
     recommend,

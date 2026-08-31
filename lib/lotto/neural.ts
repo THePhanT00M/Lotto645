@@ -31,13 +31,17 @@ export interface TrainOptions {
   batchSize?: number
   /** 재현 가능한 초기화를 위한 시드 */
   seed?: number
+  /** 검증용으로 떼어 둘 비율. 0이면 전부 학습에 쓴다. */
+  validationRatio?: number
 }
 
 export interface TrainResult {
   /** 마지막 에폭의 평균 손실 */
   loss: number
-  /** 학습 데이터에 대한 정확도 */
+  /** 학습에 쓴 데이터에 대한 정확도 */
   accuracy: number
+  /** 학습에 쓰지 않은 데이터에 대한 정확도. 과적합 여부를 여기서 본다. */
+  validationAccuracy: number
   epochs: number
 }
 
@@ -84,7 +88,7 @@ export interface PatternNetwork {
 export function trainNetwork(
     positives: readonly number[][],
     negatives: readonly number[][],
-    { epochs = 60, batchSize = 64, seed = 20260831 }: TrainOptions = {},
+    { epochs = 45, batchSize = 64, seed = 20260831, validationRatio = 0.2 }: TrainOptions = {},
 ): PatternNetwork & TrainResult {
   const random = createRandom(seed)
   const inputSize = positives[0]?.length ?? 0
@@ -95,10 +99,20 @@ export function trainNetwork(
     layers.push(createLayer(sizes[i], sizes[i + 1], random))
   }
 
-  const samples = [
+  const all = [
     ...positives.map((input) => ({ input, target: 1 })),
     ...negatives.map((input) => ({ input, target: 0 })),
   ]
+
+  // 검증용을 떼기 전에 섞어, 한쪽 부류가 검증셋에 몰리지 않게 한다.
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1))
+    ;[all[i], all[j]] = [all[j], all[i]]
+  }
+
+  const holdout = Math.floor(all.length * validationRatio)
+  const validation = all.slice(0, holdout)
+  const samples = all.slice(holdout)
 
   // 당첨 조합이 훨씬 적으므로, 적은 쪽 손실에 가중치를 줘 균형을 맞춘다.
   const positiveWeight = negatives.length / Math.max(1, positives.length)
@@ -209,7 +223,16 @@ export function trainNetwork(
     return activations[activations.length - 1][0]
   }
 
-  const correct = samples.filter(({ input, target }) => (predict(input) >= 0.5 ? 1 : 0) === target).length
+  const rate = (set: typeof samples) =>
+      set.length === 0
+          ? 0
+          : set.filter(({ input, target }) => (predict(input) >= 0.5 ? 1 : 0) === target).length / set.length
 
-  return { predict, loss: lastLoss, accuracy: correct / samples.length, epochs }
+  return {
+    predict,
+    loss: lastLoss,
+    accuracy: rate(samples),
+    validationAccuracy: validation.length > 0 ? rate(validation) : rate(samples),
+    epochs,
+  }
 }

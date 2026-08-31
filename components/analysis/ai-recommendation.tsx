@@ -1,6 +1,6 @@
 "use client"
 
-import { Brain, Ruler, Sigma, Sparkles, Waypoints } from "lucide-react"
+import { Brain, Layers, Ruler, ShieldCheck, Sigma, Sparkles, Waypoints } from "lucide-react"
 import PaperPattern from "@/components/analysis/paper-pattern"
 import { BallRow } from "@/components/lotto/ball-row"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -18,7 +18,7 @@ export default function AIRecommendation({ recommendation, stats, isGenerating }
   if (isGenerating) return <GeneratingSkeleton />
   if (!recommendation || !stats) return null
 
-  const { numbers, features, networkScore, typicality, nearestDraw } = recommendation
+  const { numbers, features, networkScore, typicality, nearestDraw, closestPastDraw } = recommendation
 
   return (
       <div className="bg-surface border-line rounded-lg border p-4">
@@ -29,7 +29,8 @@ export default function AIRecommendation({ recommendation, stats, isGenerating }
 
         <p className="text-ink-muted mt-2 mb-4 text-sm leading-relaxed">
           역대 {stats.drawCount.toLocaleString()}회 당첨 번호를 로또 용지 위의 점으로 옮겨, 여섯 점이 만드는 모양을{" "}
-          {stats.featureCount}가지 기하 특징으로 재고 학습한 결과입니다.
+          {stats.featureCount}가지 기하 특징으로 재고 학습한 결과입니다. 이미 나온 조합과 지나치게 닮은 번호는
+          제외했습니다.
         </p>
 
         <div className="bg-surface-2 rounded-lg px-2 py-4">
@@ -71,6 +72,26 @@ export default function AIRecommendation({ recommendation, stats, isGenerating }
 
             <div className="bg-surface-2 rounded-lg p-3">
               <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
+                <ShieldCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                과거 회차와의 거리
+              </h4>
+              <p className="text-ink-muted text-xs leading-relaxed">
+                {closestPastDraw ? (
+                    <>
+                      가장 많이 겹치는 회차는{" "}
+                      <span className="text-ink font-medium">
+                        {closestPastDraw.drawNo}회에서 {closestPastDraw.overlap}개
+                      </span>
+                      입니다. 이미 나온 조합과 {stats.maxPastOverlap}개를 넘게 겹치지 않도록 걸러냅니다.
+                    </>
+                ) : (
+                    <>과거 회차와 겹치는 번호가 없습니다.</>
+                )}
+              </p>
+            </div>
+
+            <div className="bg-surface-2 rounded-lg p-3">
+              <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
                 <Ruler className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 모양 지표
               </h4>
@@ -86,9 +107,16 @@ export default function AIRecommendation({ recommendation, stats, isGenerating }
           </div>
         </div>
 
-        <p className="text-ink-muted mt-3 text-right text-[10px]">
-          * 신경망 정확도 {(stats.accuracy * 100).toFixed(1)}% · 학습 {Math.round(stats.trainMs)}ms · 과거 데이터 기반
-          예측이며 당첨을 보장하지 않습니다.
+        <p className="text-ink-muted mt-3 flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-[10px]">
+          <span className="flex items-center gap-1">
+            <Layers className="h-3 w-3" />
+            신경망 {stats.ensembleSize}개 평균
+          </span>
+          <span>
+            검증 정확도 {(stats.accuracy * 100).toFixed(1)}% (학습 {(stats.trainAccuracy * 100).toFixed(1)}%)
+          </span>
+          <span>학습 {Math.round(stats.trainMs)}ms</span>
+          <span>· 과거 데이터 기반 예측이며 당첨을 보장하지 않습니다.</span>
         </p>
       </div>
   )
