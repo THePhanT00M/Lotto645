@@ -10,6 +10,7 @@ import { Panel, Surface } from "@/components/common/panel"
 import { SectionHeading } from "@/components/common/page-header"
 import { Button } from "@/components/ui/button"
 import { findMultiples } from "@/lib/lotto/analytics"
+import { logRecommendation } from "@/lib/lotto/ai-log"
 import { recordDraw } from "@/lib/lotto/draw-log"
 import { buildEngine, type EngineStats, type Recommendation, type RecommendationEngine } from "@/lib/lotto/engine"
 import { useWinningDraws } from "@/hooks/use-winning-draws"
@@ -58,7 +59,10 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
     setStats(engine.stats)
     setIsGenerating(false)
 
-    void recordDraw({ numbers: result.numbers, source: "ai", drawNo: latestDrawNo + 1 })
+    const targetDrawNo = latestDrawNo + 1
+    void recordDraw({ numbers: result.numbers, source: "ai", drawNo: targetDrawNo })
+    // 추천 근거를 함께 남겨 두면 나중에 이 기록만으로 다시 학습할 수 있다.
+    void logRecommendation(result, engine.stats, targetDrawNo)
   }
 
   return (
