@@ -27,6 +27,7 @@ export interface AiRecord {
     brierAfter?: number
     maxPastOverlap?: number
   } | null
+  model_version: string | null
   max_past_overlap: number | null
   matched_count: number | null
   bonus_matched: boolean | null

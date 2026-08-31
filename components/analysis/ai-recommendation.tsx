@@ -18,7 +18,8 @@ export default function AIRecommendation({ recommendation, stats, isGenerating }
   if (isGenerating) return <GeneratingSkeleton />
   if (!recommendation || !stats) return null
 
-  const { numbers, features, networkScore, typicality, nearestDraw, closestPastDraw } = recommendation
+  const { numbers, features, networkScore, typicality, nearestDraw, closestPastDraw, avoidedCount } =
+      recommendation
 
   return (
       <div className="bg-surface border-line rounded-lg border p-4">
@@ -83,6 +84,9 @@ export default function AIRecommendation({ recommendation, stats, isGenerating }
                         {closestPastDraw.drawNo}회에서 {closestPastDraw.overlap}개
                       </span>
                       입니다. 이미 나온 조합과 {stats.maxPastOverlap}개를 넘게 겹치지 않도록 걸러냅니다.
+                      {avoidedCount > 0 && (
+                          <> 이번 회차에 이미 추천한 {avoidedCount.toLocaleString()}개 조합도 후보에서 뺐습니다.</>
+                      )}
                     </>
                 ) : (
                     <>과거 회차와 겹치는 번호가 없습니다.</>

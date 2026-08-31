@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
+import { combinationKey } from "@/lib/lotto/combinations"
 import { PICK_COUNT } from "@/lib/lotto/constants"
 import { getAdminClient } from "@/lib/supabase/admin"
 
@@ -13,8 +14,12 @@ interface LogBody {
   typicality: number
   features: Record<string, number>
   model: Record<string, number>
+  modelVersion?: string
   maxPastOverlap: number | null
 }
+
+/** 알고리즘이 바뀌면 올린다. 버전별 성적을 나눠 보기 위한 값이다. */
+const DEFAULT_MODEL_VERSION = "geo-mlp-1"
 
 /**
  * POST /api/ai-recommendations
@@ -36,6 +41,8 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase.from(TABLE).insert({
       draw_no: body.drawNo,
       numbers: body.numbers,
+      combination_key: combinationKey(body.numbers),
+      model_version: body.modelVersion ?? DEFAULT_MODEL_VERSION,
       score: body.score,
       network_score: body.networkScore,
       typicality: body.typicality,
@@ -67,7 +74,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
         .from(TABLE)
         .select(
-            "id, created_at, draw_no, numbers, score, network_score, typicality, features, model, max_past_overlap, matched_count, bonus_matched, prize_rank, scored_at",
+            "id, created_at, draw_no, numbers, score, network_score, typicality, features, model, model_version, max_past_overlap, matched_count, bonus_matched, prize_rank, scored_at",
         )
         .order("created_at", { ascending: false })
         .limit(Math.min(1000, Math.max(1, limit)))
