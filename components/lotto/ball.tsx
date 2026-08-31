@@ -6,18 +6,19 @@ import { getBallColor } from "@/lib/lotto/colors"
 import { cn } from "@/lib/utils"
 
 const ball = cva(
-    "relative flex flex-shrink-0 items-center justify-center rounded-full font-bold text-black select-none",
+    "relative flex items-center justify-center rounded-full font-bold text-black select-none",
     {
       variants: {
+        // 고정 크기는 줄어들지 않게 막고, fluid는 남는 폭에 맞춰 줄어들게 둔다.
         size: {
-          xs: "h-7 w-7 text-xs",
-          sm: "h-8 w-8 text-xs",
-          md: "h-10 w-10 text-sm",
-          lg: "h-12 w-12 text-lg",
+          xs: "h-7 w-7 shrink-0 text-xs",
+          sm: "h-8 w-8 shrink-0 text-xs",
+          md: "h-10 w-10 shrink-0 text-sm",
+          lg: "h-12 w-12 shrink-0 text-lg",
           /** 화면 크기에 따라 커지는 결과 표시용 */
-          responsive: "h-10 w-10 text-sm sm:h-12 sm:w-12 sm:text-base",
-          /** 컨테이너 폭을 채우는 정사각형. 그리드 안에서 사용한다. */
-          fluid: "aspect-square w-full text-xs sm:text-sm",
+          responsive: "h-10 w-10 shrink-0 text-sm sm:h-12 sm:w-12 sm:text-base",
+          /** 한 줄에 나란히 놓고 남는 폭을 나눠 갖는 정사각형 */
+          fluid: "aspect-square w-full min-w-0 text-xs sm:text-sm",
         },
         interactive: {
           true: "cursor-pointer transition-transform hover:scale-105",
