@@ -10,7 +10,7 @@ const FOOTER_LINKS = [
 export default function Footer() {
   return (
       <footer className="bg-canvas mt-auto w-full">
-        <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto w-full 2xl:max-w-shell px-4 py-8">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="text-ink-muted text-sm">
               © {new Date().getFullYear()} 로또 추첨기. All rights reserved.

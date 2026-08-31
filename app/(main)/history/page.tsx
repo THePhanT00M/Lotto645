@@ -60,7 +60,7 @@ export default function HistoryPage() {
   if (isLoading) return <HistorySkeleton />
 
   return (
-      <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <PageHeader
             icon={History}
             title="나의 추첨 기록"

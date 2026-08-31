@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 /** 당첨번호 페이지 초기 로딩 화면. 실제 레이아웃과 같은 골격을 유지한다. */
 export default function WinningSkeleton() {
   return (
-      <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <div className="flex flex-col space-y-2">
           <div className="flex items-center gap-2">
             <Skeleton className="h-6 w-6 rounded-md" />

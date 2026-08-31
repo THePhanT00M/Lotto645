@@ -42,7 +42,7 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
 
   return (
       <header className="border-line bg-canvas w-full border-b">
-        <div className="container mx-auto px-4 py-4">
+        <div className="mx-auto w-full 2xl:max-w-shell px-4 py-4">
           <div className="flex items-center justify-between">
             <Logo />
 
