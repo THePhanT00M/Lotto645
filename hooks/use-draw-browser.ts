@@ -185,23 +185,30 @@ export function useDrawBrowser() {
 
     const container = listRef.current
     const element = itemRefs.current.get(scrollTargetNo)
-    if (!container || !element) return
 
-    // 부드러운 스크롤은 애니메이션이 끝나기 전에 자동 로딩이 끼어들어
-    // 위치를 흔들 수 있으므로 곧바로 배치한다.
-    container.scrollTop = element.offsetTop - container.clientHeight / 2 + element.clientHeight / 2
+    if (container && element) {
+      // offsetTop은 offsetParent 기준이라 목록 컨테이너와 기준이 다를 수 있다.
+      // 화면 좌표 차이로 컨테이너 안에서의 실제 위치를 구한다.
+      const offsetInList =
+          element.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
+
+      // 부드러운 스크롤은 애니메이션이 끝나기 전에 자동 로딩이 끼어들어
+      // 위치를 흔들 수 있으므로 곧바로 배치한다.
+      container.scrollTop = offsetInList - container.clientHeight / 2 + element.clientHeight / 2
+    }
+
     setScrollTargetNo(null)
-
-    // 배치가 화면에 반영된 뒤에 자동 로딩을 다시 연다.
-    const frame = requestAnimationFrame(() => {
-      isJumpingRef.current = false
-    })
-
-    return () => cancelAnimationFrame(frame)
+    // 배치는 동기적으로 끝난다. 옵저버 콜백은 다음 프레임에 도착하므로
+    // 여기서 바로 잠금을 풀어야 자동 로딩이 다시 살아난다.
+    isJumpingRef.current = false
   }, [draws, scrollTargetNo])
 
   // 목록 위아래 끝에 도달하면 다음 페이지를 불러온다. 옵저버는 한 번만 만든다.
+  // 첫 로딩 동안에는 목록 대신 스켈레톤이 그려져 ref가 비어 있으므로,
+  // 로딩이 끝나 목록이 마운트된 뒤에 붙인다.
   useEffect(() => {
+    if (isInitialLoading) return
+
     const container = listRef.current
     const topTrigger = topTriggerRef.current
     const bottomTrigger = bottomTriggerRef.current
@@ -222,7 +229,7 @@ export function useDrawBrowser() {
     observer.observe(bottomTrigger)
 
     return () => observer.disconnect()
-  }, [loadNewer, loadOlder])
+  }, [isInitialLoading, loadNewer, loadOlder])
 
   return {
     draws,
