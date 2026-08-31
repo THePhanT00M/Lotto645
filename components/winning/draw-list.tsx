@@ -39,7 +39,9 @@ export default function DrawList({ browser }: DrawListProps) {
             ref={listRef}
             className="custom-scrollbar flex-1 space-y-2 overflow-y-auto p-2 [overflow-anchor:none]"
         >
-          {hasMoreNewer && <div ref={topTriggerRef}>{isLoadingNewer && <DrawListSkeleton />}</div>}
+          {/* 트리거는 항상 렌더한다. 조건부로 없앴다 살리면 옵저버를 다시 붙여야 하고,
+              그때마다 교차 상태가 즉시 콜백으로 들어와 로딩이 연쇄된다. */}
+          <div ref={topTriggerRef}>{hasMoreNewer && isLoadingNewer && <DrawListSkeleton />}</div>
 
           {draws.map((draw) => (
               <DrawRow
