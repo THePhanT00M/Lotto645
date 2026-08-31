@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 import { PageHeader } from "@/components/common/page-header"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
-import { getApiUrl } from "@/lib/api-config"
+import { authorizedFetch } from "@/lib/auth/client"
 import type { WinningLottoNumbers } from "@/lib/lotto/types"
 import { cn } from "@/lib/utils"
 
@@ -28,7 +28,7 @@ export default function UpdateDrawPage() {
     setState({ kind: "loading", message: "최신 회차 확인 및 업데이트 시작..." })
 
     try {
-      const response = await fetch(getApiUrl("/api/update-draw"))
+      const response = await authorizedFetch("/api/update-draw")
       const result = await response.json()
 
       if (!response.ok || !result.success) {
@@ -139,7 +139,7 @@ function SummaryRow({ label, children }: { label: string; children: React.ReactN
 /** 새 당첨 번호가 들어오면 전 회원에게 알림을 보낸다. */
 const notifyMembers = async () => {
   try {
-    await fetch(getApiUrl("/api/admin/notifications"), {
+    await authorizedFetch("/api/admin/notifications", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -1,4 +1,6 @@
+import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
+import { requireAdmin } from "@/lib/auth/admin"
 import { getAdminClient } from "@/lib/supabase/admin"
 
 /** 조회 결과가 없을 때 Supabase가 돌려주는 코드 */
@@ -10,8 +12,10 @@ const NO_ROWS = "PGRST116"
  * 다음 회차를 겨냥해 AI가 만든 번호들의 출현 빈도를 집계한다.
  * 클라이언트에서는 RLS 때문에 다른 사용자의 기록을 볼 수 없어 서버에서 집계한다.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    if (!(await requireAdmin(request))) return fail("관리자 권한이 필요합니다.", 403)
+
     const supabase = getAdminClient()
 
     const { data: latestDraw, error: drawError } = await supabase

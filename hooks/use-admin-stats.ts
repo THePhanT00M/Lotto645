@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { getApiUrl } from "@/lib/api-config"
+import { authorizedFetch } from "@/lib/auth/client"
 import { toLottoResult } from "@/lib/lotto/queries"
 import { analyzeResults, listWinners, summarize } from "@/lib/lotto/stats"
 import { countNumberFrequency } from "@/lib/lotto/analytics"
@@ -35,7 +35,7 @@ export function useAdminStats() {
 
     const load = async () => {
       try {
-        const response = await fetch(getApiUrl("/api/stats"))
+        const response = await authorizedFetch("/api/stats")
         if (!response.ok) throw new Error(`요청 실패 (${response.status} ${response.statusText})`)
 
         const data: StatsResponse = await response.json()

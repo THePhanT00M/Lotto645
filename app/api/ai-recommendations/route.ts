@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
+import { requireAdmin } from "@/lib/auth/admin"
 import { combinationKey } from "@/lib/lotto/combinations"
 import { PICK_COUNT } from "@/lib/lotto/constants"
 import { getAdminClient } from "@/lib/supabase/admin"
@@ -68,6 +69,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    if (!(await requireAdmin(request))) return fail("관리자 권한이 필요합니다.", 403)
+
     const supabase = getAdminClient()
     const limit = Number(new URL(request.url).searchParams.get("limit") ?? 200)
 
