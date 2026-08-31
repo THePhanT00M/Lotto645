@@ -38,6 +38,7 @@ const arithmetic = (): number[] => {
 
 /** 용지의 한 가로줄에 몰아 찍은 모양 */
 const singleRow = (): number[] => {
+  // 마지막 줄은 세 칸뿐이라 여섯 개를 채울 수 없다.
   const row = getRandomInt(0, GRID_ROWS - 2)
   const available = Array.from({ length: GRID_COLUMNS }, (_, col) => toNumber(col, row)).filter(
       (n): n is number => n !== null,
@@ -77,15 +78,20 @@ const block = (): number[] => {
   return pickUnique(cells, PICK_COUNT)
 }
 
-/** 용지 한쪽 구석에 몰아 찍은 모양 */
-const corner = (): number[] => {
-  const fromLeft = Math.random() < 0.5
-  const fromTop = Math.random() < 0.5
+/**
+ * 용지 어딘가의 3×3 영역에 몰아 찍은 모양
+ *
+ * 네 구석만 쓰면 그 자리의 번호만 반대편 예시에 반복해서 들어간다.
+ * 시작 칸을 격자 전체에서 고르게 잡아 어느 번호도 특별히 자주 뽑히지 않게 한다.
+ */
+const cluster = (): number[] => {
+  const col = getRandomInt(0, GRID_COLUMNS - 3)
+  const row = getRandomInt(0, GRID_ROWS - 3)
 
   const cells: number[] = []
-  for (let r = 0; r < 3; r++) {
-    for (let c = 0; c < 3; c++) {
-      const value = toNumber(fromLeft ? c : GRID_COLUMNS - 1 - c, fromTop ? r : GRID_ROWS - 2 - r)
+  for (let r = row; r < row + 3; r++) {
+    for (let c = col; c < col + 3; c++) {
+      const value = toNumber(c, r)
       if (value !== null) cells.push(value)
     }
   }
@@ -110,7 +116,7 @@ const diagonal = (): number[] => {
   return pickUnique(cells, PICK_COUNT)
 }
 
-const GENERATORS = [consecutive, arithmetic, singleRow, singleColumn, block, corner, diagonal]
+const GENERATORS = [consecutive, arithmetic, singleRow, singleColumn, block, cluster, diagonal]
 
 /** 규칙적인 모양의 조합을 하나 만든다. */
 const createPureDecoy = (): number[] => {
@@ -154,3 +160,44 @@ export const createDecoy = (): number[] => {
 
   return blurCount === 0 ? pure : blur(pure, blurCount)
 }
+
+/** 균형 보정에서 한 조합을 다시 만들어 볼 최대 횟수 */
+const MAX_REBALANCE_TRIES = 12
+
+/**
+ * 반대편 예시를 필요한 수만큼 만들되, 번호가 고르게 쓰이도록 맞춘다.
+ *
+ * 생성기들이 격자 좌표를 쓰다 보니 가운데 칸이 자주, 양 끝 칸은 드물게 뽑힌다.
+ * 그대로 두면 판별 경계가 격자 일부 영역에만 맞춰지므로, 이미 많이 쓴 번호가
+ * 들어간 조합은 몇 번 다시 뽑아 전체 사용량을 고르게 만든다.
+ */
+export const createDecoySet = (count: number): number[][] => {
+  const used = new Array(MAX_NUMBER + 1).fill(0)
+  const result: number[][] = []
+
+  for (let i = 0; i < count; i++) {
+    // 지금까지 쓴 양을 기준으로, 목표치를 넘긴 번호가 적은 후보를 고른다.
+    const target = ((i + 1) * PICK_COUNT) / MAX_NUMBER
+    let best = createDecoy()
+    let bestExcess = excessOf(best, used, target)
+
+    for (let attempt = 1; attempt < MAX_REBALANCE_TRIES && bestExcess > 0; attempt++) {
+      const candidate = createDecoy()
+      const excess = excessOf(candidate, used, target)
+
+      if (excess < bestExcess) {
+        best = candidate
+        bestExcess = excess
+      }
+    }
+
+    for (const number of best) used[number] += 1
+    result.push(best)
+  }
+
+  return result
+}
+
+/** 목표 사용량을 넘긴 정도의 합. 작을수록 고르게 쓰인 조합이다. */
+const excessOf = (numbers: readonly number[], used: readonly number[], target: number): number =>
+    numbers.reduce((sum, number) => sum + Math.max(0, used[number] + 1 - target), 0)

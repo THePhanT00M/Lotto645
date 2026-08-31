@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "engine:backtest": "node scripts/run.mjs scripts/engine-backtest.ts",
+    "engine:distribution": "node scripts/run.mjs scripts/engine-distribution.ts",
+    "engine:tune": "node scripts/run.mjs scripts/engine-tune.ts",
     "build:ios": "( [ -d app/api ] && mv app/api app/_api || true ) && (NEXT_PUBLIC_IS_APP=true pnpm next build || ( [ -d app/_api ] && mv app/_api app/api || true; exit 1 )) && ( [ -d app/_api ] && mv app/_api app/api || true ) && pnpm cap sync ios && pnpm cap open ios"
   },
   "dependencies": {
@@ -47,6 +50,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@types/ua-parser-js": "^0.7.39",
+    "esbuild": "^0.28.2",
     "postcss": "^8.5.26",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
