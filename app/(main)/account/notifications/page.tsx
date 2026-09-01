@@ -94,33 +94,37 @@ export default function NotificationsPage() {
                   <div
                       key={notification.id}
                       className={cn(
-                          "border-line flex items-start gap-2 rounded-lg border p-4 transition-colors",
+                          "border-line rounded-lg border p-4 transition-colors",
                           notification.is_read ? "bg-surface" : "border-accent-line bg-accent-soft",
                       )}
                   >
-                    <button
-                        type="button"
-                        onClick={() => void markAsRead(notification.id)}
-                        className="min-w-0 flex-1 text-left"
-                    >
-                      <div className="flex w-full items-start justify-between gap-3">
-                        <span className={cn("font-medium", notification.is_read ? "text-ink" : "text-accent")}>
-                          {notification.title}
-                        </span>
-                        <span className="text-ink-muted shrink-0 text-xs">
+                    {/* 시각과 삭제 버튼을 같은 줄에 묶어야 세로 가운데가 맞는다. */}
+                    <div className="flex items-center justify-between gap-3">
+                      <span className={cn("truncate font-medium", notification.is_read ? "text-ink" : "text-accent")}>
+                        {notification.title}
+                      </span>
+
+                      <div className="flex shrink-0 items-center gap-1">
+                        <span className="text-ink-muted text-xs">
                           {formatRelativeTime(notification.created_at)}
                         </span>
+                        <button
+                            type="button"
+                            onClick={() => void remove(notification.id)}
+                            aria-label="이 알림 삭제"
+                            className="text-ink-muted hover:text-danger hover:bg-danger/10 rounded-md p-1.5 transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
-                      <p className="text-ink-muted mt-1 text-sm leading-relaxed">{notification.message}</p>
-                    </button>
+                    </div>
 
                     <button
                         type="button"
-                        onClick={() => void remove(notification.id)}
-                        aria-label="이 알림 삭제"
-                        className="text-ink-muted hover:text-danger hover:bg-danger/10 shrink-0 rounded-md p-2 transition-colors"
+                        onClick={() => void markAsRead(notification.id)}
+                        className="mt-1 block w-full text-left"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <p className="text-ink-muted text-sm leading-relaxed">{notification.message}</p>
                     </button>
                   </div>
               ))}
