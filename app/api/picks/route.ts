@@ -79,6 +79,34 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * GET /api/picks
+ *
+ * 로그인한 사용자의 기록을 최신순으로 돌려준다.
+ * number_picks는 RLS를 닫아 두었으므로 브라우저가 직접 읽지 않고 이 경로를 거친다.
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const userId = await resolveUserId(request)
+    if (!userId) return ok({ picks: [] })
+
+    const { data, error } = await getAdminClient()
+        .from(TABLE)
+        .select("id, numbers, created_at, source, draw_no, matched_count, bonus_matched, prize_rank, scored_at")
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(200)
+
+    if (error) throw error
+
+    return ok({ picks: data ?? [] })
+  } catch (error) {
+    console.error("내 기록 조회 실패:", errorMessage(error))
+    return fail(errorMessage(error))
+  }
+}
+
+/**
  * DELETE /api/picks
  *
  * 본인 기록을 소프트 삭제한다. 통계 집계를 위해 행은 남기고 시각만 채운다.

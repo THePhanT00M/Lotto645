@@ -8,6 +8,15 @@ import { GRID_COLUMNS, GRID_ROWS, toGridPoint } from "@/lib/lotto/grid"
 const CELL = 40
 const GAP = 6
 
+/** 공 반지름. 칸을 꽉 채우면 답답해 보여 여백을 남긴다. */
+const BALL_RADIUS = CELL / 2 - 5
+
+/** 칸에 적히는 번호 크기 */
+const CELL_FONT = 13
+
+/** 공 위에 적히는 번호 크기. 공이 칸보다 작으므로 함께 줄인다. */
+const BALL_FONT = 12
+
 /** 그림 바깥 여백. 칸 테두리가 잘리지 않을 만큼만 둔다. */
 const PADDING = 2
 
@@ -57,7 +66,7 @@ export default function PaperPattern({ numbers, compare, className }: PaperPatte
                     width={CELL}
                     height={CELL}
                     rx={6}
-                    className="fill-transparent stroke-line"
+                    className="fill-surface stroke-line"
                     strokeWidth={1}
                 />
                 <text
@@ -66,7 +75,7 @@ export default function PaperPattern({ numbers, compare, className }: PaperPatte
                     textAnchor="middle"
                     dominantBaseline="central"
                     className={isSelected ? "fill-transparent" : "fill-ink-muted"}
-                    fontSize={15}
+                    fontSize={CELL_FONT}
                 >
                   {number}
                 </text>
@@ -101,13 +110,13 @@ export default function PaperPattern({ numbers, compare, className }: PaperPatte
 
           return (
               <g key={`marked-${number}`}>
-                <circle cx={x} cy={y} r={CELL / 2 - 2} fill={getBallColor(number)} stroke="#fff" strokeWidth={1.5} />
+                <circle cx={x} cy={y} r={BALL_RADIUS} fill={getBallColor(number)} stroke="#fff" strokeWidth={1.5} />
                 <text
                     x={x}
                     y={y}
                     textAnchor="middle"
                     dominantBaseline="central"
-                    fontSize={15}
+                    fontSize={BALL_FONT}
                     fontWeight={700}
                     fill="#0f0f0f"
                 >

@@ -178,10 +178,7 @@ export default function LoginPage() {
                     onChange={(event) => setRemember(event.target.checked)}
                     className="border-line h-4 w-4 rounded accent-blue-600"
                 />
-                로그인 상태 유지
-                <span className="text-ink-muted text-xs opacity-70">
-                  (해제하면 브라우저를 닫을 때 로그아웃됩니다)
-                </span>
+                자동 로그인
               </label>
           )}
 

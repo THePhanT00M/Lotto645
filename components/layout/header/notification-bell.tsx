@@ -1,157 +1,184 @@
 "use client"
 
-import { Bell, Check, Loader2 } from "lucide-react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { useIsMobile } from "@/hooks/use-mobile"
-import { formatRelativeTime, useNotifications, type NotificationItem } from "@/hooks/use-notifications"
+import { Bell, Check, Loader2, Settings, Trash2 } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useRef, useState } from "react"
+import NotificationCard from "@/components/notifications/notification-card"
+import { useNotifications } from "@/hooks/use-notifications"
 import { cn } from "@/lib/utils"
 
 /** 배지에 그대로 노출할 최대 개수 */
 const MAX_BADGE_COUNT = 99
 
 interface NotificationBellProps {
-  unreadCount: number
+  userId?: string
+  /** 서버에서 미리 센 개수. 목록을 받기 전까지 배지에 쓴다. */
+  initialUnreadCount: number
 }
 
-/** 읽지 않은 알림 개수를 배지로 보여주고, 목록을 펼친다. 모바일은 시트로 연다. */
-export default function NotificationBell({ unreadCount }: NotificationBellProps) {
-  const isMobile = useIsMobile()
+/**
+ * 알림 벨과 알림 센터
+ *
+ * 화면 가운데를 덮는 대신 벨 아래에 붙는 형태로 열어, 보던 화면을 가리지 않는다.
+ * 배지는 알림 센터와 같은 상태를 보므로 읽음 처리를 하면 그 자리에서 줄어든다.
+ */
+export default function NotificationBell({ userId, initialUnreadCount }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  // 벨을 처음 열 때 목록을 받아 온다.
-  const { notifications, isLoading, markAsRead, markAllAsRead } = useNotifications(isOpen)
+  const { notifications, unreadCount, isLoading, hasLoaded, markAsRead, markAllAsRead, remove, removeAll } =
+      useNotifications(userId)
 
-  const trigger = <BellTrigger unreadCount={unreadCount} />
+  // 목록을 받기 전에는 서버가 세어준 값을 쓴다.
+  const badgeCount = hasLoaded ? unreadCount : initialUnreadCount
 
-  if (isMobile) {
-    return (
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>{trigger}</SheetTrigger>
-          <SheetContent side="bottom" className="h-[90vh] rounded-t-xl px-0">
-            <SheetHeader className="border-line border-b px-4 pb-4">
-              <SheetTitle className="flex items-center gap-2 text-left">
-                <Bell className="h-5 w-5" />
-                알림 센터
-              </SheetTitle>
-            </SheetHeader>
-            <ScrollArea className="h-full pb-10">
-              <NotificationList notifications={notifications} isLoading={isLoading} onRead={markAsRead} />
-            </ScrollArea>
-          </SheetContent>
-        </Sheet>
-    )
-  }
+  // 바깥을 누르거나 Esc를 누르면 닫는다.
+  useEffect(() => {
+    if (!isOpen) return
+
+    const closeOnOutside = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setIsOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false)
+    }
+
+    document.addEventListener("mousedown", closeOnOutside)
+    document.addEventListener("keydown", closeOnEscape)
+
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutside)
+      document.removeEventListener("keydown", closeOnEscape)
+    }
+  }, [isOpen])
 
   return (
-      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-        <DropdownMenuContent
-            align="end"
-            className="bg-surface border-line w-80 overflow-hidden rounded-lg border p-0 shadow-lg"
+      <div className="relative" ref={containerRef}>
+        <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            aria-label={badgeCount > 0 ? `알림 ${badgeCount}건` : "알림"}
+            aria-expanded={isOpen}
+            className="hover:bg-hover relative cursor-pointer rounded-lg p-2 transition-colors"
         >
-          <div className="border-line flex items-center justify-between border-b px-4 py-3">
-            <span className="text-ink flex items-center gap-2 font-semibold">
-              <Bell className="h-4 w-4" />
-              알림
-            </span>
-            {unreadCount > 0 && (
-                <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      void markAllAsRead()
-                    }}
-                    className="flex items-center gap-1 text-xs font-medium text-blue-500 hover:text-blue-600"
+          <Bell className="text-ink-muted h-5 w-5" />
+          {badgeCount > 0 && (
+              <span className="border-canvas absolute -top-0.5 -right-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full border-2 border-solid bg-blue-500 text-[9px] leading-none font-bold text-white tabular-nums">
+                {badgeCount > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : badgeCount}
+              </span>
+          )}
+        </button>
+
+        {isOpen && (
+            <div
+                role="dialog"
+                aria-label="알림 센터"
+                className={cn(
+                    "bg-panel border-line z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-xl border shadow-xl",
+                    // 좁은 화면에서는 벨 위치와 무관하게 화면에 맞춰 붙인다.
+                    // 벨 오른쪽에 다른 버튼이 있어 기준을 벨로 잡으면 화면 밖으로 밀린다.
+                    "fixed top-16 right-4 left-4",
+                    "sm:absolute sm:top-full sm:right-0 sm:left-auto sm:mt-3 sm:w-[380px]",
+                )}
+            >
+              {/* 벨에서 이어지는 꼬리. 화면 기준으로 붙는 좁은 화면에서는 감춘다. */}
+              <span className="border-line bg-surface absolute -top-[7px] right-3 hidden h-3 w-3 rotate-45 border-t border-l sm:block" />
+
+              {/* 머리말은 목록 영역보다 밝게 둬서 경계가 드러나게 한다. */}
+              <div className="bg-surface border-line relative flex items-center justify-between border-b px-4 py-3">
+                <h2 className="text-ink text-base font-bold">알림센터</h2>
+                <Link
+                    href="/account/notifications"
+                    onClick={() => setIsOpen(false)}
+                    aria-label="알림 설정"
+                    className="hover:bg-hover rounded-md p-1.5 transition-colors"
                 >
-                  <Check className="h-3 w-3" /> 모두 읽음
-                </button>
-            )}
-          </div>
+                  <Settings className="text-ink-muted h-4 w-4" />
+                </Link>
+              </div>
 
-          <div className="max-h-[400px] overflow-y-auto">
-            <NotificationList notifications={notifications} isLoading={isLoading} onRead={markAsRead} />
-          </div>
+              {notifications.length > 0 && (
+                  <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                    <span className="text-ink-muted text-xs">
+                      {unreadCount > 0 ? `읽지 않은 알림 ${unreadCount}건` : "모두 확인했습니다"}
+                    </span>
 
-          <div className="border-line bg-panel border-t p-2">
-            <Button variant="ghost" size="sm" className="h-8 w-full text-xs" disabled>
-              알림 전체보기
-            </Button>
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
-  )
-}
+                    <div className="flex items-center gap-1">
+                      <ActionButton onClick={() => void markAllAsRead()} disabled={unreadCount === 0}>
+                        <Check className="mr-1 h-3.5 w-3.5" />
+                        모두 읽음
+                      </ActionButton>
+                      <ActionButton onClick={() => void removeAll()} tone="danger">
+                        <Trash2 className="mr-1 h-3.5 w-3.5" />
+                        전체 삭제
+                      </ActionButton>
+                    </div>
+                  </div>
+              )}
 
-function BellTrigger({ unreadCount }: { unreadCount: number }) {
-  return (
-      <div className="relative cursor-pointer rounded-lg p-2 transition-colors hover:bg-hover">
-        <Bell className="text-ink-muted h-5 w-5" />
-        {unreadCount > 0 && (
-            // 자릿수에 따라 가로로만 늘어나게 해, 두 자리여도 벨을 덮지 않는다.
-            <span className="border-canvas bg-accent absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full border px-1 text-[10px] leading-none font-bold text-white tabular-nums">
-              {unreadCount > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : unreadCount}
-            </span>
+              <div className="flex-1 overflow-y-auto px-3 pb-3">
+                {isLoading && notifications.length === 0 ? (
+                    <div className="text-ink-muted flex items-center justify-center gap-2 py-10 text-sm">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      불러오는 중...
+                    </div>
+                ) : notifications.length === 0 ? (
+                    <p className="text-ink-muted py-10 text-center text-sm">새로운 알림이 없습니다.</p>
+                ) : (
+                    <ul className="flex flex-col gap-2">
+                      {notifications.map((notification) => (
+                          <li key={notification.id}>
+                            <NotificationCard
+                                notification={notification}
+                                onRead={(id) => void markAsRead(id)}
+                                onRemove={(id) => void remove(id)}
+                                compact
+                            />
+                          </li>
+                      ))}
+                    </ul>
+                )}
+              </div>
+
+              <div className="border-line bg-surface border-t">
+                <Link
+                    href="/account/notifications"
+                    onClick={() => setIsOpen(false)}
+                    className="text-ink-muted hover:text-ink block py-2.5 text-center text-xs transition-colors"
+                >
+                  알림 전체보기
+                </Link>
+              </div>
+            </div>
         )}
       </div>
   )
 }
 
-interface NotificationListProps {
-  notifications: NotificationItem[]
-  isLoading: boolean
-  onRead: (id: string) => void
-}
-
-function NotificationList({ notifications, isLoading, onRead }: NotificationListProps) {
-  if (isLoading && notifications.length === 0) {
-    return (
-        <div className="text-ink-muted flex items-center justify-center gap-2 py-8 text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          불러오는 중...
-        </div>
-    )
-  }
-
-  if (notifications.length === 0) {
-    return <p className="text-ink-muted py-8 text-center text-sm">새로운 알림이 없습니다.</p>
-  }
-
+function ActionButton({
+                        onClick,
+                        disabled,
+                        tone,
+                        children,
+                      }: {
+  onClick: () => void
+  disabled?: boolean
+  tone?: "danger"
+  children: React.ReactNode
+}) {
   return (
-      <div className="flex flex-col py-1">
-        {notifications.map((notification) => (
-            <button
-                key={notification.id}
-                type="button"
-                onClick={() => onRead(notification.id)}
-                className={cn(
-                    "border-line flex w-full flex-col gap-1 border-b px-4 py-3 text-left transition-colors last:border-0 hover:bg-gray-50 dark:hover:bg-[#2b2b2b]",
-                    !notification.is_read && "bg-blue-50/50 dark:bg-blue-900/10",
-                )}
-            >
-              <div className="flex w-full items-start justify-between">
-                <span
-                    className={cn(
-                        "text-sm font-medium",
-                        notification.is_read ? "text-ink" : "text-blue-600 dark:text-blue-400",
-                    )}
-                >
-                  {notification.title}
-                </span>
-                <span className="text-ink-muted ml-2 text-xs whitespace-nowrap">
-                  {formatRelativeTime(notification.created_at)}
-                </span>
-              </div>
-              <p className="text-ink-muted line-clamp-2 text-xs">{notification.message}</p>
-            </button>
-        ))}
-      </div>
+      <button
+          type="button"
+          onClick={onClick}
+          disabled={disabled}
+          className={cn(
+              "flex items-center rounded-md px-2 py-1 text-xs transition-colors disabled:opacity-40",
+              tone === "danger"
+                  ? "text-danger hover:bg-danger/10"
+                  : "text-ink-muted hover:bg-hover hover:text-ink disabled:hover:bg-transparent",
+          )}
+      >
+        {children}
+      </button>
   )
 }

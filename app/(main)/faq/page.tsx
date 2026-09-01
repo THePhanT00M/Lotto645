@@ -2,7 +2,7 @@
 
 import { Calculator, HelpCircle } from "lucide-react"
 import { PageHeader } from "@/components/common/page-header"
-import { Panel } from "@/components/common/panel"
+import { Panel, Surface } from "@/components/common/panel"
 import { FAQ_SECTIONS, type FaqSection } from "@/components/faq/faq-data"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -61,22 +61,27 @@ function FaqPanel({ section }: { section: FaqSection }) {
           <h2 className="text-ink text-lg font-bold">{section.title}</h2>
         </div>
 
-        <Accordion type="single" collapsible className="w-full">
-          {section.items.map((item, index) => (
-              <AccordionItem
-                  key={item.question}
-                  value={`${section.value}-${index}`}
-                  className={index === section.items.length - 1 ? "border-none" : "border-line border-b"}
-              >
-                <AccordionTrigger className="text-ink text-left hover:no-underline">{item.question}</AccordionTrigger>
-                <AccordionContent className="text-ink-muted space-y-2 leading-relaxed">
-                  {item.answer.map((paragraph) => (
-                      <p key={paragraph}>{paragraph}</p>
-                  ))}
-                </AccordionContent>
-              </AccordionItem>
-          ))}
-        </Accordion>
+        {/* 질문 목록은 한 단계 밝은 카드에 올려 패널과 구분한다. */}
+        <Surface className="px-4 py-1">
+          <Accordion type="single" collapsible className="w-full">
+            {section.items.map((item, index) => (
+                <AccordionItem
+                    key={item.question}
+                    value={`${section.value}-${index}`}
+                    className={index === section.items.length - 1 ? "border-none" : "border-line border-b"}
+                >
+                  <AccordionTrigger className="text-ink text-left hover:no-underline">
+                    {item.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-ink-muted space-y-2 leading-relaxed">
+                    {item.answer.map((paragraph) => (
+                        <p key={paragraph}>{paragraph}</p>
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
+            ))}
+          </Accordion>
+        </Surface>
       </Panel>
   )
 }

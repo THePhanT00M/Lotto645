@@ -3,41 +3,62 @@
 import { Loader2, Send } from "lucide-react"
 import { useState } from "react"
 import NotificationComposer from "@/components/admin/notification-composer"
-import UserPicker from "@/components/admin/user-picker"
+import RecipientPicker, { type Target } from "@/components/admin/recipient-picker"
 import { PageHeader } from "@/components/common/page-header"
 import { useAdminUsers } from "@/hooks/use-admin-users"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase/client"
+import { authorizedFetch } from "@/lib/auth/client"
 
 /**
  * 알림 발송 관리 (관리자)
  *
- * 왼쪽에서 회원을 검색·필터해 고르고, 오른쪽에서 작성한 알림을 한 번에 보낸다.
- * 어드민 등급(Lv.2) 미만은 진입 시 홈으로 돌려보낸다.
+ * 받는 사람을 고르고 내용을 쓰는 두 단계로 나눴다.
+ * 발송은 브라우저에서 테이블에 직접 넣지 않고 관리자 API를 거치므로,
+ * 전 회원 발송처럼 권한이 필요한 작업도 서버에서 한 번에 처리된다.
  */
 export default function AdminNotificationPage() {
   const { users, isLoading } = useAdminUsers()
   const { toast } = useToast()
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
 
-  const send = async ({ title, content }: { title: string; content: string }) => {
-    const rows = selectedIds.map((userId) => ({
-      user_id: userId,
-      title,
-      message: content,
-      is_read: false,
-    }))
+  const [target, setTarget] = useState<Target>({ kind: "selected", userIds: [] })
+  const [title, setTitle] = useState("")
+  const [message, setMessage] = useState("")
+  const [isSending, setIsSending] = useState(false)
 
-    const { error } = await supabase.from("notifications").insert(rows)
+  const recipientCount = target.kind === "all" ? users.length : target.userIds.length
 
-    if (error) {
-      console.error("알림 발송 실패:", error.message)
-      toast({ variant: "destructive", title: "발송 실패", description: "알림 발송 중 오류가 발생했습니다." })
-      return
+  const send = async () => {
+    setIsSending(true)
+
+    try {
+      const response = await authorizedFetch("/api/admin/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          message,
+          target: target.kind === "all" ? "all" : target.userIds,
+        }),
+      })
+
+      const result = await response.json()
+      if (!response.ok || !result.success) throw new Error(result.message ?? "알림 발송에 실패했습니다.")
+
+      toast({ title: "발송 완료", description: result.message })
+
+      // 같은 내용을 두 번 보내는 사고를 막으려고 작성 내용까지 비운다.
+      setTarget({ kind: "selected", userIds: [] })
+      setTitle("")
+      setMessage("")
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "발송 실패",
+        description: error instanceof Error ? error.message : "잠시 후 다시 시도해주세요.",
+      })
+    } finally {
+      setIsSending(false)
     }
-
-    toast({ title: "발송 완료", description: `${selectedIds.length}명에게 알림을 보냈습니다.` })
-    setSelectedIds([])
   }
 
   if (isLoading) {
@@ -50,11 +71,23 @@ export default function AdminNotificationPage() {
 
   return (
       <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
-        <PageHeader icon={Send} title="알림 발송 관리" description="선택한 회원에게 알림을 일괄 발송합니다." />
+        <PageHeader
+            icon={Send}
+            title="알림 발송"
+            description="받는 사람을 고르고 내용을 작성해 알림을 보냅니다."
+        />
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <UserPicker users={users} selectedIds={selectedIds} onChange={setSelectedIds} />
-          <NotificationComposer recipientCount={selectedIds.length} onSend={send} />
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+          <RecipientPicker users={users} target={target} onChange={setTarget} />
+          <NotificationComposer
+              title={title}
+              message={message}
+              onTitleChange={setTitle}
+              onMessageChange={setMessage}
+              recipientCount={recipientCount}
+              isSending={isSending}
+              onSend={send}
+          />
         </div>
       </div>
   )
