@@ -26,6 +26,40 @@ import { useToast } from "@/hooks/use-toast"
 /** 목록에서 기록을 가리키는 키. 로컬과 서버에 같은 id가 있을 수 있다. */
 const keyOf = (entry: AnalyzedEntry) => `${entry.source}-${entry.id}`
 
+interface DrawGroup {
+  /** 회차를 지정하지 않고 저장한 구 기록은 null 로 모은다. */
+  drawNo: number | null
+  entries: AnalyzedEntry[]
+  /** 그 회차에서 5등 이상 당첨된 건수 */
+  winCount: number
+}
+
+/**
+ * 기록을 회차별로 묶는다.
+ *
+ * 최신 회차가 위로 오고, 회차 없이 저장된 구 기록은 맨 아래로 모은다.
+ * 회차 안에서는 목록이 이미 최신순이므로 들어온 순서를 그대로 둔다.
+ */
+const groupByDraw = (entries: AnalyzedEntry[]): DrawGroup[] => {
+  const buckets = new Map<number | null, AnalyzedEntry[]>()
+
+  for (const entry of entries) {
+    const drawNo = entry.drawNo ?? null
+    const bucket = buckets.get(drawNo)
+
+    if (bucket) bucket.push(entry)
+    else buckets.set(drawNo, [entry])
+  }
+
+  return [...buckets]
+      .map(([drawNo, items]) => ({
+        drawNo,
+        entries: items,
+        winCount: items.filter((entry) => entry.status?.kind === "matched" && entry.status.match.rank !== null).length,
+      }))
+      .sort((a, b) => (b.drawNo ?? -1) - (a.drawNo ?? -1))
+}
+
 /**
  * 나의 추첨 기록
  *
@@ -46,6 +80,8 @@ export default function HistoryPage() {
   )
 
   const allSelected = entries.length > 0 && selectedEntries.length === entries.length
+
+  const groups = useMemo(() => groupByDraw(entries), [entries])
 
   const toggleSelect = (entry: AnalyzedEntry) => {
     setSelectedKeys((prev) => {
@@ -175,21 +211,27 @@ export default function HistoryPage() {
           <StatCard icon={Trophy} label="당첨된 기록 (5등 이상)" value={winCount} />
         </div>
 
-        <div className="space-y-4">
-          {entries.length === 0 ? (
-              <EmptyState icon={History} message="저장된 추첨 기록이 없습니다." />
-          ) : (
-              entries.map((entry) => (
-                  <HistoryItem
-                      key={keyOf(entry)}
-                      entry={entry}
-                      onDelete={() => handleDelete(entry)}
-                      isSelected={isSelecting ? selectedKeys.has(keyOf(entry)) : undefined}
-                      onToggleSelect={isSelecting ? () => toggleSelect(entry) : undefined}
-                  />
-              ))
-          )}
-        </div>
+        {entries.length === 0 ? (
+            <EmptyState icon={History} message="저장된 추첨 기록이 없습니다." />
+        ) : (
+            <div className="space-y-8">
+              {groups.map((group) => (
+                  <section key={group.drawNo ?? "unknown"} className="space-y-4">
+                    <DrawGroupHeader group={group} />
+
+                    {group.entries.map((entry) => (
+                        <HistoryItem
+                            key={keyOf(entry)}
+                            entry={entry}
+                            onDelete={() => handleDelete(entry)}
+                            isSelected={isSelecting ? selectedKeys.has(keyOf(entry)) : undefined}
+                            onToggleSelect={isSelecting ? () => toggleSelect(entry) : undefined}
+                        />
+                    ))}
+                  </section>
+              ))}
+            </div>
+        )}
 
         <Notice title="안내사항">
           <ul className="text-ink-muted mt-1 list-inside list-disc space-y-1 opacity-90">
@@ -205,6 +247,33 @@ export default function HistoryPage() {
             <li>추첨 대기 상태의 기록은 실제 추첨 완료 후 다시 접속하시면 결과가 자동 업데이트됩니다.</li>
           </ul>
         </Notice>
+      </div>
+  )
+}
+
+/**
+ * 회차 구분 머리말
+ *
+ * 목록이 길어지면 카드마다 붙은 회차 표시만으로는 경계가 눈에 들어오지 않아,
+ * 회차가 바뀌는 자리에 선을 긋고 그 회차의 건수와 당첨 수를 함께 보여준다.
+ */
+function DrawGroupHeader({ group }: { group: DrawGroup }) {
+  return (
+      <div className="flex items-center gap-2.5">
+        <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2.5 py-1 text-sm font-bold">
+          {group.drawNo === null ? "회차 미지정" : `${group.drawNo}회차`}
+        </span>
+
+        <span className="text-ink-muted text-sm">{group.entries.length}건</span>
+
+        {group.winCount > 0 && (
+            <span className="flex items-center gap-1 text-sm font-semibold text-amber-600 dark:text-amber-400">
+              <Trophy className="h-3.5 w-3.5" />
+              당첨 {group.winCount}건
+            </span>
+        )}
+
+        <div className="bg-line h-px flex-1" />
       </div>
   )
 }

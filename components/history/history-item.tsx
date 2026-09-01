@@ -60,12 +60,8 @@ export default function HistoryItem({ entry, onDelete, isSelected, onToggleSelec
             <DeleteButton onClick={onDelete} className="md:hidden" />
           </div>
 
+          {/* 회차는 목록의 그룹 머리말이 알려주므로 카드에서는 당첨 결과만 보여준다. */}
           <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
-            {entry.drawNo && (
-                <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-1 text-sm font-semibold">
-                  {entry.drawNo}회차
-                </span>
-            )}
             {entry.status && <RankBadge status={entry.status} showComparedDraw={entry.drawNo === undefined} />}
           </div>
         </div>
