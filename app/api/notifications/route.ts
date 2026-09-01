@@ -11,23 +11,33 @@ const LIST_LIMIT = 30
 /**
  * GET /api/notifications
  *
- * 로그인한 사용자의 알림을 최신순으로 돌려준다.
+ * 로그인한 사용자의 알림을 최신순으로, 안 읽은 개수와 함께 돌려준다.
  */
 export async function GET(request: NextRequest) {
   try {
     const userId = await resolveUserId(request)
     if (!userId) return fail("로그인이 필요합니다.", 401)
 
-    const { data, error } = await getAdminClient()
-        .from(TABLE)
-        .select("id, title, message, is_read, created_at")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(LIST_LIMIT)
+    const supabase = getAdminClient()
+
+    // 목록은 최근 것만 보내되, 배지에 쓸 개수는 잘리지 않도록 따로 센다.
+    const [{ data, error }, { count }] = await Promise.all([
+      supabase
+          .from(TABLE)
+          .select("id, title, message, is_read, created_at")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(LIST_LIMIT),
+      supabase
+          .from(TABLE)
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .eq("is_read", false),
+    ])
 
     if (error) throw error
 
-    return ok({ notifications: data ?? [] })
+    return ok({ notifications: data ?? [], unreadCount: count ?? 0 })
   } catch (error) {
     console.error("알림 조회 실패:", errorMessage(error))
     return fail(errorMessage(error))

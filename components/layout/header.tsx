@@ -10,6 +10,7 @@ import ThemeToggle from "@/components/layout/header/theme-toggle"
 import Logo from "@/components/layout/header/logo"
 import { useHeaderData, type UserData } from "@/hooks/use-header-data"
 import { clearSessionMark, markSessionAlive, shouldClearSession } from "@/lib/auth/session-persistence"
+import { resetNotifications } from "@/lib/notifications/store"
 import { supabase } from "@/lib/supabase/client"
 
 interface HeaderProps {
@@ -23,8 +24,8 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(initialUser))
   const [showMobileMenu, setShowMobileMenu] = useState(false)
 
-  // 하위 컴포넌트가 각자 조회하지 않도록 헤더에서 한 번만 구독한다.
-  const { userData, unreadCount } = useHeaderData(isLoggedIn, initialUser, initialUnreadCount)
+  // 하위 컴포넌트가 각자 조회하지 않도록 헤더에서 한 번만 조회한다.
+  const { userData } = useHeaderData(isLoggedIn, initialUser)
 
   useEffect(() => {
     // 로그인 유지를 끈 채 브라우저를 닫았다 열었다면 지난 세션을 정리한다.
@@ -47,6 +48,7 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
   const logout = async () => {
     await supabase.auth.signOut()
     clearSessionMark()
+    resetNotifications()
     setIsLoggedIn(false)
   }
 
@@ -69,7 +71,7 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
 
               {isLoggedIn ? (
                   <>
-                    <NotificationBell unreadCount={unreadCount} />
+                    <NotificationBell userId={userData?.id} initialUnreadCount={initialUnreadCount} />
                     <div className="relative hidden items-center gap-4 lg:flex">
                       <ProfileDropdown userData={userData} onLogout={logout} />
                     </div>
