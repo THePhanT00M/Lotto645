@@ -59,6 +59,32 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
+/**
+ * DELETE /api/notifications
+ *
+ * 알림을 지운다. id를 주면 그 한 건만, 없으면 본인 알림 전부를 지운다.
+ * 남의 알림을 건드리지 못하도록 언제나 user_id 조건을 함께 건다.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const userId = await resolveUserId(request)
+    if (!userId) return fail("로그인이 필요합니다.", 401)
+
+    const { id } = await request.json().catch(() => ({ id: undefined }))
+
+    const query = getAdminClient().from(TABLE).delete().eq("user_id", userId)
+    const { data, error } = await (id ? query.eq("id", id) : query).select("id")
+
+    if (error) throw error
+
+    const removed = data?.length ?? 0
+    return ok({ removed, message: `${removed}건을 삭제했습니다.` })
+  } catch (error) {
+    console.error("알림 삭제 실패:", errorMessage(error))
+    return fail(errorMessage(error))
+  }
+}
+
 /** 쿠키 세션이나 Authorization 헤더에서 사용자를 찾는다. */
 const resolveUserId = async (request: NextRequest): Promise<string | null> => {
   const header = request.headers.get("Authorization")

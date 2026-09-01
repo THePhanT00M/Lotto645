@@ -60,6 +60,32 @@ export function useNotifications(enabled: boolean) {
     }
   }, [])
 
+  /** 한 건을 지운다. 화면에서 먼저 치우고 서버에 알린다. */
+  const remove = useCallback(async (id: string) => {
+    setNotifications((prev) => prev.filter((item) => item.id !== id))
+
+    try {
+      await authorizedFetch(ENDPOINT, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      })
+    } catch (error) {
+      console.error("알림을 지우지 못했습니다:", error)
+    }
+  }, [])
+
+  /** 받은 알림을 모두 지운다. */
+  const removeAll = useCallback(async () => {
+    setNotifications([])
+
+    try {
+      await authorizedFetch(ENDPOINT, { method: "DELETE", headers: { "Content-Type": "application/json" } })
+    } catch (error) {
+      console.error("알림을 지우지 못했습니다:", error)
+    }
+  }, [])
+
   const markAllAsRead = useCallback(async () => {
     setNotifications((prev) => prev.map((item) => ({ ...item, is_read: true })))
 
@@ -70,7 +96,7 @@ export function useNotifications(enabled: boolean) {
     }
   }, [])
 
-  return { notifications, isLoading, hasLoaded, reload: load, markAsRead, markAllAsRead }
+  return { notifications, isLoading, hasLoaded, reload: load, markAsRead, markAllAsRead, remove, removeAll }
 }
 
 /** 알림이 온 시각을 '방금 전', '3시간 전'처럼 바꾼다. */

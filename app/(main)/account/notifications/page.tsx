@@ -1,9 +1,20 @@
 "use client"
 
-import { Bell, Check, Loader2 } from "lucide-react"
+import { Bell, Check, Loader2, Trash2 } from "lucide-react"
 import { EmptyState } from "@/components/common/empty-state"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { formatRelativeTime, useNotifications } from "@/hooks/use-notifications"
 import { cn } from "@/lib/utils"
 
@@ -13,7 +24,7 @@ import { cn } from "@/lib/utils"
  * 헤더 벨에는 최근 것만 보이므로, 여기서 전체 목록을 보고 읽음 처리를 한다.
  */
 export default function NotificationsPage() {
-  const { notifications, isLoading, markAsRead, markAllAsRead } = useNotifications(true)
+  const { notifications, isLoading, markAsRead, markAllAsRead, remove, removeAll } = useNotifications(true)
   const unreadCount = notifications.filter((item) => !item.is_read).length
 
   return (
@@ -29,12 +40,45 @@ export default function NotificationsPage() {
             </p>
           </div>
 
-          {unreadCount > 0 && (
-              <Button variant="outline" onClick={() => void markAllAsRead()} className="bg-surface border-line">
-                <Check className="mr-2 h-4 w-4" />
-                모두 읽음
-              </Button>
-          )}
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+                <Button variant="outline" onClick={() => void markAllAsRead()} className="bg-surface border-line">
+                  <Check className="mr-2 h-4 w-4" />
+                  모두 읽음
+                </Button>
+            )}
+
+            {notifications.length > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                        variant="destructive"
+                        className="bg-danger hover:bg-danger/90 border-none text-white shadow-none"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      전체 삭제
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-surface border-line border">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-ink">알림을 모두 지우시겠습니까?</AlertDialogTitle>
+                      <AlertDialogDescription className="text-ink-muted">
+                        받은 알림이 모두 사라지며 되돌릴 수 없습니다.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="text-ink border-line bg-transparent">취소</AlertDialogCancel>
+                      <AlertDialogAction
+                          onClick={() => void removeAll()}
+                          className="bg-danger hover:bg-danger/90 text-white"
+                      >
+                        삭제
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            )}
+          </div>
         </div>
 
         {isLoading && notifications.length === 0 ? (
@@ -47,30 +91,38 @@ export default function NotificationsPage() {
         ) : (
             <div className="space-y-2">
               {notifications.map((notification) => (
-                  <button
+                  <div
                       key={notification.id}
-                      type="button"
-                      onClick={() => void markAsRead(notification.id)}
                       className={cn(
-                          "border-line hover:bg-hover flex w-full flex-col gap-1 rounded-lg border p-4 text-left transition-colors",
+                          "border-line flex items-start gap-2 rounded-lg border p-4 transition-colors",
                           notification.is_read ? "bg-surface" : "border-accent-line bg-accent-soft",
                       )}
                   >
-                    <div className="flex w-full items-start justify-between gap-3">
-                      <span
-                          className={cn(
-                              "font-medium",
-                              notification.is_read ? "text-ink" : "text-accent",
-                          )}
-                      >
-                        {notification.title}
-                      </span>
-                      <span className="text-ink-muted shrink-0 text-xs">
-                        {formatRelativeTime(notification.created_at)}
-                      </span>
-                    </div>
-                    <p className="text-ink-muted text-sm leading-relaxed">{notification.message}</p>
-                  </button>
+                    <button
+                        type="button"
+                        onClick={() => void markAsRead(notification.id)}
+                        className="min-w-0 flex-1 text-left"
+                    >
+                      <div className="flex w-full items-start justify-between gap-3">
+                        <span className={cn("font-medium", notification.is_read ? "text-ink" : "text-accent")}>
+                          {notification.title}
+                        </span>
+                        <span className="text-ink-muted shrink-0 text-xs">
+                          {formatRelativeTime(notification.created_at)}
+                        </span>
+                      </div>
+                      <p className="text-ink-muted mt-1 text-sm leading-relaxed">{notification.message}</p>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => void remove(notification.id)}
+                        aria-label="이 알림 삭제"
+                        className="text-ink-muted hover:text-danger hover:bg-danger/10 shrink-0 rounded-md p-2 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
               ))}
             </div>
         )}
