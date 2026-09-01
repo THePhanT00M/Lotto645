@@ -76,9 +76,10 @@ export default function NotificationBell({ unreadCount }: NotificationBellProps)
                 )}
             >
               {/* 벨에서 이어지는 꼬리. 화면 기준으로 붙는 좁은 화면에서는 감춘다. */}
-              <span className="border-line bg-panel absolute -top-[7px] right-3 hidden h-3 w-3 rotate-45 border-t border-l sm:block" />
+              <span className="border-line bg-surface absolute -top-[7px] right-3 hidden h-3 w-3 rotate-45 border-t border-l sm:block" />
 
-              <div className="bg-panel relative flex items-center justify-between px-4 pt-4 pb-3">
+              {/* 머리말은 목록 영역보다 밝게 둬서 경계가 드러나게 한다. */}
+              <div className="bg-surface border-line relative flex items-center justify-between border-b px-4 py-3">
                 <h2 className="text-ink text-base font-bold">알림센터</h2>
                 <Link
                     href="/account/notifications"
@@ -91,7 +92,7 @@ export default function NotificationBell({ unreadCount }: NotificationBellProps)
               </div>
 
               {notifications.length > 0 && (
-                  <div className="flex items-center justify-between px-4 pb-2">
+                  <div className="flex items-center justify-between px-4 pt-3 pb-2">
                     <span className="text-ink-muted text-xs">
                       {unread > 0 ? `읽지 않은 알림 ${unread}건` : "모두 확인했습니다"}
                     </span>
