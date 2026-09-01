@@ -125,7 +125,7 @@ export default function RecipientPicker({ users, target, onChange }: RecipientPi
                 </button>
               </div>
 
-              <ul className="border-line max-h-[420px] flex-1 space-y-1 overflow-y-auto rounded-lg border p-1">
+              <ul className="bg-surface border-line max-h-[420px] flex-1 space-y-1 overflow-y-auto rounded-lg border p-1">
                 {filtered.length === 0 ? (
                     <li className="text-ink-muted py-10 text-center text-sm">조건에 맞는 회원이 없습니다.</li>
                 ) : (
