@@ -6,8 +6,10 @@ import { GRID_COLUMNS, GRID_ROWS, toGridPoint } from "@/lib/lotto/grid"
 
 /** 한 칸의 크기와 간격 (SVG 좌표) */
 const CELL = 40
-const GAP = 8
-const PADDING = 10
+const GAP = 6
+
+/** 그림 바깥 여백. 칸 테두리가 잘리지 않을 만큼만 둔다. */
+const PADDING = 2
 
 const STEP = CELL + GAP
 const WIDTH = PADDING * 2 + GRID_COLUMNS * STEP - GAP

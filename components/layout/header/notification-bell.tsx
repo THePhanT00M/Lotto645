@@ -95,7 +95,8 @@ function BellTrigger({ unreadCount }: { unreadCount: number }) {
       <div className="relative cursor-pointer rounded-lg p-2 transition-colors hover:bg-hover">
         <Bell className="text-ink-muted h-5 w-5" />
         {unreadCount > 0 && (
-            <span className="absolute top-0.5 right-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full border-2 border-white bg-blue-500 text-[10px] font-bold text-white dark:border-[#121212]">
+            // 자릿수에 따라 가로로만 늘어나게 해, 두 자리여도 벨을 덮지 않는다.
+            <span className="border-canvas bg-accent absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full border px-1 text-[10px] leading-none font-bold text-white tabular-nums">
               {unreadCount > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : unreadCount}
             </span>
         )}
