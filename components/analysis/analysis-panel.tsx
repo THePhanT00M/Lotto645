@@ -2,7 +2,7 @@
 
 import { Info, MousePointerClick, RotateCcw, SearchCheck, Sparkles } from "lucide-react"
 import { useMemo, useState } from "react"
-import AIRecommendation from "@/components/analysis/ai-recommendation"
+import RecommendationCard from "@/components/analysis/recommendation-card"
 import { AnalysisSkeleton } from "@/components/analysis/analysis-skeleton"
 import MultipleNumberAnalysis from "@/components/analysis/multiple-number-analysis"
 import { Notice } from "@/components/common/notice"
@@ -10,8 +10,7 @@ import { Panel, Surface } from "@/components/common/panel"
 import { SectionHeading } from "@/components/common/page-header"
 import { Button } from "@/components/ui/button"
 import { findMultiples } from "@/lib/lotto/analytics"
-import { fetchAvoidInfo, logRecommendation } from "@/lib/lotto/ai-log"
-import { recordDraw } from "@/lib/lotto/draw-log"
+import { fetchAvoidInfo, recordPick } from "@/lib/lotto/pick-log"
 import type { EngineStats, Recommendation } from "@/lib/lotto/engine"
 import { useRecommendationEngine } from "@/hooks/use-recommendation-engine"
 import { useWinningDraws } from "@/hooks/use-winning-draws"
@@ -63,9 +62,13 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
       setRecommendation(result)
       setStats(engineStats)
 
-      void recordDraw({ numbers: result.numbers, source: "ai", drawNo: targetDrawNo })
-      // 추천 근거를 함께 남겨 두면 나중에 이 기록만으로 다시 학습할 수 있다.
-      void logRecommendation(result, engineStats, targetDrawNo)
+      // 번호와 추천 근거를 한 번에 남긴다. 나중에 이 기록만으로 다시 학습할 수 있다.
+      void recordPick({
+        numbers: result.numbers,
+        source: "ai",
+        drawNo: targetDrawNo,
+        insight: { recommendation: result, stats: engineStats },
+      })
     } catch (error) {
       console.error("추천을 만들지 못했습니다:", error)
     } finally {
@@ -119,7 +122,7 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
 
               {/* 추첨 번호 분석으로 전환해도 추천 결과는 유지되도록 언마운트하지 않는다. */}
               <div className={target === "ai" ? "block" : "hidden"}>
-                <AIRecommendation recommendation={recommendation} stats={stats} isGenerating={isGenerating} />
+                <RecommendationCard recommendation={recommendation} stats={stats} isGenerating={isGenerating} />
               </div>
 
               <MultipleNumberAnalysis multiples={multiples} />

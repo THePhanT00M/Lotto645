@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ALL_NUMBERS, PICK_COUNT } from "@/lib/lotto/constants"
-import { recordDraw } from "@/lib/lotto/draw-log"
+import { recordPick } from "@/lib/lotto/pick-log"
 import { pickRandom } from "@/lib/lotto/random"
 
 /** 공 하나가 추첨통에서 나오는 연출 시간 */
@@ -103,7 +103,7 @@ export function useLottoMachine({ onComplete, onReset, targetDrawNo }: UseLottoM
     const numbers = [...drawnBalls].sort((a, b) => a - b)
 
     onComplete(numbers)
-    void recordDraw({ numbers, source: "machine", drawNo: targetDrawNo })
+    void recordPick({ numbers, source: "machine", drawNo: targetDrawNo })
   }, [drawnBalls, isComplete, onComplete, targetDrawNo])
 
   return {

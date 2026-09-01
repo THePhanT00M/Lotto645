@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { deleteServerRecords } from "@/lib/lotto/draw-log"
+import { deleteServerRecords } from "@/lib/lotto/pick-log"
 import { fetchAllDraws, fetchUserRecords } from "@/lib/lotto/queries"
 import { indexDrawsByNo, resolveDrawStatus, type DrawStatus } from "@/lib/lotto/rank"
 import { clearLottoHistory, deleteLottoResult, getLottoHistory } from "@/lib/lotto/storage"

@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/common/page-header"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { toCsv, useAiRecords, type MatchBucket } from "@/hooks/use-ai-records"
+import { toCsv, usePickInsights, type MatchBucket } from "@/hooks/use-pick-insights"
 import { FEATURE_LABELS } from "@/lib/lotto/features"
 
 /**
@@ -20,7 +20,7 @@ import { FEATURE_LABELS } from "@/lib/lotto/features"
  * 견주거나 기록을 내려받아 다시 학습시키는 데 쓴다.
  */
 export default function AiLabPage() {
-  const { records, summary, isLoading, error, reload } = useAiRecords()
+  const { records, summary, isLoading, error, reload } = usePickInsights()
 
   const download = () => {
     const blob = new Blob([toCsv(records)], { type: "text/csv;charset=utf-8;" })
@@ -28,7 +28,7 @@ export default function AiLabPage() {
     const link = document.createElement("a")
 
     link.href = url
-    link.download = `ai-recommendations-${new Date().toISOString().slice(0, 10)}.csv`
+    link.download = `pick-insights-${new Date().toISOString().slice(0, 10)}.csv`
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -59,7 +59,7 @@ export default function AiLabPage() {
             <Notice title="기록을 불러오지 못했습니다" tone="danger">
               <p className="opacity-90">{error}</p>
               <p className="opacity-90">
-                ai_recommendations 표가 아직 없다면 supabase/migrations의 SQL을 먼저 실행해 주세요.
+                number_picks와 pick_insights 표가 아직 없다면 supabase/migrations의 SQL을 먼저 실행해 주세요.
               </p>
             </Notice>
         )}

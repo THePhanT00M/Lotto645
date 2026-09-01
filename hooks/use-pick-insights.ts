@@ -6,8 +6,8 @@ import { PICK_COUNT } from "@/lib/lotto/constants"
 import { FEATURE_KEYS, type PatternFeatures } from "@/lib/lotto/features"
 import type { Rank } from "@/lib/lotto/rank"
 
-/** 서버에 쌓인 추천 기록 한 건 */
-export interface AiRecord {
+/** 서버에 쌓인 추천 근거 한 건 */
+export interface PickInsight {
   id: number
   created_at: string
   draw_no: number
@@ -44,7 +44,7 @@ export interface MatchBucket {
   expected: number
 }
 
-export interface AiSummary {
+export interface InsightSummary {
   total: number
   scored: number
   drawCount: number
@@ -70,9 +70,9 @@ const choose = (n: number, k: number): number => {
 const expectedRatio = (k: number): number =>
     (choose(PICK_COUNT, k) * choose(45 - PICK_COUNT, PICK_COUNT - k)) / choose(45, PICK_COUNT)
 
-/** 수집된 AI 추천 기록을 불러와 집계한다. */
-export function useAiRecords(limit = 500) {
-  const [records, setRecords] = useState<AiRecord[]>([])
+/** 수집된 AI 추천 근거를 불러와 집계한다. */
+export function usePickInsights(limit = 500) {
+  const [records, setRecords] = useState<PickInsight[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -81,7 +81,7 @@ export function useAiRecords(limit = 500) {
     setError(null)
 
     try {
-      const response = await authorizedFetch(`/api/ai-recommendations?limit=${limit}`)
+      const response = await authorizedFetch(`/api/picks/insights?limit=${limit}`)
       const data = await response.json()
 
       if (!data.success) throw new Error(data.message ?? "기록을 불러오지 못했습니다.")
@@ -97,7 +97,7 @@ export function useAiRecords(limit = 500) {
     void load()
   }, [load])
 
-  const summary = useMemo<AiSummary>(() => {
+  const summary = useMemo<InsightSummary>(() => {
     const scoredRecords = records.filter((record) => record.scored_at !== null)
     const matchedTotal = scoredRecords.reduce((sum, record) => sum + (record.matched_count ?? 0), 0)
 
@@ -135,7 +135,7 @@ export function useAiRecords(limit = 500) {
 }
 
 /** 기록을 CSV로 만든다. 다른 도구에서 다시 학습시킬 때 쓴다. */
-export const toCsv = (records: readonly AiRecord[]): string => {
+export const toCsv = (records: readonly PickInsight[]): string => {
   const header = [
     "id",
     "created_at",

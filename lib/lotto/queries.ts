@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase/client"
 import type { LottoResult, WinningLottoNumbers } from "./types"
 
 const WINNING_TABLE = "winning_numbers"
-const GENERATED_TABLE = "generated_numbers"
+const PICKS_TABLE = "number_picks"
 
 /** 가장 최근 추첨 회차를 반환한다. 데이터가 없으면 null. */
 export const fetchLatestDraw = async (): Promise<WinningLottoNumbers | null> => {
@@ -68,10 +68,10 @@ export const fetchDrawPage = async (
 /** 로그인한 사용자의 서버 저장 기록을 최신순으로 반환한다. */
 export const fetchUserRecords = async (userId: string): Promise<LottoResult[]> => {
   const { data, error } = await supabase
-      .from(GENERATED_TABLE)
+      .from(PICKS_TABLE)
       .select("id, numbers, created_at, source, draw_no")
       .eq("user_id", userId)
-      .eq("is_deleted", "N")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
 
   if (error) {
@@ -82,7 +82,7 @@ export const fetchUserRecords = async (userId: string): Promise<LottoResult[]> =
   return (data ?? []).map(toLottoResult)
 }
 
-/** generated_numbers 행을 도메인 타입으로 변환한다. */
+/** number_picks 행을 도메인 타입으로 변환한다. */
 export const toLottoResult = (row: {
   id: number | string
   numbers: unknown

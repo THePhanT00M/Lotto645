@@ -2,16 +2,16 @@ import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
 import { getAdminClient } from "@/lib/supabase/admin"
 
-const TABLE = "ai_recommendations"
+const TABLE = "number_picks"
 
 /** 한 회차에서 회피 판단에 쓸 최대 기록 수 */
 const MAX_ROWS = 2000
 
 /**
- * GET /api/ai-recommendations/avoid?drawNo=1240
+ * GET /api/picks/avoid?drawNo=1240
  *
- * 이번 회차에 이미 내보낸 조합과 번호별 추천 횟수를 돌려준다.
- * 추천 엔진이 같은 조합을 다시 내지 않고, 이미 많이 나간 번호는 덜 고르게 하는 데 쓴다.
+ * 이번 회차에 이미 내보낸 AI 추천 조합과 번호별 횟수를 돌려준다.
+ * 추천 엔진이 같은 조합을 다시 내지 않고, 많이 나간 번호는 덜 고르게 하는 데 쓴다.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         .from(TABLE)
         .select("combination_key, numbers")
         .eq("draw_no", drawNo)
+        .eq("source", "ai")
         .limit(MAX_ROWS)
 
     if (error) throw error
