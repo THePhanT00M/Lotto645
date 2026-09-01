@@ -1,6 +1,7 @@
 "use client"
 
-import { History, Trash2, Trophy } from "lucide-react"
+import { CheckSquare, History, Square, Trash2, Trophy, X } from "lucide-react"
+import { useMemo, useState } from "react"
 import { EmptyState } from "@/components/common/empty-state"
 import { Notice } from "@/components/common/notice"
 import { PageHeader } from "@/components/common/page-header"
@@ -19,21 +20,55 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { useDrawHistory } from "@/hooks/use-draw-history"
+import { useDrawHistory, type AnalyzedEntry } from "@/hooks/use-draw-history"
 import { useToast } from "@/hooks/use-toast"
-import type { HistoryEntry } from "@/hooks/use-draw-history"
+
+/** 목록에서 기록을 가리키는 키. 로컬과 서버에 같은 id가 있을 수 있다. */
+const keyOf = (entry: AnalyzedEntry) => `${entry.source}-${entry.id}`
 
 /**
  * 나의 추첨 기록
  *
  * 브라우저에 저장된 로컬 기록과 로그인 사용자의 서버 기록을 함께 보여주고,
  * 각 기록이 겨냥한 회차의 당첨 결과를 대조해 등수를 표시한다.
+ * 서버 기록을 지울 때는 행을 남기고 삭제 표시만 바꾼다.
  */
 export default function HistoryPage() {
-  const { entries, isLoading, winCount, hasLocalEntries, remove, clearLocal } = useDrawHistory()
+  const { entries, isLoading, winCount, remove, removeMany, clearAll } = useDrawHistory()
   const { toast } = useToast()
 
-  const handleDelete = async (entry: HistoryEntry) => {
+  const [isSelecting, setIsSelecting] = useState(false)
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
+
+  const selectedEntries = useMemo(
+      () => entries.filter((entry) => selectedKeys.has(keyOf(entry))),
+      [entries, selectedKeys],
+  )
+
+  const allSelected = entries.length > 0 && selectedEntries.length === entries.length
+
+  const toggleSelect = (entry: AnalyzedEntry) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev)
+      const key = keyOf(entry)
+
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+
+      return next
+    })
+  }
+
+  const toggleAll = () => {
+    setSelectedKeys(allSelected ? new Set() : new Set(entries.map(keyOf)))
+  }
+
+  const stopSelecting = () => {
+    setIsSelecting(false)
+    setSelectedKeys(new Set())
+  }
+
+  const handleDelete = async (entry: AnalyzedEntry) => {
     // 서버 기록은 다른 기기에서도 사라지므로 한 번 더 확인받는다.
     if (entry.source === "user" && !confirm("해당 추첨번호를 삭제하시겠습니까?")) return
 
@@ -44,17 +79,28 @@ export default function HistoryPage() {
         description: entry.source === "user" ? "서버에서 추첨 기록이 삭제되었습니다." : "로컬 기록이 삭제되었습니다.",
       })
     } catch (error) {
-      toast({
-        title: "삭제 실패",
-        description: error instanceof Error ? error.message : "잠시 후 다시 시도해주세요.",
-        variant: "destructive",
-      })
+      toast({ title: "삭제 실패", description: describeError(error), variant: "destructive" })
     }
   }
 
-  const handleClearLocal = () => {
-    clearLocal()
-    toast({ title: "로컬 기록 삭제 완료", description: "기기에 저장된 모든 기록이 삭제되었습니다." })
+  const handleDeleteSelected = async () => {
+    try {
+      const removed = await removeMany(selectedEntries)
+      stopSelecting()
+      toast({ title: "삭제 완료", description: `${removed}건을 삭제했습니다.` })
+    } catch (error) {
+      toast({ title: "삭제 실패", description: describeError(error), variant: "destructive" })
+    }
+  }
+
+  const handleClearAll = async () => {
+    try {
+      const removed = await clearAll()
+      stopSelecting()
+      toast({ title: "전체 삭제 완료", description: `${removed}건을 삭제했습니다.` })
+    } catch (error) {
+      toast({ title: "삭제 실패", description: describeError(error), variant: "destructive" })
+    }
   }
 
   if (isLoading) return <HistorySkeleton />
@@ -65,8 +111,64 @@ export default function HistoryPage() {
             icon={History}
             title="나의 추첨 기록"
             description="기기 및 서버에 저장된 기록을 확인하고 당첨 결과를 확인하세요."
-            actions={hasLocalEntries ? <ClearLocalButton onConfirm={handleClearLocal} /> : undefined}
+            actions={
+              entries.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {isSelecting ? (
+                        <Button variant="outline" onClick={stopSelecting} className="bg-surface border-line">
+                          <X className="mr-2 h-4 w-4" />
+                          선택 취소
+                        </Button>
+                    ) : (
+                        <Button variant="outline" onClick={() => setIsSelecting(true)} className="bg-surface border-line">
+                          <CheckSquare className="mr-2 h-4 w-4" />
+                          선택 삭제
+                        </Button>
+                    )}
+
+                    <ConfirmDialog
+                        trigger={
+                          <Button variant="destructive" className="bg-danger hover:bg-danger/90 border-none text-white shadow-none">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            전체 삭제
+                          </Button>
+                        }
+                        title="모든 기록을 삭제하시겠습니까?"
+                        description="이 기기에 저장된 기록과 서버에 저장된 '내 기록'이 모두 목록에서 사라집니다. 서버 기록은 실제로 지우지 않고 삭제 표시만 남깁니다."
+                        onConfirm={handleClearAll}
+                    />
+                  </div>
+              )
+            }
         />
+
+        {isSelecting && (
+            <Panel className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="custom" onClick={toggleAll} className="text-ink-muted h-8 px-2 text-sm">
+                  {allSelected ? <CheckSquare className="mr-1.5 h-4 w-4" /> : <Square className="mr-1.5 h-4 w-4" />}
+                  {allSelected ? "전체 해제" : "전체 선택"}
+                </Button>
+                <span className="text-ink-muted text-sm">{selectedEntries.length}건 선택됨</span>
+              </div>
+
+              <ConfirmDialog
+                  trigger={
+                    <Button
+                        variant="destructive"
+                        disabled={selectedEntries.length === 0}
+                        className="bg-danger hover:bg-danger/90 h-9 border-none text-white shadow-none"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      선택 항목 삭제
+                    </Button>
+                  }
+                  title={`선택한 ${selectedEntries.length}건을 삭제하시겠습니까?`}
+                  description="서버에 저장된 기록은 실제로 지우지 않고 삭제 표시만 남깁니다."
+                  onConfirm={handleDeleteSelected}
+              />
+            </Panel>
+        )}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <StatCard icon={History} label="총 저장된 기록" value={entries.length} />
@@ -78,7 +180,13 @@ export default function HistoryPage() {
               <EmptyState icon={History} message="저장된 추첨 기록이 없습니다." />
           ) : (
               entries.map((entry) => (
-                  <HistoryItem key={`${entry.source}-${entry.id}`} entry={entry} onDelete={() => handleDelete(entry)} />
+                  <HistoryItem
+                      key={keyOf(entry)}
+                      entry={entry}
+                      onDelete={() => handleDelete(entry)}
+                      isSelected={isSelecting ? selectedKeys.has(keyOf(entry)) : undefined}
+                      onToggleSelect={isSelecting ? () => toggleSelect(entry) : undefined}
+                  />
               ))
           )}
         </div>
@@ -93,6 +201,7 @@ export default function HistoryPage() {
               <strong className="font-semibold text-blue-800 dark:text-blue-400">내 기록</strong>은 서버에 저장되어 로그인
               시 언제 어디서든 확인 및 삭제가 가능합니다.
             </li>
+            <li>삭제한 서버 기록은 목록에서 사라지지만, 통계 집계를 위해 삭제 표시만 남긴 채 보관됩니다.</li>
             <li>추첨 대기 상태의 기록은 실제 추첨 완료 후 다시 접속하시면 결과가 자동 업데이트됩니다.</li>
           </ul>
         </Notice>
@@ -115,25 +224,25 @@ function StatCard({ icon: Icon, label, value }: { icon: typeof History; label: s
   )
 }
 
-function ClearLocalButton({ onConfirm }: { onConfirm: () => void }) {
+interface ConfirmDialogProps {
+  trigger: React.ReactNode
+  title: string
+  description: string
+  onConfirm: () => void | Promise<void>
+}
+
+function ConfirmDialog({ trigger, title, description, onConfirm }: ConfirmDialogProps) {
   return (
       <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="destructive" className="bg-danger hover:bg-danger/90 w-full border-none text-white shadow-none sm:w-auto">
-            <Trash2 className="mr-2 h-4 w-4" />
-            로컬 기록 전체 삭제
-          </Button>
-        </AlertDialogTrigger>
+        <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
         <AlertDialogContent className="bg-surface border-line border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-ink">로컬 기록을 삭제하시겠습니까?</AlertDialogTitle>
-            <AlertDialogDescription className="text-ink-muted">
-              브라우저에 저장된 기록만 삭제되며, 서버에 저장된 &lsquo;내 기록&rsquo;은 유지됩니다.
-            </AlertDialogDescription>
+            <AlertDialogTitle className="text-ink">{title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-ink-muted">{description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="text-ink border-line bg-transparent">취소</AlertDialogCancel>
-            <AlertDialogAction onClick={onConfirm} className="bg-danger hover:bg-danger/90 text-white">
+            <AlertDialogAction onClick={() => void onConfirm()} className="bg-danger hover:bg-danger/90 text-white">
               삭제
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -141,3 +250,6 @@ function ClearLocalButton({ onConfirm }: { onConfirm: () => void }) {
       </AlertDialog>
   )
 }
+
+const describeError = (error: unknown): string =>
+    error instanceof Error ? error.message : "잠시 후 다시 시도해주세요."

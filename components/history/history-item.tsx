@@ -6,21 +6,35 @@ import { Panel } from "@/components/common/panel"
 import { BallRow } from "@/components/lotto/ball-row"
 import { Button } from "@/components/ui/button"
 import type { AnalyzedEntry } from "@/hooks/use-draw-history"
+import { cn } from "@/lib/utils"
 
 interface HistoryItemProps {
   entry: AnalyzedEntry
   onDelete: () => void
+  /** 선택 모드일 때 체크 상태. 지정하지 않으면 체크박스를 그리지 않는다. */
+  isSelected?: boolean
+  onToggleSelect?: () => void
 }
 
 /** 추첨 기록 한 건. 출처·회차·당첨 결과와 번호를 함께 보여준다. */
-export default function HistoryItem({ entry, onDelete }: HistoryItemProps) {
+export default function HistoryItem({ entry, onDelete, isSelected, onToggleSelect }: HistoryItemProps) {
   const isServerRecord = entry.source === "user"
+  const isSelectable = onToggleSelect !== undefined
 
   return (
-      <Panel className="relative">
+      <Panel className={cn("relative", isSelected && "border-blue-300 ring-1 ring-blue-500/20 dark:border-blue-800")}>
         <div className="mb-4 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex w-full items-center justify-between md:w-auto">
             <div className="flex flex-wrap items-center gap-2">
+              {isSelectable && (
+                  <input
+                      type="checkbox"
+                      checked={Boolean(isSelected)}
+                      onChange={onToggleSelect}
+                      aria-label={`${entry.numbers.join(", ")} 선택`}
+                      className="border-line mr-1 h-4 w-4 rounded accent-blue-600"
+                  />
+              )}
               {isServerRecord ? (
                   <Tag className="border-blue-100 bg-blue-50 text-blue-700 dark:border-blue-800/50 dark:bg-blue-900/40 dark:text-blue-300">
                     <Database className="mr-1 h-3 w-3" />내 기록
