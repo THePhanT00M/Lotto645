@@ -2,7 +2,7 @@ import { ShieldAlert } from "lucide-react"
 import Link from "next/link"
 import type { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
-import { ADMIN_LEVEL, getAdminUser } from "@/lib/auth/admin"
+import { getAdminUser } from "@/lib/auth/admin"
 
 /**
  * 관리자 화면 공통 레이아웃
@@ -27,9 +27,6 @@ function AccessDenied() {
         </div>
 
         <h1 className="text-ink text-2xl font-bold">접근 권한이 없습니다</h1>
-        <p className="text-ink-muted mt-2 text-sm leading-relaxed">
-          이 화면은 관리자(Lv.{ADMIN_LEVEL} 이상) 전용입니다. 계정을 확인한 뒤 다시 시도해 주세요.
-        </p>
 
         <div className="mt-6 flex gap-2">
           <Button asChild variant="outline" className="bg-surface border-line">
