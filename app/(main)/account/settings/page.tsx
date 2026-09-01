@@ -105,19 +105,16 @@ export default function SettingsPage() {
           </div>
         </Panel>
 
-        <Panel className="space-y-3">
-          <h2 className="text-ink font-semibold">자동 로그인</h2>
-          <label className="flex cursor-pointer items-start gap-3">
+        <Panel>
+          {/* 제목이 곧 항목 이름이라, 별도 라벨 없이 한 줄에 둔다. */}
+          <label className="flex cursor-pointer items-center justify-between gap-3">
+            <span className="text-ink font-semibold">자동 로그인</span>
             <input
                 type="checkbox"
                 checked={remember}
                 onChange={(event) => changeRemember(event.target.checked)}
-                className="border-line mt-0.5 h-4 w-4 rounded accent-blue-600"
+                className="border-line h-4 w-4 rounded accent-blue-600"
             />
-            {/* 제목이 이미 '자동 로그인'이라 라벨에는 설명만 둔다. */}
-            <span className="text-ink-muted text-sm">
-              해제하면 브라우저를 닫을 때 로그아웃됩니다. 공용 컴퓨터에서 권장합니다.
-            </span>
           </label>
         </Panel>
 
