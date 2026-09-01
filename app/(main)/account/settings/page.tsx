@@ -32,7 +32,7 @@ const THEMES = [
 /**
  * 설정
  *
- * 화면 테마, 로그인 유지 여부, 이 기기에 저장된 기록 정리를 다룬다.
+ * 화면 테마, 자동 로그인 여부, 이 기기에 저장된 기록 정리를 다룬다.
  * 서버에 저장된 기록은 추첨 기록 화면에서 지운다.
  */
 export default function SettingsPage() {
@@ -56,7 +56,7 @@ export default function SettingsPage() {
     setRememberLogin(value)
     toast({
       title: "설정 저장됨",
-      description: value ? "로그인 상태를 유지합니다." : "브라우저를 닫으면 로그아웃됩니다.",
+      description: value ? "다음 접속부터 자동으로 로그인합니다." : "브라우저를 닫으면 로그아웃됩니다.",
     })
   }
 
@@ -106,7 +106,7 @@ export default function SettingsPage() {
         </Panel>
 
         <Panel className="space-y-3">
-          <h2 className="text-ink font-semibold">로그인 유지</h2>
+          <h2 className="text-ink font-semibold">자동 로그인</h2>
           <label className="flex cursor-pointer items-start gap-3">
             <input
                 type="checkbox"
@@ -114,11 +114,9 @@ export default function SettingsPage() {
                 onChange={(event) => changeRemember(event.target.checked)}
                 className="border-line mt-0.5 h-4 w-4 rounded accent-blue-600"
             />
-            <span className="text-sm">
-              <span className="text-ink block font-medium">로그인 상태 유지</span>
-              <span className="text-ink-muted">
-                해제하면 브라우저를 닫을 때 로그아웃됩니다. 공용 컴퓨터에서 권장합니다.
-              </span>
+            {/* 제목이 이미 '자동 로그인'이라 라벨에는 설명만 둔다. */}
+            <span className="text-ink-muted text-sm">
+              해제하면 브라우저를 닫을 때 로그아웃됩니다. 공용 컴퓨터에서 권장합니다.
             </span>
           </label>
         </Panel>

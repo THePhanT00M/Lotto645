@@ -152,7 +152,6 @@ export default function ProfilePage() {
                 value={profile?.joinedAt ? new Date(profile.joinedAt).toLocaleDateString() : "-"}
             />
           </dl>
-          <p className="text-ink-muted text-xs">이메일과 등급은 이 화면에서 바꿀 수 없습니다.</p>
         </Panel>
       </div>
   )
