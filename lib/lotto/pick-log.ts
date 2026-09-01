@@ -1,8 +1,9 @@
 import { getApiUrl } from "@/lib/api-config"
 import { supabase } from "@/lib/supabase/client"
 import type { EngineStats, Recommendation } from "./engine"
+import { toLottoResult } from "./queries"
 import { saveLottoResult } from "./storage"
-import type { DrawSource } from "./types"
+import type { DrawSource, LottoResult } from "./types"
 
 const ENDPOINT = "/api/picks"
 
@@ -61,6 +62,30 @@ export const recordPick = async ({ numbers, source, drawNo, insight }: RecordPic
     })
   } catch (error) {
     console.error(`번호 기록 저장 실패 (${source}):`, error)
+  }
+}
+
+/**
+ * 서버에 저장된 내 기록을 불러온다.
+ *
+ * number_picks는 RLS를 닫아 두어 브라우저가 직접 읽을 수 없으므로 서버를 거친다.
+ */
+export const fetchMyPicks = async (): Promise<LottoResult[]> => {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return []
+
+  try {
+    const response = await fetch(getApiUrl(ENDPOINT), {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    const data = await response.json()
+
+    if (!data.success) return []
+
+    return (data.picks ?? []).map(toLottoResult)
+  } catch (error) {
+    console.error("내 기록을 불러오지 못했습니다:", error)
+    return []
   }
 }
 

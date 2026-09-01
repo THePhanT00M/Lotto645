@@ -1,11 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { deleteServerRecords } from "@/lib/lotto/pick-log"
-import { fetchAllDraws, fetchUserRecords } from "@/lib/lotto/queries"
+import { deleteServerRecords, fetchMyPicks } from "@/lib/lotto/pick-log"
+import { fetchAllDraws } from "@/lib/lotto/queries"
 import { indexDrawsByNo, resolveDrawStatus, type DrawStatus } from "@/lib/lotto/rank"
 import { clearLottoHistory, deleteLottoResult, getLottoHistory } from "@/lib/lotto/storage"
-import { supabase } from "@/lib/supabase/client"
 import type { LottoResult, RecordSource, WinningLottoNumbers } from "@/lib/lotto/types"
 
 /** 저장 위치 정보를 붙인 기록 */
@@ -30,12 +29,10 @@ export function useDrawHistory() {
     let cancelled = false
 
     const load = async () => {
-      const [allDraws, { data: { session } }] = await Promise.all([fetchAllDraws(), supabase.auth.getSession()])
+      const [allDraws, myPicks] = await Promise.all([fetchAllDraws(), fetchMyPicks()])
 
       const local: HistoryEntry[] = getLottoHistory().map((item) => ({ ...item, source: "local" }))
-      const server: HistoryEntry[] = session
-          ? (await fetchUserRecords(session.user.id)).map((item) => ({ ...item, source: "user" }))
-          : []
+      const server: HistoryEntry[] = myPicks.map((item) => ({ ...item, source: "user" }))
 
       if (cancelled) return
 
