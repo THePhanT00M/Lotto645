@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth/admin"
 import { getAdminClient } from "@/lib/supabase/admin"
 
 /** 통계 화면에서 쓰는 기록 컬럼 */
-const RECORD_COLUMNS = "id, numbers, created_at, source, draw_no, score"
+const RECORD_COLUMNS = "id, numbers, created_at, source, draw_no"
 
 /**
  * GET /api/stats
@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
     const upcomingDrawNo = latestDraw.drawNo + 1
 
     const [completed, pending] = await Promise.all([
-      supabase.from("generated_numbers").select(RECORD_COLUMNS).eq("draw_no", latestDraw.drawNo),
-      supabase.from("generated_numbers").select(RECORD_COLUMNS).eq("draw_no", upcomingDrawNo),
+      supabase.from("number_picks").select(RECORD_COLUMNS).eq("draw_no", latestDraw.drawNo).is("deleted_at", null),
+      supabase.from("number_picks").select(RECORD_COLUMNS).eq("draw_no", upcomingDrawNo).is("deleted_at", null),
     ])
 
     if (completed.error) throw completed.error

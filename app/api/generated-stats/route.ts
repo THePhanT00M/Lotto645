@@ -30,10 +30,11 @@ export async function GET(request: NextRequest) {
     const upcomingDrawNo = (latestDraw?.drawNo ?? 0) + 1
 
     const { data: generated, error: generatedError } = await supabase
-        .from("generated_numbers")
+        .from("number_picks")
         .select("numbers")
         .eq("draw_no", upcomingDrawNo)
         .eq("source", "ai")
+        .is("deleted_at", null)
 
     if (generatedError) throw generatedError
 

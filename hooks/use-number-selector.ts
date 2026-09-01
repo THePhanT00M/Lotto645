@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ALL_NUMBERS, PICK_COUNT } from "@/lib/lotto/constants"
-import { recordDraw } from "@/lib/lotto/draw-log"
+import { recordPick } from "@/lib/lotto/pick-log"
 import { pickUnique } from "@/lib/lotto/random"
 
 /** 번호판 조작 모드 */
@@ -134,7 +134,7 @@ export function useNumberSelector({ onComplete, onReset, targetDrawNo }: UseNumb
 
     recordedKeyRef.current = key
     onComplete(numbers)
-    void recordDraw({ numbers, source: "manual", drawNo: targetDrawNo })
+    void recordPick({ numbers, source: "manual", drawNo: targetDrawNo })
   }, [isComplete, onComplete, onReset, selected, targetDrawNo])
 
   return {

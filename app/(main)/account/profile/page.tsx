@@ -1,0 +1,201 @@
+"use client"
+
+import { Loader2, Save, User } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Panel } from "@/components/common/panel"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/use-toast"
+import { authorizedFetch } from "@/lib/auth/client"
+
+interface Profile {
+  id: string
+  email: string
+  nickname: string | null
+  phone_number: string | null
+  avatar_url: string | null
+  role: string
+  level: number
+  joinedAt: string | null
+}
+
+/**
+ * 프로필
+ *
+ * 닉네임과 연락처처럼 본인이 고칠 수 있는 항목만 편집하고,
+ * 이메일·등급처럼 계정 관리에 속한 값은 보여주기만 한다.
+ */
+export default function ProfilePage() {
+  const { toast } = useToast()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [nickname, setNickname] = useState("")
+  const [phone, setPhone] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      try {
+        const response = await authorizedFetch("/api/profile")
+        const data = await response.json()
+
+        if (cancelled || !data.success) return
+
+        setProfile(data.profile)
+        setNickname(data.profile.nickname ?? "")
+        setPhone(data.profile.phone_number ?? "")
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const save = async () => {
+    setIsSaving(true)
+
+    try {
+      const response = await authorizedFetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nickname, phone_number: phone }),
+      })
+      const data = await response.json()
+
+      if (!data.success) throw new Error(data.message)
+
+      toast({ title: "저장 완료", description: "프로필이 수정되었습니다." })
+    } catch (error) {
+      toast({
+        title: "저장 실패",
+        description: error instanceof Error ? error.message : "잠시 후 다시 시도해주세요.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (isLoading) return <ProfileSkeleton />
+
+  return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-ink flex items-center gap-2 text-2xl font-bold">
+            <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            프로필
+          </h1>
+          <p className="text-ink-muted mt-1 text-sm">계정에 표시되는 정보를 확인하고 수정합니다.</p>
+        </div>
+
+        <Panel className="space-y-5">
+          <div className="flex items-center gap-4">
+            {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="h-16 w-16 rounded-full object-cover" />
+            ) : (
+                <div className="bg-surface-2 flex h-16 w-16 items-center justify-center rounded-full">
+                  <User className="text-ink-muted h-7 w-7" />
+                </div>
+            )}
+
+            <div className="min-w-0">
+              <div className="text-ink truncate text-lg font-semibold">{nickname || "이름 없음"}</div>
+              <div className="text-ink-muted truncate text-sm">{profile?.email}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="닉네임" htmlFor="nickname">
+              <Input
+                  id="nickname"
+                  value={nickname}
+                  onChange={(event) => setNickname(event.target.value)}
+                  placeholder="표시할 이름"
+                  className="bg-surface border-line"
+              />
+            </Field>
+
+            <Field label="연락처" htmlFor="phone">
+              <Input
+                  id="phone"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value.replace(/[^0-9-]/g, ""))}
+                  placeholder="010-0000-0000"
+                  className="bg-surface border-line"
+              />
+            </Field>
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={save} disabled={isSaving} className="bg-blue-600 text-white hover:bg-blue-700">
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              저장
+            </Button>
+          </div>
+        </Panel>
+
+        <Panel className="space-y-3">
+          <h2 className="text-ink font-semibold">계정 정보</h2>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+            <Row label="이메일" value={profile?.email ?? "-"} />
+            <Row label="등급" value={`Lv.${profile?.level ?? 0}${profile?.role === "admin" ? " (관리자)" : ""}`} />
+            <Row
+                label="가입일"
+                value={profile?.joinedAt ? new Date(profile.joinedAt).toLocaleDateString() : "-"}
+            />
+          </dl>
+          <p className="text-ink-muted text-xs">이메일과 등급은 이 화면에서 바꿀 수 없습니다.</p>
+        </Panel>
+      </div>
+  )
+}
+
+function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
+  return (
+      <div className="space-y-1.5">
+        <Label htmlFor={htmlFor} className="text-ink text-sm font-medium">
+          {label}
+        </Label>
+        {children}
+      </div>
+  )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+      <div className="flex justify-between gap-3">
+        <dt className="text-ink-muted">{label}</dt>
+        <dd className="text-ink truncate font-medium">{value}</dd>
+      </div>
+  )
+}
+
+function ProfileSkeleton() {
+  return (
+      <div className="space-y-6">
+        <Skeleton className="h-9 w-40" />
+        <Panel className="space-y-5">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Skeleton className="h-16" />
+            <Skeleton className="h-16" />
+          </div>
+        </Panel>
+        <Skeleton className="h-32 rounded-xl" />
+      </div>
+  )
+}

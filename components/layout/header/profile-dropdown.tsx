@@ -1,6 +1,7 @@
 "use client"
 
 import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react"
+import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import type { UserData } from "@/hooks/use-header-data"
 import { cn } from "@/lib/utils"
@@ -53,9 +54,11 @@ export default function ProfileDropdown({ userData, onLogout }: ProfileDropdownP
               </div>
 
               <div className="py-1">
-                <MenuItem icon={User}>프로필</MenuItem>
-                <MenuItem icon={Bell}>알림</MenuItem>
-                <MenuItem icon={Settings}>설정</MenuItem>
+                {ACCOUNT_MENU.map(({ href, label, icon }) => (
+                    <MenuItem key={href} icon={icon} href={href} onClick={() => setIsOpen(false)}>
+                      {label}
+                    </MenuItem>
+                ))}
 
                 <hr className="border-line my-1" />
 
@@ -77,23 +80,45 @@ export default function ProfileDropdown({ userData, onLogout }: ProfileDropdownP
   )
 }
 
+/** 계정 화면으로 가는 항목들 */
+const ACCOUNT_MENU = [
+  { href: "/account/profile", label: "프로필", icon: User },
+  { href: "/account/notifications", label: "알림", icon: Bell },
+  { href: "/account/settings", label: "설정", icon: Settings },
+] as const
+
 interface MenuItemProps {
   icon: typeof User
+  /** 지정하면 링크로, 없으면 버튼으로 그린다. */
+  href?: string
   onClick?: () => void
   iconClass?: string
   labelClass?: string
   children: React.ReactNode
 }
 
-function MenuItem({ icon: Icon, onClick, iconClass, labelClass, children }: MenuItemProps) {
-  return (
-      <button
-          type="button"
-          onClick={onClick}
-          className="flex w-full items-center space-x-3 px-4 py-2 text-left transition-colors hover:bg-gray-100 dark:hover:bg-[#2b2b2b]"
-      >
+function MenuItem({ icon: Icon, href, onClick, iconClass, labelClass, children }: MenuItemProps) {
+  const className =
+      "flex w-full items-center space-x-3 px-4 py-2 text-left transition-colors hover:bg-gray-100 dark:hover:bg-[#2b2b2b]"
+
+  const content = (
+      <>
         <Icon className={cn("text-ink-muted h-4 w-4", iconClass)} />
         <span className={cn("text-ink", labelClass)}>{children}</span>
+      </>
+  )
+
+  if (href) {
+    return (
+        <Link href={href} onClick={onClick} className={className}>
+          {content}
+        </Link>
+    )
+  }
+
+  return (
+      <button type="button" onClick={onClick} className={className}>
+        {content}
       </button>
   )
 }

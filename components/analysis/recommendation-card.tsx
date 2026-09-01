@@ -7,14 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { FEATURE_LABELS } from "@/lib/lotto/features"
 import type { EngineStats, Recommendation } from "@/lib/lotto/engine"
 
-interface AIRecommendationProps {
+interface RecommendationCardProps {
   recommendation: Recommendation | null
   stats: EngineStats | null
   isGenerating: boolean
 }
 
 /** 추천 결과와 그 근거가 된 용지 모양을 보여준다. */
-export default function AIRecommendation({ recommendation, stats, isGenerating }: AIRecommendationProps) {
+export default function RecommendationCard({ recommendation, stats, isGenerating }: RecommendationCardProps) {
   if (isGenerating) return <GeneratingSkeleton />
   if (!recommendation || !stats) return null
 
@@ -38,17 +38,13 @@ export default function AIRecommendation({ recommendation, stats, isGenerating }
           <BallRow numbers={numbers} size="fluid" className="mx-auto max-w-xs" />
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 items-start gap-4 md:grid-cols-2">
           <div className="bg-surface-2 rounded-lg p-3">
             <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
               <Waypoints className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               용지 위 모양
             </h4>
-            <PaperPattern
-                numbers={numbers}
-                compare={nearestDraw?.numbers}
-                className="mx-auto w-full max-w-[320px]"
-            />
+            <PaperPattern numbers={numbers} compare={nearestDraw?.numbers} className="w-full" />
             {nearestDraw && (
                 <p className="text-ink-muted mt-2 text-center text-xs">
                   점선은 모양이 가장 닮은 <span className="text-ink font-medium">{nearestDraw.drawNo}회</span> (

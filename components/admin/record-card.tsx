@@ -6,7 +6,7 @@ import PaperPattern from "@/components/analysis/paper-pattern"
 import { rankStyle } from "@/components/common/rank-badge"
 import { Ball } from "@/components/lotto/ball"
 import { Button } from "@/components/ui/button"
-import type { AiRecord } from "@/hooks/use-ai-records"
+import type { PickInsight } from "@/hooks/use-pick-insights"
 import { FEATURE_KEYS, FEATURE_LABELS } from "@/lib/lotto/features"
 import { rankLabel } from "@/lib/lotto/rank"
 import { cn } from "@/lib/utils"
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 const SNAPSHOT_WIDTH = 720
 
 interface RecordCardProps {
-  record: AiRecord
+  record: PickInsight
 }
 
 /**
@@ -64,14 +64,14 @@ export default function RecordCard({ record }: RecordCardProps) {
         </button>
 
         {isOpen && (
-            <div className="border-line grid grid-cols-1 gap-4 border-t p-4 md:grid-cols-2">
+            <div className="border-line grid grid-cols-1 items-start gap-4 border-t p-4 md:grid-cols-2">
               <div className="bg-surface-2 rounded-lg p-3">
                 <div className="mb-2 flex items-center justify-between">
                   <h4 className="text-ink text-sm font-semibold">용지 스냅샷</h4>
                   <SnapshotButton target={snapshotRef} record={record} />
                 </div>
                 <div ref={snapshotRef} className="bg-surface rounded-md p-2">
-                  <PaperPattern numbers={record.numbers} className="mx-auto w-full max-w-[320px]" />
+                  <PaperPattern numbers={record.numbers} className="w-full" />
                 </div>
                 <p className="text-ink-muted mt-2 text-center text-xs">
                   {new Date(record.created_at).toLocaleString()} 추천
@@ -146,7 +146,7 @@ const formatFeature = (value: number | undefined): string => {
  * SVG를 그대로 저장하면 CSS 변수로 잡은 색이 빠지므로, 계산된 색을 인라인으로
  * 옮겨 붙인 뒤 캔버스에 그려 내보낸다.
  */
-function SnapshotButton({ target, record }: { target: React.RefObject<HTMLDivElement | null>; record: AiRecord }) {
+function SnapshotButton({ target, record }: { target: React.RefObject<HTMLDivElement | null>; record: PickInsight }) {
   const [isSaving, setIsSaving] = useState(false)
 
   const save = async () => {

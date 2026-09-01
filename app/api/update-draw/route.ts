@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     return ok({
       message: `${record.drawNo}회 당첨 번호가 성공적으로 DB에 삽입되었습니다.`,
       data: record,
-      scoredRecommendations: scored,
+      scoredPicks: scored,
     })
   } catch (error) {
     console.error("Update Draw API Error:", errorMessage(error))
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
 const formatDate = (raw: string): string => `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`
 
 /**
- * 이번 회차를 겨냥했던 AI 추천 기록을 새 당첨 번호와 대조해 채점한다.
+ * 이번 회차를 겨냥했던 기록을 새 당첨 번호와 대조해 채점한다.
  *
  * 채점 실패가 당첨 번호 삽입 성공을 가리지 않도록 따로 감싼다.
  */
@@ -118,7 +118,7 @@ const scorePendingRecommendations = async (
 ): Promise<number> => {
   try {
     const { data: records, error } = await supabase
-        .from("ai_recommendations")
+        .from("number_picks")
         .select("id, numbers")
         .eq("draw_no", draw.drawNo)
         .is("scored_at", null)
@@ -134,7 +134,7 @@ const scorePendingRecommendations = async (
       const match = matchDraw(numbers, draw)
 
       const { error: updateError } = await supabase
-          .from("ai_recommendations")
+          .from("number_picks")
           .update({
             matched_count: match.matchCount,
             bonus_matched: match.bonusMatch,
@@ -149,7 +149,7 @@ const scorePendingRecommendations = async (
 
     return scored
   } catch (error) {
-    console.error("AI 추천 채점 실패:", errorMessage(error))
+    console.error("채점 실패:", errorMessage(error))
     return 0
   }
 }

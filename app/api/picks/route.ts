@@ -1,27 +1,43 @@
 import type { NextRequest } from "next/server"
 import { UAParser } from "ua-parser-js"
 import { errorMessage, fail, ok } from "@/lib/api-response"
+import { combinationKey } from "@/lib/lotto/combinations"
 import { PICK_COUNT } from "@/lib/lotto/constants"
 import { getAdminClient } from "@/lib/supabase/admin"
 
-interface LogDrawBody {
+const TABLE = "number_picks"
+const INSIGHT_TABLE = "pick_insights"
+
+/** 알고리즘이 바뀌면 올린다. 버전별 성적을 나눠 보기 위한 값이다. */
+const MODEL_VERSION = "geo-mlp-1"
+
+interface InsightBody {
+  score: number
+  networkScore: number
+  typicality: number
+  features: Record<string, number>
+  model: Record<string, number>
+  maxPastOverlap: number | null
+}
+
+interface PickBody {
   numbers: number[]
-  source: "manual" | "machine" | "ai"
-  score?: number
-  userId?: string
+  source: "machine" | "manual" | "ai"
+  drawNo?: number
   memo?: string
+  insight?: InsightBody
 }
 
 /**
- * POST /api/log-draw
+ * POST /api/picks
  *
- * 생성된 번호를 기록한다. 회차 번호는 클라이언트를 믿지 않고 서버에서
- * 최신 회차 + 1로 정한다. 비로그인 사용자의 기록도 통계를 위해 남긴다.
+ * 생성한 번호를 남긴다. AI 추천이면 그 근거도 함께 받아 딸린 표에 넣는다.
+ * 회차 번호는 클라이언트를 믿지 않고 서버에서 최신 회차 + 1로 정한다.
  */
 export async function POST(request: NextRequest) {
   try {
     const supabase = getAdminClient()
-    const body: LogDrawBody = await request.json()
+    const body: PickBody = await request.json()
 
     if (!Array.isArray(body.numbers) || body.numbers.length !== PICK_COUNT || !body.source) {
       return fail("필수 데이터 누락", 400)
@@ -34,33 +50,38 @@ export async function POST(request: NextRequest) {
         .limit(1)
         .maybeSingle()
 
-    const userId = await resolveUserId(request, body.userId)
+    const userId = await resolveUserId(request)
     const parsedUa = new UAParser(request.headers.get("user-agent") ?? "unknown").getResult()
 
-    const { error } = await supabase.from("generated_numbers").insert({
-      numbers: body.numbers,
-      source: body.source,
-      memo: body.memo,
-      draw_no: (latestDraw?.drawNo ?? 0) + 1,
-      ip_address: readClientIp(request),
-      device_info: JSON.stringify(parsedUa),
-      user_id: userId,
-      is_deleted: "N",
-      ...(body.score !== undefined && { score: body.score }),
-    })
+    const { data: pick, error } = await supabase
+        .from(TABLE)
+        .insert({
+          numbers: body.numbers,
+          combination_key: combinationKey(body.numbers),
+          source: body.source,
+          memo: body.memo,
+          draw_no: (latestDraw?.drawNo ?? 0) + 1,
+          client_ip: readClientIp(request),
+          client_agent: parsedUa,
+          user_id: userId,
+        })
+        .select("id")
+        .single()
 
     if (error) throw error
 
-    return ok({ message: "기록되었습니다.", isGuest: !userId })
+    if (body.insight) await saveInsight(pick.id, body.insight)
+
+    return ok({ id: pick.id, message: "기록되었습니다.", isGuest: !userId })
   } catch (error) {
     return fail(errorMessage(error))
   }
 }
 
 /**
- * DELETE /api/log-draw
+ * DELETE /api/picks
  *
- * 본인 기록을 소프트 삭제한다. 통계 집계를 위해 행은 남기고 플래그만 바꾼다.
+ * 본인 기록을 소프트 삭제한다. 통계 집계를 위해 행은 남기고 시각만 채운다.
  *
  * 본문에 따라 범위가 달라진다.
  *   { id }    한 건
@@ -83,10 +104,10 @@ export async function DELETE(request: NextRequest) {
 
     // 어떤 경우에도 본인 것만 건드리도록 user_id 조건을 먼저 건다.
     const query = supabase
-        .from("generated_numbers")
-        .update({ is_deleted: "Y", deleted_at: new Date().toISOString() })
+        .from(TABLE)
+        .update({ deleted_at: new Date().toISOString() })
         .eq("user_id", user.id)
-        .eq("is_deleted", "N")
+        .is("deleted_at", null)
 
     const { data, error } = await (ids.length > 0 ? query.in("id", ids) : query).select("id")
 
@@ -99,6 +120,22 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
+/** 추천 근거를 딸린 표에 넣는다. 실패해도 번호 기록은 남긴다. */
+const saveInsight = async (pickId: number, insight: InsightBody) => {
+  const { error } = await getAdminClient().from(INSIGHT_TABLE).insert({
+    pick_id: pickId,
+    score: insight.score,
+    network_score: insight.networkScore,
+    typicality: insight.typicality,
+    features: insight.features,
+    model: insight.model,
+    model_version: MODEL_VERSION,
+    max_past_overlap: insight.maxPastOverlap,
+  })
+
+  if (error) console.error("추천 근거 저장 실패:", error.message)
+}
+
 /** 본문에서 삭제할 id 목록을 뽑는다. 숫자로 바꿀 수 없는 값은 버린다. */
 const collectIds = (body: unknown): number[] => {
   const source = body as { id?: unknown; ids?: unknown }
@@ -107,13 +144,13 @@ const collectIds = (body: unknown): number[] => {
   return raw.map(Number).filter((value) => Number.isInteger(value) && value > 0)
 }
 
-/** 토큰이 있으면 토큰의 사용자를, 없으면 요청 본문의 값을 쓴다. */
-const resolveUserId = async (request: NextRequest, fallback?: string): Promise<string | null> => {
+/** 토큰이 있으면 그 사용자의 기록으로 남긴다. */
+const resolveUserId = async (request: NextRequest): Promise<string | null> => {
   const token = readBearerToken(request)
-  if (!token) return fallback ?? null
+  if (!token) return null
 
   const { data: { user } } = await getAdminClient().auth.getUser(token)
-  return user?.id ?? fallback ?? null
+  return user?.id ?? null
 }
 
 const readBearerToken = (request: NextRequest): string | null => {
