@@ -6,22 +6,39 @@ import { createServerSupabase } from "@/lib/supabase/server"
 /** 관리자 기능을 쓸 수 있는 최소 등급 */
 export const ADMIN_LEVEL = 2
 
+interface AdminUser {
+  id: string
+  email: string
+  level: number
+  role: string
+}
+
 /**
- * 서버 컴포넌트에서 현재 사용자가 관리자인지 확인한다.
+ * 관리자 화면에 들어올 수 있는지와, 막혔다면 그 이유.
  *
- * 로그인하지 않았거나 등급이 모자라면 null을 돌려준다.
+ * 로그인은 했지만 등급이 모자란 경우("denied")와 아예 로그인하지 않은 경우("guest")를
+ * 구분해야 막힌 화면에서 로그인한 사람에게 다시 로그인을 권하지 않는다.
  */
-export const getAdminUser = async () => {
-  if (await isSessionRetired()) return null
+export type AdminAccess =
+    | { status: "ok"; user: AdminUser }
+    | { status: "denied" }
+    | { status: "guest" }
+
+/** 서버 컴포넌트에서 현재 사용자의 관리자 접근 여부를 확인한다. */
+export const getAdminAccess = async (): Promise<AdminAccess> => {
+  if (await isSessionRetired()) return { status: "guest" }
 
   const supabase = await createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  if (!user) return { status: "guest" }
 
   const { data: profile } = await supabase.from("profiles").select("level, role").eq("id", user.id).single()
-  if (!profile || (profile.level ?? 0) < ADMIN_LEVEL) return null
+  if (!profile || (profile.level ?? 0) < ADMIN_LEVEL) return { status: "denied" }
 
-  return { id: user.id, email: user.email ?? "", level: profile.level as number, role: profile.role as string }
+  return {
+    status: "ok",
+    user: { id: user.id, email: user.email ?? "", level: profile.level as number, role: profile.role as string },
+  }
 }
 
 /**
