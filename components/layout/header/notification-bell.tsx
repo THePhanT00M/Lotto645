@@ -2,13 +2,19 @@
 
 import { Bell, Check, Loader2, Settings, Trash2 } from "lucide-react"
 import Link from "next/link"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import NotificationCard from "@/components/notifications/notification-card"
 import { useNotifications } from "@/hooks/use-notifications"
 import { cn } from "@/lib/utils"
 
 /** 배지에 그대로 노출할 최대 개수 */
 const MAX_BADGE_COUNT = 99
+
+/** 좁은 화면에서 알림 센터 좌우로 남길 여백(px) */
+const MOBILE_GUTTER = 16
+
+/** Tailwind sm 기준. 이 위로는 벨 기준 배치를 그대로 쓴다. */
+const DESKTOP_QUERY = "(min-width: 640px)"
 
 interface NotificationBellProps {
   userId?: string
@@ -24,6 +30,8 @@ interface NotificationBellProps {
  */
 export default function NotificationBell({ userId, initialUnreadCount }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false)
+  // 좁은 화면에서 화면 폭에 맞추려고 계산한 벨 기준 가로 위치. sm 이상에서는 null.
+  const [mobileBox, setMobileBox] = useState<{ left: number; width: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const { notifications, unreadCount, isLoading, hasLoaded, markAsRead, markAllAsRead, remove, removeAll } =
@@ -52,6 +60,33 @@ export default function NotificationBell({ userId, initialUnreadCount }: Notific
     }
   }, [isOpen])
 
+  // 좁은 화면에서는 벨 오른쪽에 다른 버튼이 있어 벨에 붙이면 화면 밖으로 밀린다.
+  // 그래서 화면 폭에 맞춘 가로 위치를 벨 기준 좌표로 환산해 둔다.
+  useLayoutEffect(() => {
+    if (!isOpen) return
+
+    const sync = () => {
+      const container = containerRef.current
+      if (!container) return
+
+      if (window.matchMedia(DESKTOP_QUERY).matches) {
+        setMobileBox(null)
+        return
+      }
+
+      const { left } = container.getBoundingClientRect()
+      setMobileBox({
+        left: MOBILE_GUTTER - left,
+        width: document.documentElement.clientWidth - MOBILE_GUTTER * 2,
+      })
+    }
+
+    sync()
+    window.addEventListener("resize", sync)
+
+    return () => window.removeEventListener("resize", sync)
+  }, [isOpen])
+
   return (
       <div className="relative" ref={containerRef}>
         <button
@@ -73,15 +108,15 @@ export default function NotificationBell({ userId, initialUnreadCount }: Notific
             <div
                 role="dialog"
                 aria-label="알림 센터"
+                // 화면(viewport)이 아니라 벨을 기준으로 놓아, 스크롤해도 연 자리에 그대로 남는다.
+                style={mobileBox ? { left: mobileBox.left, width: mobileBox.width, right: "auto" } : undefined}
                 className={cn(
-                    "bg-panel border-line z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-xl border shadow-xl",
-                    // 좁은 화면에서는 벨 위치와 무관하게 화면에 맞춰 붙인다.
-                    // 벨 오른쪽에 다른 버튼이 있어 기준을 벨로 잡으면 화면 밖으로 밀린다.
-                    "fixed top-16 right-4 left-4",
-                    "sm:absolute sm:top-full sm:right-0 sm:left-auto sm:mt-3 sm:w-[380px]",
+                    "bg-panel border-line absolute top-full right-0 z-50 mt-3 flex max-h-[70vh] flex-col",
+                    "overflow-hidden rounded-xl border shadow-xl",
+                    "sm:w-[380px]",
                 )}
             >
-              {/* 벨에서 이어지는 꼬리. 화면 기준으로 붙는 좁은 화면에서는 감춘다. */}
+              {/* 벨에서 이어지는 꼬리. 화면 폭에 맞춰 벌어지는 좁은 화면에서는 위치가 어긋나 감춘다. */}
               <span className="border-line bg-surface absolute -top-[7px] right-3 hidden h-3 w-3 rotate-45 border-t border-l sm:block" />
 
               {/* 머리말은 목록 영역보다 밝게 둬서 경계가 드러나게 한다. */}
