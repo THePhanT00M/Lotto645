@@ -70,7 +70,8 @@ export default function RecordCard({ record }: RecordCardProps) {
                   <h4 className="text-ink text-sm font-semibold">용지 스냅샷</h4>
                   <SnapshotButton target={snapshotRef} record={record} />
                 </div>
-                <div ref={snapshotRef} className="bg-surface rounded-md p-2">
+                {/* PNG로 저장할 때 이 영역을 그대로 그린다. 배경은 저장 시 따로 깔아 준다. */}
+                <div ref={snapshotRef}>
                   <PaperPattern numbers={record.numbers} className="w-full" />
                 </div>
                 <p className="text-ink-muted mt-2 text-center text-xs">
