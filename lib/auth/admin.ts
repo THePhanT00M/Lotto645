@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { getAdminClient } from "@/lib/supabase/admin"
+import { isSessionRetired } from "@/lib/auth/session"
 import { createServerSupabase } from "@/lib/supabase/server"
 
 /** 관리자 기능을 쓸 수 있는 최소 등급 */
@@ -11,6 +12,8 @@ export const ADMIN_LEVEL = 2
  * 로그인하지 않았거나 등급이 모자라면 null을 돌려준다.
  */
 export const getAdminUser = async () => {
+  if (await isSessionRetired()) return null
+
   const supabase = await createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
