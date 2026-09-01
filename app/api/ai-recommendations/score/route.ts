@@ -1,4 +1,6 @@
+import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
+import { hasCronSecret, requireAdmin } from "@/lib/auth/admin"
 import { matchDraw } from "@/lib/lotto/rank"
 import type { WinningLottoNumbers } from "@/lib/lotto/types"
 import { getAdminClient } from "@/lib/supabase/admin"
@@ -11,8 +13,13 @@ const TABLE = "ai_recommendations"
  * 아직 채점하지 않은 추천 기록을, 해당 회차의 당첨 번호와 대조해 결과를 채운다.
  * 회차를 지정하지 않으면 발표된 모든 회차의 미채점 기록을 처리한다.
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // 스케줄러가 부를 수도 있어 시크릿 헤더도 함께 받는다.
+    if (!hasCronSecret(request) && !(await requireAdmin(request))) {
+      return fail("관리자 권한이 필요합니다.", 403)
+    }
+
     const supabase = getAdminClient()
     const body = await request.json().catch(() => ({}))
     const targetDrawNo: number | undefined = body?.drawNo

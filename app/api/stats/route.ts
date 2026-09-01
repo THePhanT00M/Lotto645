@@ -1,4 +1,6 @@
+import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
+import { requireAdmin } from "@/lib/auth/admin"
 import { getAdminClient } from "@/lib/supabase/admin"
 
 /** 통계 화면에서 쓰는 기록 컬럼 */
@@ -11,8 +13,10 @@ const RECORD_COLUMNS = "id, numbers, created_at, source, draw_no, score"
  * 기록, 그리고 아직 결과를 기다리는 다음 회차 기록을 함께 내려준다.
  * RLS를 우회해야 전체 사용자 기록을 집계할 수 있어 서비스 롤로 조회한다.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    if (!(await requireAdmin(request))) return fail("관리자 권한이 필요합니다.", 403)
+
     const supabase = getAdminClient()
 
     const { data: latestDraw, error: drawError } = await supabase

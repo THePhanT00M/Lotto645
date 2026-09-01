@@ -1,4 +1,6 @@
+import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
+import { requireAdmin } from "@/lib/auth/admin"
 import { getAdminClient } from "@/lib/supabase/admin"
 
 /**
@@ -7,8 +9,10 @@ import { getAdminClient } from "@/lib/supabase/admin"
  * 전 회원에게 같은 알림을 발송한다. 회원 수가 많아도 한 번에 처리되도록
  * 행 삽입 대신 DB 함수(send_notification_to_all)를 호출한다.
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    if (!(await requireAdmin(request))) return fail("관리자 권한이 필요합니다.", 403)
+
     const { title, message } = await request.json()
 
     if (!title || !message) return fail("제목과 내용을 입력해주세요.", 400)

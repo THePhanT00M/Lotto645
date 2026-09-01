@@ -39,10 +39,19 @@ export const recordDraw = async ({ numbers, source, drawNo }: RecordDrawOptions)
   }
 }
 
-/** 서버에 저장된 내 기록을 삭제한다(소프트 삭제). */
-export const deleteServerRecord = async (id: string): Promise<void> => {
+/** 서버 기록 삭제 범위 */
+type DeleteTarget = { ids: string[] } | { all: true }
+
+/**
+ * 서버에 저장된 내 기록을 소프트 삭제한다.
+ *
+ * 실제 행은 남기고 is_deleted만 바꾸므로 통계 집계에는 그대로 쓰인다.
+ */
+export const deleteServerRecords = async (target: DeleteTarget): Promise<number> => {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error("로그인이 필요합니다.")
+
+  const body = "all" in target ? { all: true } : { ids: target.ids.map(Number) }
 
   const response = await fetch(getApiUrl(LOG_ENDPOINT), {
     method: "DELETE",
@@ -50,11 +59,14 @@ export const deleteServerRecord = async (id: string): Promise<void> => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ id: Number(id) }),
+    body: JSON.stringify(body),
   })
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => null)
-    throw new Error(body?.message ?? "서버 기록 삭제에 실패했습니다.")
+  const payload = await response.json().catch(() => null)
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(payload?.message ?? "서버 기록 삭제에 실패했습니다.")
   }
+
+  return payload.removed ?? 0
 }

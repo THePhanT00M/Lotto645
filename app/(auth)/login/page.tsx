@@ -3,13 +3,14 @@
 import { Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import AuthField from "@/components/auth/auth-field"
 import AuthShell from "@/components/auth/auth-shell"
 import SocialLogin, { type SocialProvider } from "@/components/auth/social-login"
 import { Button } from "@/components/ui/button"
 import { isValidEmail, useAuthForm } from "@/hooks/use-auth-form"
 import { useToast } from "@/hooks/use-toast"
+import { getRememberLogin, setRememberLogin } from "@/lib/auth/session-persistence"
 import { supabase } from "@/lib/supabase/client"
 
 /** 로그인 화면과 비밀번호 재설정 화면을 전환한다. */
@@ -25,6 +26,10 @@ export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [view, setView] = useState<View>("login")
+  const [rememberLogin, setRemember] = useState(true)
+
+  // 지난번 선택을 그대로 보여 준다.
+  useEffect(() => setRemember(getRememberLogin()), [])
 
   const form = useAuthForm({ email: "", password: "" })
   const { values, errors, setErrors, isSubmitting, setIsSubmitting, handleChange } = form
@@ -41,6 +46,9 @@ export default function LoginPage() {
     }
 
     setIsSubmitting(true)
+    // 로그인으로 세션이 만들어지기 전에 저장해야, 창을 새로 열었을 때 판단할 수 있다.
+    setRememberLogin(rememberLogin)
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: values.email,
@@ -92,6 +100,8 @@ export default function LoginPage() {
   }
 
   const signInWithProvider = async (provider: SocialProvider) => {
+    setRememberLogin(rememberLogin)
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/api/auth/callback` },
@@ -159,6 +169,21 @@ export default function LoginPage() {
                 />
             )}
           </div>
+
+          {isLogin && (
+              <label className="text-ink-muted flex cursor-pointer items-center gap-2 text-sm select-none">
+                <input
+                    type="checkbox"
+                    checked={rememberLogin}
+                    onChange={(event) => setRemember(event.target.checked)}
+                    className="border-line h-4 w-4 rounded accent-blue-600"
+                />
+                로그인 상태 유지
+                <span className="text-ink-muted text-xs opacity-70">
+                  (해제하면 브라우저를 닫을 때 로그아웃됩니다)
+                </span>
+              </label>
+          )}
 
           <Button
               type="submit"

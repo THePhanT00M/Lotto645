@@ -9,6 +9,7 @@ import ProfileDropdown from "@/components/layout/header/profile-dropdown"
 import ThemeToggle from "@/components/layout/header/theme-toggle"
 import Logo from "@/components/layout/header/logo"
 import { useHeaderData, type UserData } from "@/hooks/use-header-data"
+import { clearSessionMark, markSessionAlive, shouldClearSession } from "@/lib/auth/session-persistence"
 import { supabase } from "@/lib/supabase/client"
 
 interface HeaderProps {
@@ -26,6 +27,14 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
   const { userData, unreadCount } = useHeaderData(isLoggedIn, initialUser, initialUnreadCount)
 
   useEffect(() => {
+    // 로그인 유지를 끈 채 브라우저를 닫았다 열었다면 지난 세션을 정리한다.
+    if (shouldClearSession()) {
+      void supabase.auth.signOut()
+      setIsLoggedIn(false)
+    } else {
+      markSessionAlive()
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(Boolean(session))
     })
@@ -37,6 +46,7 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
 
   const logout = async () => {
     await supabase.auth.signOut()
+    clearSessionMark()
     setIsLoggedIn(false)
   }
 

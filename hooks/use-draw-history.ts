@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { deleteServerRecord } from "@/lib/lotto/draw-log"
+import { deleteServerRecords } from "@/lib/lotto/draw-log"
 import { fetchAllDraws, fetchUserRecords } from "@/lib/lotto/queries"
 import { indexDrawsByNo, resolveDrawStatus, type DrawStatus } from "@/lib/lotto/rank"
 import { clearLottoHistory, deleteLottoResult, getLottoHistory } from "@/lib/lotto/storage"
@@ -67,11 +67,12 @@ export function useDrawHistory() {
   )
 
   const hasLocalEntries = useMemo(() => entries.some((entry) => entry.source === "local"), [entries])
+  const hasServerEntries = useMemo(() => entries.some((entry) => entry.source === "user"), [entries])
 
   /** 기록 한 건을 삭제한다. 서버 기록은 소프트 삭제로 처리된다. */
   const remove = useCallback(async (entry: HistoryEntry) => {
     if (entry.source === "user") {
-      await deleteServerRecord(entry.id)
+      await deleteServerRecords({ ids: [entry.id] })
     } else if (!deleteLottoResult(entry.id)) {
       return
     }
@@ -79,11 +80,55 @@ export function useDrawHistory() {
     setEntries((prev) => prev.filter((item) => item.id !== entry.id))
   }, [])
 
-  /** 이 기기에 저장된 기록만 모두 지운다. 서버 기록은 남는다. */
+  /**
+   * 고른 기록을 한 번에 삭제한다.
+   *
+   * 서버 기록은 한 번의 요청으로 묶어 보내고, 로컬 기록은 이 기기에서만 지운다.
+   */
+  const removeMany = useCallback(
+      async (targets: readonly HistoryEntry[]): Promise<number> => {
+        if (targets.length === 0) return 0
+
+        const serverIds = targets.filter((entry) => entry.source === "user").map((entry) => entry.id)
+        const localIds = targets.filter((entry) => entry.source === "local").map((entry) => entry.id)
+
+        if (serverIds.length > 0) await deleteServerRecords({ ids: serverIds })
+        for (const id of localIds) deleteLottoResult(id)
+
+        const removed = new Set(targets.map((entry) => `${entry.source}-${entry.id}`))
+        setEntries((prev) => prev.filter((entry) => !removed.has(`${entry.source}-${entry.id}`)))
+
+        return targets.length
+      },
+      [],
+  )
+
+  /** 목록에 있는 기록을 모두 지운다. 서버 기록은 소프트 삭제로 남는다. */
+  const clearAll = useCallback(async (): Promise<number> => {
+    const total = entries.length
+
+    if (hasServerEntries) await deleteServerRecords({ all: true })
+    clearLottoHistory()
+    setEntries([])
+
+    return total
+  }, [entries.length, hasServerEntries])
+
+  /** 이 기기에 저장된 기록만 지운다. 서버 기록은 남는다. */
   const clearLocal = useCallback(() => {
     clearLottoHistory()
     setEntries((prev) => prev.filter((entry) => entry.source === "user"))
   }, [])
 
-  return { entries: analyzed, isLoading, winCount, hasLocalEntries, remove, clearLocal }
+  return {
+    entries: analyzed,
+    isLoading,
+    winCount,
+    hasLocalEntries,
+    hasServerEntries,
+    remove,
+    removeMany,
+    clearAll,
+    clearLocal,
+  }
 }

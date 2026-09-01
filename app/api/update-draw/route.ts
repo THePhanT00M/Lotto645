@@ -1,5 +1,7 @@
 import { revalidatePath } from "next/cache"
+import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
+import { hasCronSecret, requireAdmin } from "@/lib/auth/admin"
 import { matchDraw } from "@/lib/lotto/rank"
 import { getAdminClient } from "@/lib/supabase/admin"
 
@@ -39,8 +41,13 @@ interface LottoApiResponse {
  * 동행복권에서 다음 회차 결과를 가져와 DB에 넣는다. 아직 추첨 전이면
  * 목록이 비어 오므로 404로 알리고, 이미 저장된 회차는 409로 구분한다.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // 매주 스케줄러가 부르는 경로라 시크릿 헤더도 허용한다.
+    if (!hasCronSecret(request) && !(await requireAdmin(request))) {
+      return fail("관리자 권한이 필요합니다.", 403)
+    }
+
     const supabase = getAdminClient()
 
     const { data: latestDraw, error: fetchError } = await supabase

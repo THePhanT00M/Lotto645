@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { getApiUrl } from "@/lib/api-config"
+import { authorizedFetch } from "@/lib/auth/client"
 import { PICK_COUNT } from "@/lib/lotto/constants"
 import { FEATURE_KEYS, type PatternFeatures } from "@/lib/lotto/features"
 import type { Rank } from "@/lib/lotto/rank"
@@ -81,7 +81,7 @@ export function useAiRecords(limit = 500) {
     setError(null)
 
     try {
-      const response = await fetch(getApiUrl(`/api/ai-recommendations?limit=${limit}`))
+      const response = await authorizedFetch(`/api/ai-recommendations?limit=${limit}`)
       const data = await response.json()
 
       if (!data.success) throw new Error(data.message ?? "기록을 불러오지 못했습니다.")
