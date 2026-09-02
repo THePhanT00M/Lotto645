@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { useToast } from "@/hooks/use-toast"
 import { authorizedFetch } from "@/lib/auth/client"
 
@@ -24,6 +25,7 @@ export interface Member {
  * 다시 그려지면 스크롤 자리와 열어 둔 것이 흐트러진다.
  */
 export function useAdminMembers() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [members, setMembers] = useState<Member[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -41,7 +43,7 @@ export function useAdminMembers() {
       setMembers(Array.isArray(data.members) ? data.members : [])
       setError(null)
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "회원 목록을 불러오지 못했습니다.")
+      setError(caught instanceof Error ? caught.message : t.admin.members.loadFailed)
     } finally {
       setIsLoading(false)
     }
@@ -69,16 +71,16 @@ export function useAdminMembers() {
           if (!data.success) throw new Error(data.message)
 
           patch(userId, { level: data.level, role: data.role })
-          toast({ title: `등급을 ${data.level}로 바꿨습니다.` })
+          toast({ title: t.admin.members.levelChanged(data.level) })
         } catch (caught) {
           toast({
             variant: "destructive",
-            title: "등급을 바꾸지 못했습니다",
-            description: caught instanceof Error ? caught.message : "잠시 후 다시 시도해주세요.",
+            title: t.admin.members.levelFailed,
+            description: caught instanceof Error ? caught.message : t.auth.errors.unknown,
           })
         }
       },
-      [patch, toast],
+      [patch, t, toast],
   )
 
   return { members, isLoading, error, reload: load, changeLevel, patch }

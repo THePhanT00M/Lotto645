@@ -15,6 +15,7 @@ interface DrawHighlightProps {
 
 /** 선택된 회차의 당첨 번호를 크게 보여주는 카드. */
 export default function DrawHighlight({ draw, latestDrawNo, onNavigate }: DrawHighlightProps) {
+  const { t } = useTranslation()
   return (
       <Panel className="relative overflow-hidden shadow-sm sm:p-8">
         <div className="pointer-events-none absolute top-0 right-0 p-4 opacity-5 dark:opacity-10">
@@ -26,7 +27,7 @@ export default function DrawHighlight({ draw, latestDrawNo, onNavigate }: DrawHi
             <NavButton direction="prev" disabled={draw.drawNo <= 1} onClick={() => onNavigate(draw.drawNo - 1)} />
 
             <div className="flex flex-col items-center justify-center">
-              <span className="text-ink mb-2 text-3xl leading-none font-bold tracking-tight">{draw.drawNo}회</span>
+              <span className="text-ink mb-2 text-3xl leading-none font-bold tracking-tight">{t.winning.drawNoShort(draw.drawNo)}</span>
               <div className="text-ink-muted bg-surface border-line flex items-center rounded-full border px-3 py-1 text-sm">
                 <Calendar className="mr-1.5 h-3.5 w-3.5" />
                 {draw.date}

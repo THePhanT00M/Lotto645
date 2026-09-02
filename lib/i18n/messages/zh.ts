@@ -2,6 +2,11 @@ import type { Messages } from "@/lib/i18n/messages/types"
 
 const zh: Messages = {
   common: {
+    multiple: (size: number) => `${size} 个一组`,
+    justNow: "刚刚",
+    minutesAgo: (value: number) => `${value} 分钟前`,
+    hoursAgo: (value: number) => `${value} 小时前`,
+    daysAgo: (value: number) => `${value} 天前`,
     save: "保存",
     cancel: "取消",
     delete: "删除",
@@ -276,6 +281,10 @@ const zh: Messages = {
   },
 
   history: {
+    mine: "我的记录",
+    local: "本设备",
+    ai: "AI 推荐",
+    selectAria: (numbers: string) => `选择 ${numbers}`,
     title: "我的记录",
     description: "查看保存在本设备与账号中的号码及其中奖结果。",
     totalSaved: "已保存条数",
@@ -308,6 +317,10 @@ const zh: Messages = {
   },
 
   winning: {
+    drawNoShort: (drawNo: number) => `第 ${drawNo} 期`,
+    searchDraw: "查找期数",
+    quickJump: "快速跳转",
+    latest: (drawNo: number) => `最新一期（第 ${drawNo} 期）`,
     title: "历期中奖号码",
     description: "跳转到任意一期查看中奖号码。",
     listTitle: "各期列表",
@@ -331,6 +344,12 @@ const zh: Messages = {
     confirmAllDescription: "清除后的通知无法恢复。",
   },
   draw: {
+    drawAll: "一次摇完",
+    redraw: "重新摇号",
+    reset: "重置",
+    saved: "已保存记录",
+    complete: "摇号完成！",
+    fixedPlusAuto: (fixed: number, auto: number) => `锁定 ${fixed} 个 + 自动 ${auto} 个`,
     start: "开始",
     again: "再摇一次",
     drawnNumbers: "摇出的号码",
@@ -352,6 +371,18 @@ const zh: Messages = {
   },
 
   analysis: {
+    noticeReference: (draws: number) => `本分析基于过去 ${draws} 期的真实中奖号码，统计数据仅供参考。`,
+    noticeRandom: "乐透号码每期随机开出，过往统计不会影响未来的中奖概率。",
+    analyzeHint: "可以分析摇出的号码，或让 AI 给出新的推荐。",
+    analyzeNumbers: "分析这组号码",
+    backToAi: "返回 AI 推荐",
+    noticeBasis: (draws: number) => `本分析基于过去 ${draws} 期的真实中奖号码，统计数据仅供参考。`,
+    comboHint: "所选号码能组成的全部组合，以及每个组合过去出现的次数。",
+    comboHit: (count: number) => `${count} 个组合曾经中奖`,
+    appearedDraw: (drawNo: number) => `第 ${drawNo} 期`,
+    showing: (first: number, last: number, total: number) => `共 ${total} 条，显示 ${first}-${last}`,
+    perPageOption: (count: number) => `${count} 条`,
+    slipLabel: (numbers: string) => `彩票单上标记的号码 ${numbers}`,
     title: "推荐号码说明",
     heading: "号码分析与 AI 推荐",
     recommend: "AI 推荐",
@@ -368,6 +399,13 @@ const zh: Messages = {
     lastPage: "最后一页",
     perPage: "显示",
     recommendation: {
+      intro: (draws: number, features: number) => `将过去 ${draws.toLocaleString()} 期中奖号码作为彩票单上的点位，用 ${features} 种几何特征衡量这六个点构成的形状并加以学习。与已出现过的组合过于相似的号码已被排除。`,
+      overlap: (drawNo: number, overlap: number, limit: number) => `重合最多的是第 ${drawNo} 期，共 ${overlap} 个。系统会过滤与历期重合超过 ${limit} 个的组合。`,
+      avoided: (count: number) => `本期已推荐过的 ${count.toLocaleString()} 组也已从候选中排除。`,
+      ensemble: (count: number) => `${count} 个神经网络平均`,
+      accuracyLine: (validation: string, training: string) => `验证准确率 ${validation}%（训练 ${training}%）`,
+      brierLine: (before: string, after: string) => `分数校准 Brier ${before} → ${after}`,
+      trainTime: (ms: number) => `训练 ${ms}ms`,
       title: "AI 推荐号码",
       building: "正在生成 AI 推荐号码",
       shape: "彩票单上的形状",
@@ -443,6 +481,12 @@ const zh: Messages = {
   },
 
   header: {
+    center: "通知中心",
+    markAllRead: "全部已读",
+    clearAll: "全部删除",
+    loading: "加载中",
+    noNew: "没有新通知。",
+    seeAll: "查看全部通知",
     notifications: "通知",
     notificationsWithCount: (count: number) => `通知 ${count} 条`,
     notificationCenter: "通知中心",
@@ -570,6 +614,10 @@ const zh: Messages = {
       irreversible: "已发送的通知无法撤回。",
     },
     update: {
+      updating: "更新中",
+      retry: "手动重新更新",
+      inserted: (drawNo: number) => `已加入第 ${drawNo} 期数据`,
+      migrationHint: "若尚未创建 number_picks 与 pick_insights 表，请先执行 supabase/migrations 中的 SQL。",
       title: "更新中奖号码",
       description: "查询彩票发行机构 API，获取最新中奖号码。",
       waiting: "等待更新",
@@ -583,6 +631,17 @@ const zh: Messages = {
       bonus: "特别号",
     },
     stats: {
+      tabRanks: "按等级",
+      tabMatches: "命中个数",
+      tabCompare: "AI 与普通",
+      waitingTitle: (drawNo: number) => `等待第 ${drawNo} 期结果`,
+      waitingBody: (count: number) => `有 ${count} 组号码正在等待开奖，开奖后会自动分析。`,
+      matchHint: (drawNo: number) => `与第 ${drawNo} 期中奖号码命中个数的统计`,
+      matched: (count: number) => `命中 ${count} 个`,
+      rankHint: (drawNo: number) => `针对第 ${drawNo} 期的抽号等级统计`,
+      times: (count: number) => `${count} 次`,
+      ai: "AI 推荐",
+      manual: "普通抽号",
       title: "管理员统计面板",
       description: (drawNo: number) => `第 ${drawNo} 期的站内中奖比例与分析数据`,
       latestDraw: "最新一期中奖号码",
@@ -611,6 +670,10 @@ const zh: Messages = {
       loadFailedHint: "加载统计时发生错误。",
     },
     recipients: {
+      recipients: "接收对象",
+      everyoneNotice: (count: number) => `将发送给已注册的全部 ${count.toLocaleString()} 位会员，无需另行选择。`,
+      all: "全部",
+      showing: (count: number) => `显示 ${count} 人`,
       hint: "可以发送给全部会员，也可以只选择符合条件的会员。",
       selected: "已选会员",
       selectedHint: (count: number) => `已选 ${count} 人`,
@@ -631,6 +694,16 @@ const zh: Messages = {
       pending: "待回复",
       toggleFailed: "标记修改失败",
     },
+  },
+  notFound: {
+    title: "找不到页面。",
+    description: "该地址不正确，或页面已被删除。",
+    goHome: "返回首页",
+  },
+
+  meta: {
+    siteName: "乐透摇号机",
+    defaultUser: "会员",
   },
 }
 

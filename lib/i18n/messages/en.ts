@@ -2,6 +2,11 @@ import type { Messages } from "@/lib/i18n/messages/types"
 
 const en: Messages = {
   common: {
+    multiple: (size: number) => `Groups of ${size}`,
+    justNow: "just now",
+    minutesAgo: (value: number) => `${value} min ago`,
+    hoursAgo: (value: number) => `${value} h ago`,
+    daysAgo: (value: number) => `${value} d ago`,
     save: "Save",
     cancel: "Cancel",
     delete: "Delete",
@@ -276,6 +281,10 @@ const en: Messages = {
   },
 
   history: {
+    mine: "My history",
+    local: "This device",
+    ai: "AI picks",
+    selectAria: (numbers: string) => `Select ${numbers}`,
     title: "My history",
     description: "Review the sets saved on this device and in your account, and see how they did.",
     totalSaved: "Sets saved",
@@ -308,6 +317,10 @@ const en: Messages = {
   },
 
   winning: {
+    drawNoShort: (drawNo: number) => `#${drawNo}`,
+    searchDraw: "Find a draw",
+    quickJump: "Quick jump",
+    latest: (drawNo: number) => `Latest (draw ${drawNo})`,
     title: "Winning numbers",
     description: "Jump to any draw to see the numbers that came up.",
     listTitle: "All draws",
@@ -331,6 +344,12 @@ const en: Messages = {
     confirmAllDescription: "Cleared notifications cannot be brought back.",
   },
   draw: {
+    drawAll: "Draw all at once",
+    redraw: "Draw again",
+    reset: "Reset",
+    saved: "Saved",
+    complete: "All six drawn!",
+    fixedPlusAuto: (fixed: number, auto: number) => `${fixed} locked + ${auto} auto`,
     start: "Start",
     again: "Draw again",
     drawnNumbers: "Your numbers",
@@ -352,6 +371,18 @@ const en: Messages = {
   },
 
   analysis: {
+    noticeReference: (draws: number) => `This analysis draws on ${draws} real past results. Please treat the statistics as reference only.`,
+    noticeRandom: "Every draw is random, and past statistics have no bearing on the odds of a future one.",
+    analyzeHint: "Analyse the numbers you drew, or ask the AI for a fresh recommendation.",
+    analyzeNumbers: "Analyse these numbers",
+    backToAi: "Back to AI picks",
+    noticeBasis: (draws: number) => `This analysis is based on ${draws} real past draws. Please treat the statistics as reference only.`,
+    comboHint: "Every combination your numbers can make, and how often each has come up before.",
+    comboHit: (count: number) => `${count} combinations have won before`,
+    appearedDraw: (drawNo: number) => `Draw ${drawNo}`,
+    showing: (first: number, last: number, total: number) => `Showing ${first}-${last} of ${total}`,
+    perPageOption: (count: number) => `${count}`,
+    slipLabel: (numbers: string) => `Numbers marked on the lottery slip: ${numbers}`,
     title: "About these numbers",
     heading: "Analysis and AI picks",
     recommend: "AI picks",
@@ -368,6 +399,13 @@ const en: Messages = {
     lastPage: "Last page",
     perPage: "Show",
     recommendation: {
+      intro: (draws: number, features: number) => `Built from ${draws.toLocaleString()} past results, each plotted as six points on a lottery slip and measured by ${features} geometric features. Sets too close to ones that already came up are left out.`,
+      overlap: (drawNo: number, overlap: number, limit: number) => `The largest overlap is ${overlap} numbers with draw ${drawNo}. Sets overlapping a past draw by more than ${limit} are filtered out.`,
+      avoided: (count: number) => `${count.toLocaleString()} sets already recommended for this draw were also excluded.`,
+      ensemble: (count: number) => `Average of ${count} networks`,
+      accuracyLine: (validation: string, training: string) => `Validation accuracy ${validation}% (training ${training}%)`,
+      brierLine: (before: string, after: string) => `Brier after calibration ${before} → ${after}`,
+      trainTime: (ms: number) => `Trained in ${ms}ms`,
       title: "AI picks",
       building: "Building AI picks",
       shape: "Shape on the slip",
@@ -443,6 +481,12 @@ const en: Messages = {
   },
 
   header: {
+    center: "Notifications",
+    markAllRead: "Mark all read",
+    clearAll: "Clear all",
+    loading: "Loading",
+    noNew: "Nothing new.",
+    seeAll: "See all notifications",
     notifications: "Notifications",
     notificationsWithCount: (count: number) => `${count} notifications`,
     notificationCenter: "Notification centre",
@@ -570,6 +614,10 @@ const en: Messages = {
       irreversible: "A notice cannot be taken back once sent.",
     },
     update: {
+      updating: "Updating",
+      retry: "Run the update again",
+      inserted: (drawNo: number) => `Draw ${drawNo} has been added`,
+      migrationHint: "If the number_picks and pick_insights tables do not exist yet, run the SQL in supabase/migrations first.",
       title: "Update winning numbers",
       description: "Checks the lottery operator's API and pulls in the latest winning numbers.",
       waiting: "Waiting to update",
@@ -583,6 +631,17 @@ const en: Messages = {
       bonus: "Bonus",
     },
     stats: {
+      tabRanks: "By prize",
+      tabMatches: "Matches",
+      tabCompare: "AI vs manual",
+      waitingTitle: (drawNo: number) => `Waiting for draw ${drawNo}`,
+      waitingBody: (count: number) => `${count} sets are waiting for the result. They will be analysed automatically once the draw is announced.`,
+      matchHint: (drawNo: number) => `How many numbers matched draw ${drawNo}`,
+      matched: (count: number) => `${count} matched`,
+      rankHint: (drawNo: number) => `Prize distribution of sets aimed at draw ${drawNo}`,
+      times: (count: number) => `${count}×`,
+      ai: "AI picks",
+      manual: "Manual",
       title: "Admin dashboard",
       description: (drawNo: number) => `Win rates and analysis for draw ${drawNo}`,
       latestDraw: "Latest winning numbers",
@@ -611,6 +670,10 @@ const en: Messages = {
       loadFailedHint: "Something went wrong while loading the statistics.",
     },
     recipients: {
+      recipients: "Recipients",
+      everyoneNotice: (count: number) => `Goes to all ${count.toLocaleString()} members. There is no need to pick anyone.`,
+      all: "All",
+      showing: (count: number) => `showing ${count}`,
       hint: "Send to everyone, or pick just the members you need.",
       selected: "Selected members",
       selectedHint: (count: number) => `${count} selected`,
@@ -631,6 +694,16 @@ const en: Messages = {
       pending: "Waiting",
       toggleFailed: "Could not change the mark",
     },
+  },
+  notFound: {
+    title: "Page not found.",
+    description: "That address is not right, or the page has been removed.",
+    goHome: "Go home",
+  },
+
+  meta: {
+    siteName: "Lotto645",
+    defaultUser: "Member",
   },
 }
 

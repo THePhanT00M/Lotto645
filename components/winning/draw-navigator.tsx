@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 /** 빠른 이동 버튼 하나가 담당하는 회차 구간 */
 interface DrawRange {
@@ -20,6 +21,7 @@ interface DrawNavigatorProps {
 
 /** 회차 검색 입력과 100회 단위 빠른 이동 버튼. */
 export default function DrawNavigator({ latestDrawNo, currentDrawNo, onJump }: DrawNavigatorProps) {
+  const { t } = useTranslation()
   const [keyword, setKeyword] = useState("")
   const ranges = useMemo(() => buildRanges(latestDrawNo), [latestDrawNo])
 
@@ -38,7 +40,7 @@ export default function DrawNavigator({ latestDrawNo, currentDrawNo, onJump }: D
       <div className="space-y-4">
         <Panel>
           <h3 className="text-ink mb-3 flex items-center gap-2 font-semibold">
-            <Search className="h-4 w-4" /> 회차 검색
+            <Search className="h-4 w-4" /> {t.winning.searchDraw}
           </h3>
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -54,14 +56,14 @@ export default function DrawNavigator({ latestDrawNo, currentDrawNo, onJump }: D
               <Hash className="text-ink-muted absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             </div>
             <Button onClick={search} className="h-10 bg-blue-600 text-white hover:bg-blue-700">
-              검색
+              {t.common.search}
             </Button>
           </div>
         </Panel>
 
         <Panel>
           <h3 className="text-ink mb-3 flex items-center gap-2 font-semibold">
-            <ListFilter className="h-4 w-4" /> 빠른 이동
+            <ListFilter className="h-4 w-4" /> {t.winning.quickJump}
           </h3>
           <div className="grid grid-cols-3 gap-2">
             <button
@@ -69,7 +71,7 @@ export default function DrawNavigator({ latestDrawNo, currentDrawNo, onJump }: D
                 onClick={() => onJump(latestDrawNo)}
                 className={cn(RANGE_BUTTON_CLASS, "col-span-3 font-bold", currentDrawNo === latestDrawNo && ACTIVE_CLASS)}
             >
-              최신 회차 ({latestDrawNo}회)
+              {t.winning.latest(latestDrawNo)}
             </button>
 
             {ranges.map((range) => (

@@ -66,7 +66,7 @@ export default function RecipientPicker({ users, target, onChange }: RecipientPi
         <div>
           <h2 className="text-ink flex items-center gap-2 font-semibold">
             <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            받는 사람
+            {t.admin.recipients.recipients}
           </h2>
           <p className="text-ink-muted mt-1 text-sm">{t.admin.recipients.hint}</p>
         </div>
@@ -88,8 +88,7 @@ export default function RecipientPicker({ users, target, onChange }: RecipientPi
 
         {target.kind === "all" ? (
             <div className="border-accent-line bg-accent-soft text-ink-muted rounded-lg border p-4 text-sm leading-relaxed">
-              가입한 <span className="text-ink font-semibold">{users.length.toLocaleString()}명 전원</span>에게
-              발송합니다. 받는 사람을 따로 고를 필요가 없습니다.
+              {t.admin.recipients.everyoneNotice(users.length)}
             </div>
         ) : (
             <>
@@ -106,7 +105,7 @@ export default function RecipientPicker({ users, target, onChange }: RecipientPi
 
               <div className="flex flex-wrap items-center gap-1.5">
                 <LevelChip active={level === "all"} onClick={() => setLevel("all")}>
-                  전체
+                  {t.admin.recipients.all}
                 </LevelChip>
                 {LEVELS.map((each) => (
                     <LevelChip key={each} active={level === each} onClick={() => setLevel(each)}>
@@ -116,7 +115,7 @@ export default function RecipientPicker({ users, target, onChange }: RecipientPi
               </div>
 
               <div className="flex items-center justify-between text-sm">
-                <span className="text-ink-muted">{filtered.length}명 표시 중</span>
+                <span className="text-ink-muted">{t.admin.recipients.showing(filtered.length)}</span>
                 <button
                     type="button"
                     onClick={toggleFiltered}

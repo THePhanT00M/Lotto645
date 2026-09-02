@@ -5,7 +5,6 @@ import { rankStyle } from "@/components/common/rank-badge"
 import { Panel } from "@/components/common/panel"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { rankLabel } from "@/lib/lotto/rank"
 import type { AnalyzedResult } from "@/lib/lotto/stats"
 import { useTranslation } from "@/components/i18n/locale-provider"
 
@@ -38,21 +37,21 @@ export default function WinnerList({ winners }: WinnerListProps) {
                     >
                       <div className="flex items-center gap-3">
                         <span className="rounded bg-black/5 px-2 py-1 text-sm font-bold whitespace-nowrap dark:bg-white/10">
-                          {rankLabel(match.rank)}
+                          {match.rank === null ? t.lotto.miss : t.lotto.rank(match.rank)}
                         </span>
                         {result.isAiRecommended ? (
                             <Badge
                                 variant="secondary"
                                 className="border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
                             >
-                              AI 추천
+                              {t.admin.stats.ai}
                             </Badge>
                         ) : (
                             <Badge
                                 variant="secondary"
                                 className="border-purple-200 bg-purple-100 text-purple-700 dark:border-purple-800 dark:bg-purple-900/40 dark:text-purple-300"
                             >
-                              일반 추첨
+                              {t.admin.stats.manual}
                             </Badge>
                         )}
                       </div>

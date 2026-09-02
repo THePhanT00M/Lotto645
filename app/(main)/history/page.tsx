@@ -114,7 +114,7 @@ export default function HistoryPage() {
       await remove(entry)
       toast({ title: t.history.deleted })
     } catch (error) {
-      toast({ title: t.history.deleteFailed, description: describeError(error), variant: "destructive" })
+      toast({ title: t.history.deleteFailed, description: describeError(error, t.auth.errors.unknown), variant: "destructive" })
     }
   }
 
@@ -124,7 +124,7 @@ export default function HistoryPage() {
       stopSelecting()
       toast({ title: t.history.deletedCount(removed) })
     } catch (error) {
-      toast({ title: t.history.deleteFailed, description: describeError(error), variant: "destructive" })
+      toast({ title: t.history.deleteFailed, description: describeError(error, t.auth.errors.unknown), variant: "destructive" })
     }
   }
 
@@ -134,7 +134,7 @@ export default function HistoryPage() {
       stopSelecting()
       toast({ title: t.history.deletedCount(removed) })
     } catch (error) {
-      toast({ title: t.history.deleteFailed, description: describeError(error), variant: "destructive" })
+      toast({ title: t.history.deleteFailed, description: describeError(error, t.auth.errors.unknown), variant: "destructive" })
     }
   }
 
@@ -264,7 +264,7 @@ function DrawGroupHeader({ group }: { group: DrawGroup }) {
         {group.winCount > 0 && (
             <span className="flex items-center gap-1 text-sm font-semibold text-amber-600 dark:text-amber-400">
               <Trophy className="h-3.5 w-3.5" />
-              당첨 {group.winCount}건
+              {t.history.winnersInDraw(group.winCount)}
             </span>
         )}
 
@@ -282,7 +282,7 @@ function StatCard({ icon: Icon, label, value }: { icon: typeof History; label: s
         </div>
         <div className="text-ink text-3xl font-bold">
           {value}
-          <span className="text-ink-muted ml-1 text-sm font-normal">건</span>
+          
         </div>
       </Panel>
   )
@@ -317,5 +317,6 @@ function ConfirmDialog({ trigger, title, description, onConfirm }: ConfirmDialog
   )
 }
 
-const describeError = (error: unknown): string =>
-    error instanceof Error ? error.message : "잠시 후 다시 시도해주세요."
+/** 오류에서 사람이 읽을 말을 뽑는다. 모르는 오류면 넘겨받은 문구를 쓴다. */
+const describeError = (error: unknown, fallback: string): string =>
+    error instanceof Error ? error.message : fallback

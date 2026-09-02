@@ -10,6 +10,11 @@
  */
 const ko = {
   common: {
+    multiple: (size: number) => `${size}쌍둥이`,
+    justNow: "방금 전",
+    minutesAgo: (value: number) => `${value}분 전`,
+    hoursAgo: (value: number) => `${value}시간 전`,
+    daysAgo: (value: number) => `${value}일 전`,
     save: "저장",
     cancel: "취소",
     delete: "삭제",
@@ -284,6 +289,10 @@ const ko = {
   },
 
   history: {
+    mine: "내 기록",
+    local: "로컬 기록",
+    ai: "AI 추천",
+    selectAria: (numbers: string) => `${numbers} 선택`,
     title: "나의 추첨 기록",
     description: "기기와 서버에 저장된 기록을 확인하고 당첨 결과를 봅니다.",
     totalSaved: "총 저장된 기록",
@@ -316,6 +325,10 @@ const ko = {
   },
 
   winning: {
+    drawNoShort: (drawNo: number) => `${drawNo}회`,
+    searchDraw: "회차 검색",
+    quickJump: "빠른 이동",
+    latest: (drawNo: number) => `최신 회차 (${drawNo}회)`,
     title: "역대 당첨번호",
     description: "원하는 회차로 이동해 당첨 번호를 확인합니다.",
     listTitle: "회차별 목록",
@@ -339,6 +352,12 @@ const ko = {
     confirmAllDescription: "지운 알림은 되돌릴 수 없습니다.",
   },
   draw: {
+    drawAll: "한번에 뽑기",
+    redraw: "다시 뽑기",
+    reset: "초기화",
+    saved: "기록 저장됨",
+    complete: "추첨 완료!",
+    fixedPlusAuto: (fixed: number, auto: number) => `${fixed}개 + ${auto}개 자동`,
     start: "시작하기",
     again: "번호 뽑기",
     drawnNumbers: "추첨 번호",
@@ -360,6 +379,18 @@ const ko = {
   },
 
   analysis: {
+    noticeReference: (draws: number) => `이 분석은 과거 ${draws}회의 실제 당첨번호를 바탕으로 합니다. 통계는 참고용으로만 봐 주세요.`,
+    noticeRandom: "로또 번호는 회차마다 무작위로 뽑히며, 과거의 통계가 앞으로의 당첨 확률에 영향을 주지 않습니다.",
+    analyzeHint: "추첨된 번호를 분석하거나 AI의 새로운 추천을 받을 수 있습니다.",
+    analyzeNumbers: "추첨 번호 분석",
+    backToAi: "AI 추천 번호 돌아가기",
+    noticeBasis: (draws: number) => `이 분석은 과거 ${draws}회의 실제 당첨번호를 바탕으로 합니다. 통계는 참고용으로만 봐 주세요.`,
+    comboHint: "고른 번호로 만들 수 있는 모든 조합과, 각 조합이 과거에 나온 횟수입니다.",
+    comboHit: (count: number) => `${count}개 조합이 과거에 당첨`,
+    appearedDraw: (drawNo: number) => `${drawNo}회`,
+    showing: (first: number, last: number, total: number) => `총 ${total}개 중 ${first}-${last}개 표시`,
+    perPageOption: (count: number) => `${count}개`,
+    slipLabel: (numbers: string) => `로또 용지에 표시한 번호 ${numbers}`,
     title: "추천 번호 정보",
     heading: "번호 분석 및 AI 추천",
     recommend: "AI 추천",
@@ -376,6 +407,13 @@ const ko = {
     lastPage: "마지막 페이지",
     perPage: "표시",
     recommendation: {
+      intro: (draws: number, features: number) => `역대 ${draws.toLocaleString()}회 당첨 번호를 로또 용지 위의 점으로 옮겨, 여섯 점이 만드는 모양을 ${features}가지 기하 특징으로 재고 학습한 결과입니다. 이미 나온 조합과 지나치게 닮은 번호는 제외했습니다.`,
+      overlap: (drawNo: number, overlap: number, limit: number) => `가장 많이 겹치는 회차는 ${drawNo}회에서 ${overlap}개입니다. 이미 나온 조합과 ${limit}개를 넘게 겹치지 않도록 걸러냅니다.`,
+      avoided: (count: number) => `이번 회차에 이미 추천한 ${count.toLocaleString()}개 조합도 후보에서 뺐습니다.`,
+      ensemble: (count: number) => `신경망 ${count}개 평균`,
+      accuracyLine: (validation: string, training: string) => `검증 정확도 ${validation}% (학습 ${training}%)`,
+      brierLine: (before: string, after: string) => `점수 보정 Brier ${before} → ${after}`,
+      trainTime: (ms: number) => `학습 ${ms}ms`,
       title: "AI 추천 번호",
       building: "AI 추천 번호를 만드는 중",
       shape: "용지 위 모양",
@@ -451,6 +489,12 @@ const ko = {
   },
 
   header: {
+    center: "알림센터",
+    markAllRead: "모두 읽음",
+    clearAll: "전체 삭제",
+    loading: "불러오는 중",
+    noNew: "새로운 알림이 없습니다.",
+    seeAll: "알림 전체보기",
     notifications: "알림",
     notificationsWithCount: (count: number) => `알림 ${count}건`,
     notificationCenter: "알림 센터",
@@ -578,6 +622,10 @@ const ko = {
       irreversible: "발송한 알림은 회수할 수 없습니다.",
     },
     update: {
+      updating: "업데이트 중",
+      retry: "수동으로 다시 업데이트",
+      inserted: (drawNo: number) => `${drawNo}회 데이터를 넣었습니다`,
+      migrationHint: "number_picks 와 pick_insights 표가 아직 없다면 supabase/migrations 의 SQL 을 먼저 실행해 주세요.",
       title: "당첨 번호 업데이트",
       description: "동행복권 API를 확인하여 최신 당첨 번호를 가져옵니다.",
       waiting: "업데이트 대기 중",
@@ -591,6 +639,17 @@ const ko = {
       bonus: "보너스",
     },
     stats: {
+      tabRanks: "등수별 통계",
+      tabMatches: "일치 개수",
+      tabCompare: "AI vs 일반",
+      waitingTitle: (drawNo: number) => `${drawNo}회차 결과 대기 중`,
+      waitingBody: (count: number) => `${count}개의 번호가 발표를 기다리고 있습니다. 다음 회차가 발표되면 자동으로 분석됩니다.`,
+      matchHint: (drawNo: number) => `${drawNo}회차 당첨 번호와 일치하는 개수별 통계`,
+      matched: (count: number) => `${count}개 일치`,
+      rankHint: (drawNo: number) => `${drawNo}회차를 대상으로 한 추첨의 등수별 통계`,
+      times: (count: number) => `${count}회`,
+      ai: "AI 추천",
+      manual: "일반 추첨",
       title: "관리자 통계 대시보드",
       description: (drawNo: number) => `최신 ${drawNo}회차에 대한 사이트 당첨 비율과 분석 데이터`,
       latestDraw: "최신 회차 당첨 번호",
@@ -619,6 +678,10 @@ const ko = {
       loadFailedHint: "통계를 불러오는 중 오류가 났습니다.",
     },
     recipients: {
+      recipients: "받는 사람",
+      everyoneNotice: (count: number) => `가입한 ${count.toLocaleString()}명 전원에게 보냅니다. 받는 사람을 따로 고를 필요가 없습니다.`,
+      all: "전체",
+      showing: (count: number) => `${count}명 표시 중`,
       hint: "전체에게 보내거나, 조건에 맞는 회원만 고를 수 있습니다.",
       selected: "고른 회원",
       selectedHint: (count: number) => `${count}명 선택됨`,
@@ -639,6 +702,16 @@ const ko = {
       pending: "답변 대기",
       toggleFailed: "표시를 바꾸지 못했습니다",
     },
+  },
+  notFound: {
+    title: "페이지를 찾을 수 없습니다.",
+    description: "요청하신 주소가 올바르지 않거나 삭제되었습니다.",
+    goHome: "홈으로 이동",
+  },
+
+  meta: {
+    siteName: "로또 추첨기",
+    defaultUser: "사용자",
   },
 } as const
 

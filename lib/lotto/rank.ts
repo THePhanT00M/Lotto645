@@ -22,7 +22,6 @@ export type DrawStatus =
     | { kind: "missing"; drawNo: number }
 
 /** 등수를 한국어 라벨로 변환한다. */
-export const rankLabel = (rank: Rank): string => (rank === null ? "미당첨" : `${rank}등`)
 
 /** 번호 한 세트를 회차 당첨 번호와 대조한다. */
 export const matchDraw = (numbers: number[], draw: WinningLottoNumbers): MatchResult => {

@@ -3,7 +3,7 @@
 import { BarChart3, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Ball } from "@/components/lotto/ball"
-import { MULTIPLE_SIZES, multipleLabel, type MultipleNumber, type MultipleSize } from "@/lib/lotto/analytics"
+import { MULTIPLE_SIZES, type MultipleNumber, type MultipleSize } from "@/lib/lotto/analytics"
 import { useTranslation } from "@/components/i18n/locale-provider"
 import { cn } from "@/lib/utils"
 
@@ -61,14 +61,14 @@ export default function MultipleNumberAnalysis({ multiples }: MultipleNumberAnal
                             : "bg-surface text-ink-muted",
                     )}
                 >
-                  {multipleLabel(each)}
+                  {t.common.multiple(each)}
                 </button>
             ))}
           </div>
         </div>
 
         <p className="text-ink-muted mt-2 text-sm leading-relaxed">
-          선택한 번호에서 가능한 모든 조합과 각 조합이 과거에 등장한 횟수입니다.
+          {t.analysis.comboHint}
         </p>
 
         <div className="mt-4 grid max-h-[500px] grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2 md:grid-cols-3">
@@ -94,8 +94,8 @@ export default function MultipleNumberAnalysis({ multiples }: MultipleNumberAnal
         <div className="border-accent-line bg-accent-soft mt-3 grid grid-cols-2 gap-2 rounded-md border p-3 text-center text-sm md:grid-cols-4">
           {hitCounts.map(({ size: each, count }) => (
               <div key={each}>
-                <div className="font-medium text-blue-700 dark:text-blue-400">{multipleLabel(each)}</div>
-                <div className="text-ink-muted">{count}개 조합이 과거 당첨</div>
+                <div className="font-medium text-blue-700 dark:text-blue-400">{t.common.multiple(each)}</div>
+                <div className="text-ink-muted">{t.analysis.comboHit(count)}</div>
               </div>
           ))}
         </div>
@@ -139,7 +139,7 @@ function MultipleCard({ item }: { item: MultipleNumber }) {
                       key={appearance.drawNo}
                       className="border-line flex items-center justify-between border-b py-0.5 last:border-0"
                   >
-                    <span>{appearance.drawNo}회</span>
+                    <span>{t.analysis.appearedDraw(appearance.drawNo)}</span>
                     <span>{appearance.date}</span>
                   </div>
               ))}
@@ -166,7 +166,7 @@ function Pagination({ page, totalPages, pageSize, totalItems, onPageChange, onPa
   return (
       <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
         <div className="text-ink-muted text-xs">
-          총 {totalItems}개 중 {first}-{last}개 표시
+          {t.analysis.showing(first, last, totalItems)}
         </div>
 
         <div className="flex items-center">
@@ -198,7 +198,7 @@ function Pagination({ page, totalPages, pageSize, totalItems, onPageChange, onPa
           >
             {PAGE_SIZE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option}개
+                  {t.analysis.perPageOption(option)}
                 </option>
             ))}
           </select>

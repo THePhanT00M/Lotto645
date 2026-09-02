@@ -3,6 +3,7 @@
 import { getBallColor } from "@/lib/lotto/colors"
 import { ALL_NUMBERS } from "@/lib/lotto/constants"
 import { GRID_COLUMNS, GRID_ROWS, toGridPoint } from "@/lib/lotto/grid"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 /** 한 칸의 크기와 간격 (SVG 좌표) */
 const CELL = 40
@@ -43,6 +44,7 @@ interface PaperPatternProps {
  * 추천 근거가 되는 "용지에서의 생김새"를 눈으로 확인할 수 있게 한다.
  */
 export default function PaperPattern({ numbers, compare, className }: PaperPatternProps) {
+  const { t } = useTranslation()
   const selected = new Set(numbers)
   const path = [...numbers].sort((a, b) => a - b).map(centerOf)
   const comparePath = compare ? [...compare].sort((a, b) => a - b).map(centerOf) : []
@@ -52,7 +54,7 @@ export default function PaperPattern({ numbers, compare, className }: PaperPatte
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           className={className}
           role="img"
-          aria-label={`로또 용지에 표시한 번호 ${[...numbers].sort((a, b) => a - b).join(", ")}`}
+          aria-label={t.analysis.slipLabel([...numbers].sort((a, b) => a - b).join(", "))}
       >
         {ALL_NUMBERS.map((number) => {
           const { col, row } = toGridPoint(number)

@@ -40,19 +40,28 @@ export function useNotifications(userId?: string | null) {
   }
 }
 
-/** 알림이 온 시각을 '방금 전', '3시간 전'처럼 바꾼다. */
-export const formatRelativeTime = (isoDate: string): string => {
-  const diff = Date.now() - new Date(isoDate).getTime()
-  const minutes = Math.floor(diff / 60000)
+/**
+ * 얼마나 지났는지 나타내는 값
+ *
+ * 말은 화면에서 그때의 언어로 붙이므로, 여기서는 단위와 수만 정한다.
+ */
+export type RelativeTime =
+    | { unit: "now" }
+    | { unit: "minutes" | "hours" | "days"; value: number }
+    | { unit: "date"; value: string }
 
-  if (minutes < 1) return "방금 전"
-  if (minutes < 60) return `${minutes}분 전`
+export const relativeTime = (isoDate: string): RelativeTime => {
+  const minutes = Math.floor((Date.now() - new Date(isoDate).getTime()) / 60_000)
+
+  if (minutes < 1) return { unit: "now" }
+  if (minutes < 60) return { unit: "minutes", value: minutes }
 
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}시간 전`
+  if (hours < 24) return { unit: "hours", value: hours }
 
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}일 전`
+  if (days < 7) return { unit: "days", value: days }
 
-  return new Date(isoDate).toLocaleDateString()
+  return { unit: "date", value: new Date(isoDate).toLocaleDateString() }
 }
+

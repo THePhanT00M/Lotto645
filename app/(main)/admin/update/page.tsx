@@ -68,12 +68,12 @@ export default function UpdateDrawPage() {
             {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  업데이트 중...
+                  {t.admin.update.updating}
                 </>
             ) : (
                 <>
                   <RefreshCw className="mr-2 h-5 w-5" />
-                  수동으로 다시 업데이트
+                  {t.admin.update.retry}
                 </>
             )}
           </Button>
@@ -121,7 +121,7 @@ function DrawSummary({ draw }: { draw: WinningLottoNumbers }) {
 
   return (
       <div className="border-accent-line mt-4 border-t pt-4">
-        <h3 className="text-ink mb-2 font-medium">{draw.drawNo}회 데이터가 삽입되었습니다:</h3>
+        <h3 className="text-ink mb-2 font-medium">{t.admin.update.inserted(draw.drawNo)}</h3>
         <dl className="text-ink-muted space-y-1 text-sm">
           <SummaryRow label={t.admin.update.date}>{draw.date}</SummaryRow>
           <SummaryRow label={t.admin.update.numbers}>{draw.numbers.join(", ")}</SummaryRow>

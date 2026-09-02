@@ -36,9 +36,7 @@ export default function RecommendationCard({ recommendation, stats, isGenerating
         </div>
 
         <p className="text-ink-muted mt-2 mb-4 text-sm leading-relaxed">
-          역대 {stats.drawCount.toLocaleString()}회 당첨 번호를 로또 용지 위의 점으로 옮겨, 여섯 점이 만드는 모양을{" "}
-          {stats.featureCount}가지 기하 특징으로 재고 학습한 결과입니다. 이미 나온 조합과 지나치게 닮은 번호는
-          제외했습니다.
+          {t.analysis.recommendation.intro(stats.drawCount, stats.featureCount)}
         </p>
 
         <div className="bg-surface-2 rounded-lg px-2 py-4">
@@ -81,13 +79,9 @@ export default function RecommendationCard({ recommendation, stats, isGenerating
               <p className="text-ink-muted text-xs leading-relaxed">
                 {closestPastDraw ? (
                     <>
-                      가장 많이 겹치는 회차는{" "}
-                      <span className="text-ink font-medium">
-                        {closestPastDraw.drawNo}회에서 {closestPastDraw.overlap}개
-                      </span>
-                      입니다. 이미 나온 조합과 {stats.maxPastOverlap}개를 넘게 겹치지 않도록 걸러냅니다.
+                      {t.analysis.recommendation.overlap(closestPastDraw.drawNo, closestPastDraw.overlap, stats.maxPastOverlap)}
                       {avoidedCount > 0 && (
-                          <> 이번 회차에 이미 추천한 {avoidedCount.toLocaleString()}개 조합도 후보에서 뺐습니다.</>
+                          <> {t.analysis.recommendation.avoided(avoidedCount)}</>
                       )}
                     </>
                 ) : (
@@ -116,15 +110,15 @@ export default function RecommendationCard({ recommendation, stats, isGenerating
         <p className="text-ink-muted mt-3 flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right text-[10px]">
           <span className="flex items-center gap-1">
             <Layers className="h-3 w-3" />
-            신경망 {stats.ensembleSize}개 평균
+            {t.analysis.recommendation.ensemble(stats.ensembleSize)}
           </span>
           <span>
-            검증 정확도 {(stats.accuracy * 100).toFixed(1)}% (학습 {(stats.trainAccuracy * 100).toFixed(1)}%)
+            {t.analysis.recommendation.accuracyLine((stats.accuracy * 100).toFixed(1), (stats.trainAccuracy * 100).toFixed(1))}
           </span>
           <span>
-            점수 보정 Brier {stats.brierBefore.toFixed(3)} → {stats.brierAfter.toFixed(3)}
+            {t.analysis.recommendation.brierLine(stats.brierBefore.toFixed(3), stats.brierAfter.toFixed(3))}
           </span>
-          <span>학습 {Math.round(stats.trainMs)}ms</span>
+          <span>{t.analysis.recommendation.trainTime(Math.round(stats.trainMs))}</span>
           <span>· {t.analysis.recommendation.disclaimer}</span>
         </p>
       </div>

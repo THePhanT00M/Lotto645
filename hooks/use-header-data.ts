@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { onAvatarChanged } from "@/lib/auth/profile-events"
 import { supabase } from "@/lib/supabase/client"
 
@@ -20,6 +21,7 @@ export interface UserData {
  * 알림은 공유 스토어(lib/notifications/store)가 맡는다.
  */
 export function useHeaderData(isLoggedIn: boolean, initialData?: UserData | null) {
+    const { t } = useTranslation()
     const [userData, setUserData] = useState<UserData | null>(initialData ?? null)
 
     useEffect(() => {
@@ -47,7 +49,7 @@ export function useHeaderData(isLoggedIn: boolean, initialData?: UserData | null
             setUserData({
                 id: user.id,
                 email: user.email || "",
-                name: profile?.nickname || user.user_metadata?.full_name || "사용자",
+                name: profile?.nickname || user.user_metadata?.full_name || t.meta.defaultUser,
                 avatarUrl: profile?.avatar_url || user.user_metadata?.avatar_url || null,
                 role: profile?.role || 'user',
                 level: profile?.level || 0,
@@ -59,7 +61,7 @@ export function useHeaderData(isLoggedIn: boolean, initialData?: UserData | null
         return () => {
             cancelled = true
         }
-    }, [isLoggedIn, userData])
+    }, [isLoggedIn, t, userData])
 
     // 프로필 화면에서 사진을 바꾸면 다시 조회하지 않고 그 값만 갈아 끼운다.
     useEffect(() => onAvatarChanged((avatarUrl) => {

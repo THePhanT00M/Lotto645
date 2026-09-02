@@ -116,7 +116,7 @@ export default function NumberSelector({
                   className="text-ink-muted h-10 bg-gray-50 hover:bg-gray-100 dark:bg-transparent dark:text-gray-100 dark:hover:bg-[#646464]"
               >
                 <RotateCcw className="mr-1 h-4 w-4" />
-                초기화
+                {t.draw.reset}
               </Button>
               <Button
                   onClick={selector.autoFill}
@@ -124,7 +124,7 @@ export default function NumberSelector({
                   className="h-10 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500"
               >
                 <Zap className="mr-1 h-4 w-4" />
-                {fixed.length}개 + {autoFillCount}개 자동
+                {t.draw.fixedPlusAuto(fixed.length, autoFillCount)}
               </Button>
             </div>
           </div>

@@ -2,7 +2,6 @@
 
 import { Sparkles, Target } from "lucide-react"
 import { Panel } from "@/components/common/panel"
-import { rankLabel } from "@/lib/lotto/rank"
 import type { StatsSummary } from "@/lib/lotto/stats"
 import { useTranslation } from "@/components/i18n/locale-provider"
 
@@ -58,6 +57,7 @@ function ComparisonPanel({
                            rowClass,
                            valueClass,
                          }: ComparisonPanelProps) {
+  const { t } = useTranslation()
   return (
       <Panel className="space-y-5">
         <div>
@@ -71,10 +71,10 @@ function ComparisonPanel({
         <div className="space-y-2">
           {summary.rankCounts.map(({ rank, count, percentage }) => (
               <div
-                  key={rankLabel(rank)}
+                  key={rank ?? "miss"}
                   className={`flex items-center justify-between rounded border p-2 ${rowClass}`}
               >
-                <span className="text-ink text-sm font-medium">{rankLabel(rank)}</span>
+                <span className="text-ink text-sm font-medium">{rank === null ? t.lotto.miss : t.lotto.rank(rank)}</span>
                 <div className="flex items-center gap-2">
                   <span className={`text-lg font-bold ${valueClass}`}>{count}</span>
                   <span className="text-ink-muted text-xs">({percentage.toFixed(1)}%)</span>

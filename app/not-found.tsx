@@ -1,8 +1,12 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 /** 존재하지 않는 주소로 들어왔을 때 보여주는 화면. */
 export default function NotFound() {
+  const { t } = useTranslation()
   return (
       <div className="bg-canvas flex min-h-screen flex-col items-center justify-center px-4 transition-colors">
         <div className="flex w-full max-w-lg flex-col items-center text-center">
@@ -12,9 +16,9 @@ export default function NotFound() {
 
           <div className="relative z-10 space-y-6">
             <div className="space-y-3">
-              <h2 className="text-ink text-2xl font-bold">페이지를 찾을 수 없습니다.</h2>
+              <h2 className="text-ink text-2xl font-bold">{t.notFound.title}</h2>
               <p className="text-ink-muted text-[15px] leading-relaxed font-medium">
-                요청하신 주소가 올바르지 않거나 삭제되었습니다.
+                {t.notFound.description}
               </p>
             </div>
 
@@ -22,7 +26,7 @@ export default function NotFound() {
                 asChild
                 className="h-11 rounded-full bg-[#0f0f0f] px-8 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#272727] dark:bg-white dark:text-[#0f0f0f] dark:hover:bg-[#e5e5e5]"
             >
-              <Link href="/">홈으로 이동</Link>
+              <Link href="/">{t.notFound.goHome}</Link>
             </Button>
           </div>
         </div>
