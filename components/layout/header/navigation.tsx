@@ -65,7 +65,9 @@ export default function Navigation({
                 <div className="mx-auto flex w-full 2xl:max-w-shell items-center justify-between px-4 py-4">
                   <Logo />
                   <div className="relative flex items-center gap-2">
-                    {isLoggedIn && <ProfileDropdown userData={userData} onLogout={onLogout} />}
+                    {isLoggedIn && (
+                        <ProfileDropdown userData={userData} onLogout={onLogout} onNavigate={onToggleMobileMenu} />
+                    )}
                     <button
                         type="button"
                         onClick={onToggleMobileMenu}

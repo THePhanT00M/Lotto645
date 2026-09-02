@@ -9,12 +9,24 @@ import { cn } from "@/lib/utils"
 interface ProfileDropdownProps {
   userData: UserData | null
   onLogout: () => void
+  /**
+   * 메뉴에서 화면을 옮길 때 함께 정리할 것.
+   *
+   * 모바일에서는 이 메뉴가 전체화면 메뉴 위에 뜬다. 드롭다운만 닫으면 아래 깔린
+   * 메뉴가 옮겨 간 화면을 계속 가려, 직접 닫아야만 내용이 보인다.
+   */
+  onNavigate?: () => void
 }
 
 /** 프로필 버튼과 계정 메뉴. 바깥을 누르면 닫힌다. */
-export default function ProfileDropdown({ userData, onLogout }: ProfileDropdownProps) {
+export default function ProfileDropdown({ userData, onLogout, onNavigate }: ProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const close = () => {
+    setIsOpen(false)
+    onNavigate?.()
+  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -55,7 +67,7 @@ export default function ProfileDropdown({ userData, onLogout }: ProfileDropdownP
 
               <div className="py-1">
                 {ACCOUNT_MENU.map(({ href, label, icon }) => (
-                    <MenuItem key={href} icon={icon} href={href} onClick={() => setIsOpen(false)}>
+                    <MenuItem key={href} icon={icon} href={href} onClick={close}>
                       {label}
                     </MenuItem>
                 ))}
@@ -68,7 +80,7 @@ export default function ProfileDropdown({ userData, onLogout }: ProfileDropdownP
                     labelClass="text-red-600 font-medium"
                     onClick={() => {
                       onLogout()
-                      setIsOpen(false)
+                      close()
                     }}
                 >
                   로그아웃

@@ -4,12 +4,12 @@ import { Loader2, Save, User } from "lucide-react"
 import { useEffect, useState } from "react"
 import AvatarPicker from "@/components/account/avatar-picker"
 import BannerPicker from "@/components/account/banner-picker"
+import ProfileSkeleton from "@/components/account/profile-skeleton"
 import { Notice } from "@/components/common/notice"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { authorizedFetch } from "@/lib/auth/client"
 import { cn } from "@/lib/utils"
@@ -123,21 +123,25 @@ export default function ProfilePage() {
           <BannerPicker url={bannerUrl} onChange={setBannerUrl} />
 
           <div className="px-5 pb-5">
-            <div className="-mt-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div className="flex min-w-0 items-end gap-4">
-                <AvatarPicker url={avatarUrl} onChange={setAvatarUrl} />
+            {/* 아바타만 배너에 걸치고 이름은 그 아래로 내린다. 옆에 두면 글자 높이에
+                따라 배너를 침범해 잘린 것처럼 보인다. */}
+            <div className="-mt-10 flex items-end justify-between gap-3">
+              <AvatarPicker url={avatarUrl} onChange={setAvatarUrl} />
 
-                {/* 아바타 아래 삭제 버튼 자리만큼 띄워, 이름이 사진 옆에 오게 한다. */}
-                <div className="min-w-0 pb-7">
-                  <div className="text-ink truncate text-xl font-bold">{nickname || "이름 없음"}</div>
-                  <div className="text-ink-muted truncate text-sm">{profile?.email}</div>
-                </div>
-              </div>
-
-              <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:pb-7">
+              <div className="flex flex-wrap items-center justify-end gap-1.5 pb-1">
                 <Badge>Lv.{profile?.level ?? 0}</Badge>
                 {profile?.role === "admin" && <Badge tone="accent">관리자</Badge>}
               </div>
+            </div>
+
+            <div className="mt-3 min-w-0">
+              <div className="text-ink truncate text-xl font-bold">{nickname || "이름 없음"}</div>
+              <div className="text-ink-muted truncate text-sm">{profile?.email}</div>
+              {profile?.joinedAt && (
+                  <div className="text-ink-muted mt-1 text-xs">
+                    {new Date(profile.joinedAt).toLocaleDateString()} 가입
+                  </div>
+              )}
             </div>
 
             <div className="border-line mt-5 space-y-5 border-t pt-5">
@@ -173,17 +177,6 @@ export default function ProfilePage() {
           </div>
         </Panel>
 
-        <Panel className="space-y-3">
-          <h2 className="text-ink font-semibold">계정 정보</h2>
-          <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-            <Row label="이메일" value={profile?.email ?? "-"} />
-            <Row label="등급" value={`Lv.${profile?.level ?? 0}${profile?.role === "admin" ? " (관리자)" : ""}`} />
-            <Row
-                label="가입일"
-                value={profile?.joinedAt ? new Date(profile.joinedAt).toLocaleDateString() : "-"}
-            />
-          </dl>
-        </Panel>
       </div>
   )
 }
@@ -211,55 +204,6 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor: string; c
           {label}
         </Label>
         {children}
-      </div>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-      <div className="flex justify-between gap-3">
-        <dt className="text-ink-muted">{label}</dt>
-        <dd className="text-ink truncate font-medium">{value}</dd>
-      </div>
-  )
-}
-
-function ProfileSkeleton() {
-  return (
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-4 w-64 max-w-full" />
-        </div>
-
-        <Panel className="overflow-hidden p-0">
-          <Skeleton className="aspect-[5/1] w-full rounded-none" />
-
-          <div className="px-5 pb-5">
-            <div className="-mt-10 flex items-end gap-4">
-              <div className="flex flex-col items-center gap-1">
-                <Skeleton className="ring-panel h-20 w-20 rounded-full ring-4" />
-                <div className="h-6" />
-              </div>
-              <div className="space-y-2 pb-7">
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-4 w-48" />
-              </div>
-            </div>
-
-            <div className="border-line mt-5 space-y-5 border-t pt-5">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Skeleton className="h-16" />
-                <Skeleton className="h-16" />
-              </div>
-              <div className="flex justify-end">
-                <Skeleton className="h-10 w-20 rounded-md" />
-              </div>
-            </div>
-          </div>
-        </Panel>
-
-        <Skeleton className="h-32 rounded-xl" />
       </div>
   )
 }

@@ -1,8 +1,7 @@
 "use client"
 
-import { Camera, Loader2, User } from "lucide-react"
+import { Camera, Loader2, Trash2, User } from "lucide-react"
 import ImageCropDialog from "@/components/account/image-crop-dialog"
-import { Button } from "@/components/ui/button"
 import { useImageFile } from "@/hooks/use-image-file"
 import { useProfileImage } from "@/hooks/use-profile-image"
 import { cn } from "@/lib/utils"
@@ -31,58 +30,49 @@ export default function AvatarPicker({ url, onChange }: AvatarPickerProps) {
   }
 
   return (
-      <div className="flex flex-col items-center gap-1">
-        <div className="relative">
-          <button
-              type="button"
-              onClick={open}
-              disabled={isSaving}
-              aria-label="프로필 사진 바꾸기"
-              className="group bg-surface border-line ring-panel relative block h-20 w-20 overflow-hidden rounded-full border ring-4 disabled:cursor-not-allowed"
-          >
-            {url ? (
-                <img src={url} alt="" className="h-full w-full object-cover" />
-            ) : (
-                <span className="flex h-full w-full items-center justify-center">
-                  <User className="text-ink-muted h-8 w-8" />
-                </span>
-            )}
-
-            <span
-                className={cn(
-                    "absolute inset-0 flex items-center justify-center bg-black/50 transition-opacity",
-                    isSaving ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                )}
-            >
-              {isSaving ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-white" />
-              ) : (
-                  <Camera className="h-5 w-5 text-white" />
-              )}
-            </span>
-          </button>
-
-          {/* 손가락으로 쓰는 화면에는 hover 가 없어, 누를 수 있다는 표시를 따로 둔다. */}
-          <span className="border-panel pointer-events-none absolute right-0 bottom-0 flex h-6 w-6 items-center justify-center rounded-full border-2 bg-blue-600">
-            <Camera className="h-3 w-3 text-white" />
-          </span>
-        </div>
-
-        {/* 사진이 없을 때도 자리를 비워 두어 삭제 버튼이 나타나도 배치가 흔들리지 않는다. */}
-        <div className="flex h-6 items-center">
-          {url && (
-              <Button
-                  type="button"
-                  variant="ghost"
-                  size="custom"
-                  disabled={isSaving}
-                  onClick={() => void remove()}
-                  className="text-ink-muted hover:text-danger h-6 px-2 text-xs"
-              >
-                삭제
-              </Button>
+      <div className="relative h-20 w-20 shrink-0">
+        <button
+            type="button"
+            onClick={open}
+            disabled={isSaving}
+            aria-label="프로필 사진 바꾸기"
+            className="group bg-surface border-line ring-panel absolute inset-0 overflow-hidden rounded-full border ring-4 disabled:cursor-not-allowed"
+        >
+          {url ? (
+              <img src={url} alt="" className="h-full w-full object-cover" />
+          ) : (
+              <span className="flex h-full w-full items-center justify-center">
+                <User className="text-ink-muted h-8 w-8" />
+              </span>
           )}
-        </div>
+
+          <span
+              className={cn(
+                  "absolute inset-0 flex items-center justify-center bg-black/50 transition-opacity",
+                  isSaving ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+              )}
+          >
+            {isSaving ? (
+                <Loader2 className="h-5 w-5 animate-spin text-white" />
+            ) : (
+                <Camera className="h-5 w-5 text-white" />
+            )}
+          </span>
+        </button>
+
+        {/* 사진을 바꾸는 것은 원을 누르면 되므로, 따로 표시를 두지 않는다.
+            지우기만 겹치지 않는 자리를 따로 갖는다. */}
+        {url && (
+            <button
+                type="button"
+                aria-label="프로필 사진 삭제"
+                disabled={isSaving}
+                onClick={() => void remove()}
+                className="border-panel absolute right-0 bottom-0 flex h-6 w-6 items-center justify-center rounded-full border-2 bg-black/70 text-white transition-colors hover:bg-black disabled:opacity-50"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+        )}
 
         <ImageCropDialog
             file={file}
