@@ -1,7 +1,10 @@
+"use client"
+
 import { Hash } from "lucide-react"
 import { Ball } from "@/components/lotto/ball"
 import { Panel } from "@/components/common/panel"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 interface FrequencyEntry {
   number: number
@@ -17,6 +20,7 @@ interface PendingFrequencyProps {
 
 /** 결과를 기다리는 번호들의 출현 빈도 목록. */
 export default function PendingFrequency({ title, description, entries, iconClass }: PendingFrequencyProps) {
+  const { t } = useTranslation()
   return (
       <Panel className="flex flex-col p-0">
         <div className="border-line border-b p-5">
@@ -30,7 +34,7 @@ export default function PendingFrequency({ title, description, entries, iconClas
         <ScrollArea className="h-[300px] w-full p-4">
           <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6">
             {entries.length === 0 ? (
-                <p className="text-ink-muted col-span-full py-4 text-center text-sm">데이터가 없습니다.</p>
+                <p className="text-ink-muted col-span-full py-4 text-center text-sm">{t.admin.stats.noData}</p>
             ) : (
                 entries.map(({ number, count }) => (
                     <div

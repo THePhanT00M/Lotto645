@@ -1,3 +1,4 @@
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { Panel } from "@/components/common/panel"
 import { LINE, SkeletonLine, SkeletonLines } from "@/components/common/skeleton-text"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -16,10 +17,12 @@ const RECORD_PLACEHOLDERS = 5
  * 항목 수가 데이터와 무관하게 정해져 있으므로 실제 개수만큼 그대로 잡는다.
  */
 export default function AiLabSkeleton() {
+  const { t } = useTranslation()
+
   return (
       <div
           role="status"
-          aria-label="AI 추천 데이터를 불러오는 중"
+          aria-label={t.admin.aiLab.loading}
           className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6"
       >
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">

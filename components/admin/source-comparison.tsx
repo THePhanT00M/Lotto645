@@ -1,7 +1,10 @@
+"use client"
+
 import { Sparkles, Target } from "lucide-react"
 import { Panel } from "@/components/common/panel"
 import { rankLabel } from "@/lib/lotto/rank"
 import type { StatsSummary } from "@/lib/lotto/stats"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 interface SourceComparisonProps {
   ai: StatsSummary
@@ -11,12 +14,13 @@ interface SourceComparisonProps {
 
 /** AI 추천과 일반 추첨의 등수 분포를 나란히 비교한다. */
 export default function SourceComparison({ ai, manual, drawNo }: SourceComparisonProps) {
+  const { t } = useTranslation()
   return (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ComparisonPanel
             icon={Sparkles}
-            title="AI 추천 등수별 통계"
-            description={`${drawNo}회차 AI 추천 번호의 당첨 등수 분포`}
+            title={t.admin.stats.aiRanks}
+            description={t.admin.stats.aiRanksHint(drawNo ?? 0)}
             summary={ai}
             iconClass="text-blue-600 dark:text-blue-400"
             rowClass="bg-accent-soft border-accent-line"
@@ -24,8 +28,8 @@ export default function SourceComparison({ ai, manual, drawNo }: SourceCompariso
         />
         <ComparisonPanel
             icon={Target}
-            title="일반 추첨 등수별 통계"
-            description={`${drawNo}회차 일반 추첨 번호의 당첨 등수 분포`}
+            title={t.admin.stats.manualRanks}
+            description={t.admin.stats.manualRanksHint(drawNo ?? 0)}
             summary={manual}
             iconClass="text-purple-600 dark:text-purple-400"
             rowClass="bg-[#f3e5f5] border-[#e1bee7] dark:bg-[#341b3a] dark:border-[#5c2b66]"

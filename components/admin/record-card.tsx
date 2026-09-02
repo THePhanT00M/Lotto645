@@ -2,13 +2,13 @@
 
 import { ChevronDown, Download } from "lucide-react"
 import { useRef, useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import PaperPattern from "@/components/analysis/paper-pattern"
 import { rankStyle } from "@/components/common/rank-badge"
 import { Ball } from "@/components/lotto/ball"
 import { Button } from "@/components/ui/button"
 import type { PickInsight } from "@/hooks/use-pick-insights"
-import { FEATURE_KEYS, FEATURE_LABELS } from "@/lib/lotto/features"
-import { rankLabel } from "@/lib/lotto/rank"
+import { FEATURE_KEYS } from "@/lib/lotto/features"
 import { cn } from "@/lib/utils"
 
 /** 내려받을 스냅샷 이미지의 가로 크기 */
@@ -25,6 +25,7 @@ interface RecordCardProps {
  * 그 추천이 용지에서 어떤 모양이었는지 다시 그려 준다.
  */
 export default function RecordCard({ record }: RecordCardProps) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const snapshotRef = useRef<HTMLDivElement>(null)
 
@@ -39,7 +40,7 @@ export default function RecordCard({ record }: RecordCardProps) {
           <div className="flex items-center gap-3">
             <ChevronDown className={cn("text-ink-muted h-4 w-4 shrink-0 transition-transform", isOpen && "rotate-180")} />
             <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-1 text-xs font-semibold">
-              {record.draw_no}회
+              {t.lotto.drawNo(record.draw_no)}
             </span>
             <div className="flex flex-wrap gap-1">
               {record.numbers.map((number) => (
@@ -49,15 +50,15 @@ export default function RecordCard({ record }: RecordCardProps) {
           </div>
 
           <div className="text-ink-muted flex flex-wrap items-center gap-3 pl-7 text-xs sm:pl-0">
-            <span>점수 {(record.score * 100).toFixed(1)}%</span>
-            <span>겹침 {record.max_past_overlap ?? "-"}개</span>
+            <span>{t.admin.record.score(`${(record.score * 100).toFixed(1)}%`)}</span>
+            <span>{t.admin.record.overlap(t.admin.record.count(record.max_past_overlap ?? 0))}</span>
             {record.scored_at ? (
                 <span className={cn("rounded-md border px-2 py-0.5 font-semibold", rankStyle(record.prize_rank))}>
-                  {record.matched_count}개 · {rankLabel(record.prize_rank)}
+                  {t.admin.record.matchedCount(record.matched_count ?? 0)} · {record.prize_rank === null ? t.lotto.miss : t.lotto.rank(record.prize_rank)}
                 </span>
             ) : (
                 <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-0.5">
-                  채점 대기
+                  {t.admin.record.awaiting}
                 </span>
             )}
           </div>
@@ -67,7 +68,7 @@ export default function RecordCard({ record }: RecordCardProps) {
             <div className="border-line grid grid-cols-1 items-start gap-4 border-t p-4 md:grid-cols-2">
               <div className="bg-surface-2 rounded-lg p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <h4 className="text-ink text-sm font-semibold">용지 스냅샷</h4>
+                  <h4 className="text-ink text-sm font-semibold">{t.admin.record.snapshot}</h4>
                   <SnapshotButton target={snapshotRef} record={record} />
                 </div>
                 {/* PNG로 저장할 때 이 영역을 그대로 그린다. 배경은 저장 시 따로 깔아 준다. */}
@@ -75,33 +76,33 @@ export default function RecordCard({ record }: RecordCardProps) {
                   <PaperPattern numbers={record.numbers} className="w-full" />
                 </div>
                 <p className="text-ink-muted mt-2 text-center text-xs">
-                  {new Date(record.created_at).toLocaleString()} 추천
+                  {t.admin.record.recommendedAt(new Date(record.created_at).toLocaleString())}
                 </p>
               </div>
 
               <div className="space-y-3">
                 <div className="bg-surface-2 rounded-lg p-3">
-                  <h4 className="text-ink mb-2 text-sm font-semibold">추천 당시 점수</h4>
+                  <h4 className="text-ink mb-2 text-sm font-semibold">{t.admin.record.scores}</h4>
                   <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                    <Row label="최종 점수" value={`${(record.score * 100).toFixed(1)}%`} />
-                    <Row label="패턴 판별" value={`${(record.network_score * 100).toFixed(1)}%`} />
-                    <Row label="분포 적합도" value={`${(record.typicality * 100).toFixed(1)}%`} />
-                    <Row label="과거 최대 겹침" value={`${record.max_past_overlap ?? "-"}개`} />
+                    <Row label={t.admin.record.finalScore} value={`${(record.score * 100).toFixed(1)}%`} />
+                    <Row label={t.admin.record.networkScore} value={`${(record.network_score * 100).toFixed(1)}%`} />
+                    <Row label={t.admin.record.typicality} value={`${(record.typicality * 100).toFixed(1)}%`} />
+                    <Row label={t.admin.record.maxOverlap} value={t.admin.record.count(record.max_past_overlap ?? 0)} />
                   </dl>
                 </div>
 
                 {record.model && (
                     <div className="bg-surface-2 rounded-lg p-3">
-                      <h4 className="text-ink mb-2 text-sm font-semibold">모델</h4>
+                      <h4 className="text-ink mb-2 text-sm font-semibold">{t.admin.record.model}</h4>
                       <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                        <Row label="학습 회차" value={`${record.model.drawCount?.toLocaleString() ?? "-"}회`} />
-                        <Row label="앙상블" value={`${record.model.ensembleSize ?? "-"}개`} />
+                        <Row label={t.admin.record.trainedDraws} value={t.admin.record.draws(record.model.drawCount?.toLocaleString() ?? "-")} />
+                        <Row label={t.admin.record.ensemble} value={t.admin.record.count(record.model.ensembleSize ?? 0)} />
                         <Row
-                            label="검증 정확도"
+                            label={t.admin.record.accuracy}
                             value={record.model.accuracy != null ? `${(record.model.accuracy * 100).toFixed(1)}%` : "-"}
                         />
                         <Row
-                            label="보정 Brier"
+                            label={t.admin.record.brier}
                             value={
                               record.model.brierAfter != null
                                   ? `${record.model.brierBefore?.toFixed(3) ?? "-"} → ${record.model.brierAfter.toFixed(3)}`
@@ -113,10 +114,10 @@ export default function RecordCard({ record }: RecordCardProps) {
                 )}
 
                 <div className="bg-surface-2 rounded-lg p-3">
-                  <h4 className="text-ink mb-2 text-sm font-semibold">기하 특징 {FEATURE_KEYS.length}가지</h4>
+                  <h4 className="text-ink mb-2 text-sm font-semibold">{t.admin.record.geometry(FEATURE_KEYS.length)}</h4>
                   <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                     {FEATURE_KEYS.map((key) => (
-                        <Row key={key} label={FEATURE_LABELS[key]} value={formatFeature(record.features?.[key])} />
+                        <Row key={key} label={t.features[key]} value={formatFeature(record.features?.[key])} />
                     ))}
                   </dl>
                 </div>
@@ -186,7 +187,7 @@ function SnapshotButton({ target, record }: { target: React.RefObject<HTMLDivEle
 
       const link = document.createElement("a")
       link.href = canvas.toDataURL("image/png")
-      link.download = `lotto-${record.draw_no}회-${record.numbers.join("-")}.png`
+      link.download = `lotto-${record.draw_no}-${record.numbers.join("-")}.png`
       link.click()
     } catch (error) {
       console.error("스냅샷 저장 실패:", error)

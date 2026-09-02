@@ -2,6 +2,7 @@
 
 import { Loader2, Send } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import NotificationComposer from "@/components/admin/notification-composer"
 import RecipientPicker, { type Target } from "@/components/admin/recipient-picker"
 import { PageHeader } from "@/components/common/page-header"
@@ -18,6 +19,7 @@ import { authorizedFetch } from "@/lib/auth/client"
  */
 export default function AdminNotificationPage() {
   const { users, isLoading } = useAdminUsers()
+  const { t } = useTranslation()
   const { toast } = useToast()
 
   const [target, setTarget] = useState<Target>({ kind: "selected", userIds: [] })
@@ -42,9 +44,9 @@ export default function AdminNotificationPage() {
       })
 
       const result = await response.json()
-      if (!response.ok || !result.success) throw new Error(result.message ?? "알림 발송에 실패했습니다.")
+      if (!response.ok || !result.success) throw new Error(result.message ?? t.admin.notify.failed)
 
-      toast({ title: "발송 완료", description: result.message })
+      toast({ title: t.admin.notify.sent, description: result.message })
 
       // 같은 내용을 두 번 보내는 사고를 막으려고 작성 내용까지 비운다.
       setTarget({ kind: "selected", userIds: [] })
@@ -53,8 +55,8 @@ export default function AdminNotificationPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "발송 실패",
-        description: error instanceof Error ? error.message : "잠시 후 다시 시도해주세요.",
+        title: t.admin.notify.failed,
+        description: error instanceof Error ? error.message : t.auth.errors.unknown,
       })
     } finally {
       setIsSending(false)
@@ -73,8 +75,8 @@ export default function AdminNotificationPage() {
       <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <PageHeader
             icon={Send}
-            title="알림 발송"
-            description="받는 사람을 고르고 내용을 작성해 알림을 보냅니다."
+            title={t.admin.notify.title}
+            description={t.admin.notify.description}
         />
 
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
