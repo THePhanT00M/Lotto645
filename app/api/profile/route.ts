@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
 import { resolveUserId } from "@/lib/auth/api-user"
+import { decryptPhone, encryptPhone } from "@/lib/profile/phone"
 import { getAdminClient } from "@/lib/supabase/admin"
 
 const TABLE = "profiles"
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
     return ok({
       profile: {
         ...profile,
+        phone_number: decryptPhone(profile?.phone_number ?? null),
         id: userId,
         email: auth?.user?.email ?? "",
         joinedAt: auth?.user?.created_at ?? profile?.created_at ?? null,
@@ -54,10 +56,13 @@ export async function PATCH(request: NextRequest) {
     const updates: Record<string, string | null> = {}
 
     for (const field of EDITABLE_FIELDS) {
-      if (field in body) {
-        const value = body[field]
-        updates[field] = typeof value === "string" && value.trim() !== "" ? value.trim() : null
-      }
+      if (!(field in body)) continue
+
+      const value = body[field]
+      const trimmed = typeof value === "string" && value.trim() !== "" ? value.trim() : null
+
+      // 연락처는 표에 그대로 담지 않는다.
+      updates[field] = field === "phone_number" ? encryptPhone(trimmed) : trimmed
     }
 
     if (Object.keys(updates).length === 0) return fail("변경할 내용이 없습니다.", 400)

@@ -47,7 +47,7 @@ export function useAdminUsers() {
 
       const { data: rows, error } = await supabase
           .from("profiles")
-          .select("id, nickname, email, avatar_url, role, level, phone_number")
+          .select("id, nickname, email, avatar_url, role, level")
           .order("created_at", { ascending: false })
 
       if (cancelled) return
@@ -77,7 +77,6 @@ const toUserData = (row: {
   avatar_url: string | null
   role: string | null
   level: number | null
-  phone_number: string | null
 }): UserData => ({
   id: row.id,
   name: row.nickname || "이름 없음",
@@ -85,5 +84,4 @@ const toUserData = (row: {
   avatarUrl: row.avatar_url,
   role: (row.role as UserData["role"]) ?? "user",
   level: row.level ?? 0,
-  phoneNumber: row.phone_number ?? "",
 })

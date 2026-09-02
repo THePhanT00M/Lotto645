@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
 import { ADMIN_LEVEL, requireAdmin } from "@/lib/auth/admin"
+import { decryptPhone } from "@/lib/profile/phone"
 import { getAdminClient } from "@/lib/supabase/admin"
 
 const TABLE = "profiles"
@@ -29,7 +30,12 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
-    return ok({ members: data ?? [] })
+    const members = (data ?? []).map((member) => ({
+      ...member,
+      phone_number: decryptPhone(member.phone_number),
+    }))
+
+    return ok({ members })
   } catch (error) {
     console.error("회원 목록 조회 실패:", errorMessage(error))
     return fail(errorMessage(error))

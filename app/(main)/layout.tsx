@@ -24,7 +24,7 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
 
   if (user) {
     const [{ data: profile }, { count }] = await Promise.all([
-      supabase.from("profiles").select("nickname, role, level, avatar_url, phone_number").eq("id", user.id).single(),
+      supabase.from("profiles").select("nickname, role, level, avatar_url").eq("id", user.id).single(),
       supabase
           .from("notifications")
           .select("*", { count: "exact", head: true })
@@ -39,7 +39,6 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
       avatarUrl: profile?.avatar_url ?? user.user_metadata?.avatar_url ?? null,
       role: profile?.role ?? "user",
       level: profile?.level ?? 0,
-      phoneNumber: profile?.phone_number ?? "",
     }
     unreadCount = count ?? 0
   }
