@@ -15,17 +15,19 @@
 --   153.120 → 153.121 처럼 잔버전만 오른 경우 바뀐 규칙이 없거나 아주 적어
 --   실제로 문제가 될 가능성은 낮지만, 바로잡는 방법은 정해져 있다.
 --
--- 순서가 중요하다
---   버전 표시만 새로 찍으면(REFRESH COLLATION VERSION) 경고는 사라지지만
---   인덱스는 예전 순서 그대로 남는다. 반드시 다시 만든 뒤에 표시를 찍는다.
+-- 이 파일을 통째로 한 번에 돌려도 된다
+--   대시보드 SQL 편집기는 보낸 것을 통째로 한 트랜잭션으로 감싼다. 그래서
+--   중간에 하나라도 실패하면 앞의 것까지 모두 되돌아간다. 트랜잭션 안에서
+--   돌 수 없는 문장(REINDEX DATABASE·SCHEMA)과 우리 권한 밖의 문장은 아예
+--   빼고, 남은 것은 권한이 없으면 건너뛰도록 감쌌다.
 --
--- REINDEX DATABASE 는 쓰지 않는다
---   대시보드 SQL 편집기는 보낸 것을 통째로 한 트랜잭션으로 감싼다. DATABASE·
---   SCHEMA 단위 REINDEX 는 트랜잭션 안에서 돌 수 없어 25001 로 끊긴다.
---   TABLE 단위는 트랜잭션 안에서도 되므로 그렇게 나눠 돈다.
+-- template1 은 여기서 다루지 않는다
+--   그 데이터베이스의 주인은 supabase_admin 이라 우리 역할로는 만질 수 없다
+--   (42501). 새 데이터베이스를 만들 때만 쓰이는 원본이라 서비스와 무관하고,
+--   경고가 남더라도 Supabase 쪽에서 정리할 몫이다.
 
 
--- 1) 영향을 받는 인덱스를 본다.
+-- ── 1. 무엇이 영향을 받는지 본다 ────────────────────────────────────────────
 --
 --    C 와 POSIX 는 글자 코드값 그대로 견주는 규칙이라 라이브러리가 올라가도
 --    순서가 바뀌지 않는다. 그 밖의 규칙을 쓰는 인덱스만 해당된다.
@@ -50,31 +52,18 @@ where c.relkind = 'i'
 order by 1, 2, 3;
 
 
--- 2) 다시 만들 문장을 뽑는다. 결과를 복사해 그대로 돌리면 된다.
+-- ── 2. 인덱스를 다시 만들고 버전 표시를 찍는다 ─────────────────────────────
 --
---    한 번에 돌리는 3) 보다 이쪽이 낫다. 무엇이 도는지 눈으로 확인할 수 있고,
---    남의 스키마(auth·storage 등)는 우리 권한으로 못 고치므로 골라 낼 수 있다.
-select distinct format('reindex table %I.%I;', n.nspname, t.relname) as statement
-from pg_class c
-         join pg_index i on i.indexrelid = c.oid
-         join pg_class t on t.oid = i.indrelid
-         join pg_namespace n on n.oid = c.relnamespace
-         cross join lateral unnest(i.indcollation::oid[]) as coll
-         join pg_collation co on co.oid = coll
-where c.relkind = 'i'
-  and n.nspname not in ('pg_catalog', 'information_schema')
-  and co.collname not in ('C', 'POSIX')
-order by 1;
-
-
--- 3) 한 번에 돌리고 싶다면 이것만 실행한다.
+--    표 단위 REINDEX 는 트랜잭션 안에서도 돈다. auth·storage 처럼 주인이 다른
+--    스키마는 권한이 없어 실패하는데, 건너뛰고 이어 간다. 그쪽은 Supabase 가
+--    관리하는 영역이다.
 --
---    TABLE 단위라 트랜잭션 안에서도 돈다. 우리 것이 아닌 표는 권한이 없어
---    실패하는데, 그때는 건너뛰고 이어 간다. Supabase 가 관리하는 스키마는
---    그쪽에서 정리한다.
+--    편집기가 notice 를 보여 주지 않을 수 있다. 오류 없이 끝났다면 된 것이다.
 do $$
     declare
-        target record;
+        target  record;
+        done    int := 0;
+        skipped int := 0;
     begin
         for target in
             select distinct n.nspname as schema_name, t.relname as table_name
@@ -91,20 +80,23 @@ do $$
             loop
                 begin
                     execute format('reindex table %I.%I', target.schema_name, target.table_name);
-                    raise notice '다시 만듦 : %.%', target.schema_name, target.table_name;
+                    done := done + 1;
                 exception
-                    when insufficient_privilege then
-                        raise notice '건너뜀   : %.% (권한 없음)', target.schema_name, target.table_name;
+                    when insufficient_privilege or undefined_table then
+                        skipped := skipped + 1;
                 end;
             end loop;
+
+        raise notice '인덱스 : 다시 만듦 %건, 건너뜀 %건', done, skipped;
+
+        -- 다시 만든 뒤에야 버전 표시를 찍는다. 순서를 바꾸면 경고만 사라지고
+        -- 인덱스는 예전 순서 그대로 남는다.
+        begin
+            execute format('alter database %I refresh collation version', current_database());
+            raise notice '버전 표시 : 새로 찍음';
+        exception
+            when insufficient_privilege then
+                raise notice '버전 표시 : 권한이 없어 건너뜀. Supabase 쪽에서 정리할 몫이다.';
+        end;
     end
 $$;
-
-
--- 4) 다시 만든 뒤에 버전 표시를 새로 찍는다.
-alter database postgres refresh collation version;
-
-
--- 5) template1 은 새 데이터베이스를 만들 때만 쓰이는 원본이라 급하지 않다.
---    권한이 모자라 실패하면 그대로 두어도 서비스에는 영향이 없다.
-alter database template1 refresh collation version;
