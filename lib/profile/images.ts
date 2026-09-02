@@ -12,9 +12,6 @@ const TABLE = "profiles"
  */
 const BUCKET = "profile-images"
 
-/** 예전에 아바타만 담던 버킷. 그때 올린 파일을 지울 때만 쓴다. */
-const LEGACY_BUCKETS = ["avatars"] as const
-
 /** 종류별 저장 위치. 접두사와 컬럼만 다르고 다루는 방식은 같다. */
 const STORES = {
   avatar: { prefix: "avatars", column: "avatar_url" },
@@ -78,12 +75,9 @@ const readProfileImage = async (userId: string, kind: ProfileImageKind): Promise
 const removeStored = async (url: string | null): Promise<void> => {
   if (!url) return
 
-  for (const bucket of [BUCKET, ...LEGACY_BUCKETS]) {
-    const marker = `/storage/v1/object/public/${bucket}/`
-    const index = url.indexOf(marker)
-    if (index === -1) continue
+  const marker = `/storage/v1/object/public/${BUCKET}/`
+  const index = url.indexOf(marker)
+  if (index === -1) return
 
-    await getAdminClient().storage.from(bucket).remove([url.slice(index + marker.length)])
-    return
-  }
+  await getAdminClient().storage.from(BUCKET).remove([url.slice(index + marker.length)])
 }
