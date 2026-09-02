@@ -71,6 +71,43 @@ const ko = {
       failed: "문의를 남기지 못했습니다. 잠시 후 다시 시도해 주세요.",
     },
   },
+  settings: {
+    title: "설정",
+    description: "화면과 계정 동작을 조정합니다.",
+    theme: {
+      title: "화면 테마",
+      light: "밝게",
+      dark: "어둡게",
+      system: "시스템",
+    },
+    language: {
+      title: "화면 언어",
+      description: "고른 언어는 계정에 저장되어 다른 기기에서도 그대로 보입니다.",
+      saved: "언어를 바꿨습니다.",
+    },
+    autoLogin: {
+      title: "자동 로그인",
+      saved: "설정을 저장했습니다.",
+      on: "다음 접속부터 자동으로 로그인합니다.",
+      off: "브라우저를 닫으면 로그아웃됩니다.",
+    },
+    account: {
+      title: "계정",
+      withdrawDescription: "탈퇴하면 계정과 프로필이 사라지고 되돌릴 수 없습니다. 만들었던 번호 기록은 누구의 것인지 알 수 없는 형태로 남습니다.",
+      withdraw: "회원 탈퇴",
+      withdrawing: "탈퇴 처리 중",
+      confirmTitle: "정말 탈퇴하시겠어요?",
+      confirmDescription: "계정과 프로필, 올린 사진이 모두 사라집니다. 같은 이메일로 다시 가입할 수는 있지만 예전 기록은 돌아오지 않습니다.",
+      confirm: "탈퇴",
+      done: "탈퇴 처리했습니다.",
+      failed: "탈퇴하지 못했습니다.",
+    },
+  },
+
+  auth: {
+    languageLabel: "선호하는 언어",
+    languageHint: "가입 후에도 설정에서 바꿀 수 있습니다.",
+  },
 } as const
 
 export default ko

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import LoginLink from "@/components/auth/login-link"
-import LanguageSelect from "@/components/i18n/language-select"
 import { useTranslation } from "@/components/i18n/locale-provider"
 import MobileMenuToggle from "@/components/layout/header/mobile-menu-toggle"
 import Navigation from "@/components/layout/header/navigation"
@@ -70,7 +69,6 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
             />
 
             <div className="flex items-center gap-2">
-              <LanguageSelect />
               <ThemeToggle />
 
               {isLoggedIn ? (

@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import AuthField from "@/components/auth/auth-field"
 import AuthShell from "@/components/auth/auth-shell"
 import SocialLogin, { type SocialProvider } from "@/components/auth/social-login"
@@ -12,7 +13,10 @@ import { useNextPath } from "@/hooks/use-next-path"
 import { useToast } from "@/hooks/use-toast"
 import { describeAuthError } from "@/lib/auth/error-messages"
 import { loginHref } from "@/lib/auth/redirect"
+import { writeLocaleCookie } from "@/lib/i18n/client"
+import { LOCALES, LOCALE_NAMES, type Locale } from "@/lib/i18n/locales"
 import { supabase } from "@/lib/supabase/client"
+import { cn } from "@/lib/utils"
 
 /** Supabase가 요구하는 최소 비밀번호 길이 */
 const MIN_PASSWORD_LENGTH = 6
@@ -26,7 +30,20 @@ const MIN_PASSWORD_LENGTH = 6
 export default function RegisterPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t, locale } = useTranslation()
   const nextPath = useNextPath()
+
+  /**
+   * 고른 언어를 바로 적용한다.
+   *
+   * 가입 화면 자체가 그 말로 바뀌어야 무엇을 적는 칸인지 알 수 있다. 계정에는
+   * 가입이 끝난 뒤에야 담을 수 있으므로, 고른 값을 회원 정보에도 함께 실어
+   * 첫 로그인 때 계정으로 옮긴다.
+   */
+  const changeLanguage = (next: Locale) => {
+    writeLocaleCookie(next)
+    router.refresh()
+  }
 
   const form = useAuthForm({ name: "", email: "", password: "", confirmPassword: "" })
   const { values, errors, setErrors, isSubmitting, setIsSubmitting, handleChange } = form
@@ -44,7 +61,7 @@ export default function RegisterPage() {
         email: values.email,
         password: values.password,
         options: {
-          data: { full_name: values.name },
+          data: { full_name: values.name, language: locale },
           emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`,
         },
       })
@@ -92,6 +109,28 @@ export default function RegisterPage() {
               void register()
             }}
         >
+          <div className="space-y-2">
+            <span className="text-ink block text-sm font-medium">{t.auth.languageLabel}</span>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {LOCALES.map((option) => (
+                  <button
+                      key={option}
+                      type="button"
+                      onClick={() => changeLanguage(option)}
+                      className={cn(
+                          "border-line rounded-lg border px-2 py-2 text-sm transition-colors",
+                          locale === option
+                              ? "border-accent-line bg-accent-soft text-accent font-medium"
+                              : "bg-surface text-ink-muted hover:bg-hover",
+                      )}
+                  >
+                    {LOCALE_NAMES[option]}
+                  </button>
+              ))}
+            </div>
+            <p className="text-ink-muted text-xs">{t.auth.languageHint}</p>
+          </div>
+
           <div className="space-y-5">
             <AuthField
                 id="name"

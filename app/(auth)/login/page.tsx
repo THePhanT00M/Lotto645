@@ -13,7 +13,7 @@ import { useNextPath } from "@/hooks/use-next-path"
 import { useToast } from "@/hooks/use-toast"
 import { describeAuthError } from "@/lib/auth/error-messages"
 import { writeLocaleCookie } from "@/lib/i18n/client"
-import { toLocale } from "@/lib/i18n/locales"
+import { DEFAULT_LOCALE, toLocale } from "@/lib/i18n/locales"
 import { registerHref } from "@/lib/auth/redirect"
 import { getRememberLogin, setRememberLogin } from "@/lib/auth/session-persistence"
 import { supabase } from "@/lib/supabase/client"
@@ -85,13 +85,32 @@ export default function LoginPage() {
     }
   }
 
-  /** 로그인한 계정이 골라 둔 언어를 이 브라우저에 적어 둔다. */
+  /**
+   * 계정에 담긴 언어를 이 브라우저에 적어 둔다.
+   *
+   * 가입할 때 고른 언어는 그 시점에 계정이 없어 회원 정보에만 실려 있다.
+   * 계정 쪽이 아직 기본값이면 그 값을 계정으로 옮겨, 다음부터는 계정만 보면
+   * 되게 한다.
+   */
   const applyAccountLocale = async () => {
     try {
-      const response = await fetch("/api/profile")
+      const [{ data: { user } }, response] = await Promise.all([supabase.auth.getUser(), fetch("/api/profile")])
       const data = await response.json()
+      if (!data.success) return
 
-      if (data.success && data.profile?.language) writeLocaleCookie(toLocale(data.profile.language))
+      const saved = toLocale(data.profile?.language)
+      const chosenAtSignUp = toLocale(user?.user_metadata?.language)
+      const locale = saved === DEFAULT_LOCALE && chosenAtSignUp !== DEFAULT_LOCALE ? chosenAtSignUp : saved
+
+      if (locale !== saved) {
+        await fetch("/api/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language: locale }),
+        })
+      }
+
+      writeLocaleCookie(locale)
     } catch {
       // 언어를 못 읽어도 로그인 자체는 끝났다. 지금 쿠키에 있는 언어로 이어 간다.
     }

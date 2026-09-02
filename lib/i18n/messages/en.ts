@@ -63,6 +63,43 @@ const en: Messages = {
       failed: "We could not send your message. Please try again in a moment.",
     },
   },
+  settings: {
+    title: "Settings",
+    description: "Adjust how the app looks and how your account behaves.",
+    theme: {
+      title: "Theme",
+      light: "Light",
+      dark: "Dark",
+      system: "System",
+    },
+    language: {
+      title: "Language",
+      description: "Your choice is saved to your account, so it follows you to other devices.",
+      saved: "Language changed.",
+    },
+    autoLogin: {
+      title: "Stay signed in",
+      saved: "Setting saved.",
+      on: "You will be signed in automatically next time.",
+      off: "You will be signed out when the browser closes.",
+    },
+    account: {
+      title: "Account",
+      withdrawDescription: "Deleting your account removes your profile for good. The number sets you generated stay, but they can no longer be traced back to you.",
+      withdraw: "Delete account",
+      withdrawing: "Deleting",
+      confirmTitle: "Delete your account?",
+      confirmDescription: "Your account, profile and uploaded images will all be removed. You can sign up again with the same email, but nothing from before will come back.",
+      confirm: "Delete",
+      done: "Your account has been deleted.",
+      failed: "We could not delete your account.",
+    },
+  },
+
+  auth: {
+    languageLabel: "Preferred language",
+    languageHint: "You can change this later in Settings.",
+  },
 }
 
 export default en

@@ -63,6 +63,43 @@ const zh: Messages = {
       failed: "发送失败，请稍后再试。",
     },
   },
+  settings: {
+    title: "设置",
+    description: "调整界面显示与账号行为。",
+    theme: {
+      title: "主题",
+      light: "浅色",
+      dark: "深色",
+      system: "跟随系统",
+    },
+    language: {
+      title: "界面语言",
+      description: "所选语言会保存到账号，在其他设备上也会保持一致。",
+      saved: "已切换语言。",
+    },
+    autoLogin: {
+      title: "保持登录",
+      saved: "已保存设置。",
+      on: "下次访问时将自动登录。",
+      off: "关闭浏览器后将退出登录。",
+    },
+    account: {
+      title: "账号",
+      withdrawDescription: "注销后账号与个人资料将被永久删除，无法恢复。您生成过的号码会保留，但不再关联到您。",
+      withdraw: "注销账号",
+      withdrawing: "正在注销",
+      confirmTitle: "确定要注销账号吗？",
+      confirmDescription: "账号、个人资料以及上传的图片都会被删除。您可以用同一邮箱重新注册，但此前的记录不会恢复。",
+      confirm: "注销",
+      done: "已完成注销。",
+      failed: "注销失败。",
+    },
+  },
+
+  auth: {
+    languageLabel: "偏好语言",
+    languageHint: "注册后也可以在设置中更改。",
+  },
 }
 
 export default zh

@@ -1,9 +1,10 @@
 "use client"
 
-import { LogOut, Monitor, Moon, Settings, Sun, Trash2 } from "lucide-react"
+import { Loader2, Monitor, Moon, Settings, Sun, UserMinus } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { Panel } from "@/components/common/panel"
 import {
   AlertDialog,
@@ -18,59 +19,82 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
+import { authorizedFetch } from "@/lib/auth/client"
 import { clearSessionMark, getRememberLogin, setRememberLogin } from "@/lib/auth/session-persistence"
-import { clearLottoHistory, getLottoHistory } from "@/lib/lotto/storage"
+import { writeLocaleCookie } from "@/lib/i18n/client"
+import { LOCALES, LOCALE_NAMES, type Locale } from "@/lib/i18n/locales"
 import { supabase } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
-const THEMES = [
-  { value: "light", label: "밝게", icon: Sun },
-  { value: "dark", label: "어둡게", icon: Moon },
-  { value: "system", label: "시스템", icon: Monitor },
-] as const
+const THEMES = ["light", "dark", "system"] as const
+const THEME_ICONS = { light: Sun, dark: Moon, system: Monitor } as const
 
 /**
  * 설정
  *
- * 화면 테마, 자동 로그인 여부, 이 기기에 저장된 기록 정리를 다룬다.
- * 서버에 저장된 기록은 추첨 기록 화면에서 지운다.
+ * 화면 테마와 언어, 자동 로그인 여부, 그리고 탈퇴를 다룬다. 언어는 계정에
+ * 저장되므로 기기를 옮겨도 따라온다.
  */
 export default function SettingsPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
+  const { t, locale } = useTranslation()
 
   const [isMounted, setIsMounted] = useState(false)
   const [remember, setRemember] = useState(true)
-  const [localCount, setLocalCount] = useState(0)
+  const [isLeaving, setIsLeaving] = useState(false)
 
   // 테마와 저장소 값은 브라우저에서만 읽을 수 있다.
   useEffect(() => {
     setIsMounted(true)
     setRemember(getRememberLogin())
-    setLocalCount(getLottoHistory().length)
   }, [])
 
   const changeRemember = (value: boolean) => {
     setRemember(value)
     setRememberLogin(value)
-    toast({
-      title: "설정 저장됨",
-      description: value ? "다음 접속부터 자동으로 로그인합니다." : "브라우저를 닫으면 로그아웃됩니다.",
+    toast({ title: t.settings.autoLogin.saved, description: value ? t.settings.autoLogin.on : t.settings.autoLogin.off })
+  }
+
+  const changeLanguage = (next: Locale) => {
+    writeLocaleCookie(next)
+
+    void authorizedFetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ language: next }),
+    }).catch(() => {
+      // 계정 저장이 실패해도 이 브라우저에서는 바뀐 대로 보인다.
     })
-  }
 
-  const clearLocal = () => {
-    clearLottoHistory()
-    setLocalCount(0)
-    toast({ title: "삭제 완료", description: "이 기기에 저장된 기록을 지웠습니다." })
-  }
-
-  const logout = async () => {
-    await supabase.auth.signOut()
-    clearSessionMark()
-    router.push("/")
     router.refresh()
+  }
+
+  /** 탈퇴한 뒤에는 남은 세션을 정리하고 첫 화면으로 돌린다. */
+  const withdraw = async () => {
+    setIsLeaving(true)
+
+    try {
+      const response = await authorizedFetch("/api/account", { method: "DELETE" })
+      const data = await response.json()
+
+      if (!data.success) throw new Error(data.message)
+
+      await supabase.auth.signOut()
+      clearSessionMark()
+
+      toast({ title: t.settings.account.done })
+      router.push("/")
+      router.refresh()
+    } catch (error) {
+      setIsLeaving(false)
+      toast({
+        variant: "destructive",
+        title: t.settings.account.failed,
+        description: error instanceof Error ? error.message : undefined,
+      })
+    }
   }
 
   return (
@@ -78,28 +102,55 @@ export default function SettingsPage() {
         <div>
           <h1 className="text-ink flex items-center gap-2 text-2xl font-bold">
             <Settings className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            설정
+            {t.settings.title}
           </h1>
-          <p className="text-ink-muted mt-1 text-sm">화면과 계정 동작을 조정합니다.</p>
+          <p className="text-ink-muted mt-1 text-sm">{t.settings.description}</p>
         </div>
 
         <Panel className="space-y-3">
-          <h2 className="text-ink font-semibold">화면 테마</h2>
+          <h2 className="text-ink font-semibold">{t.settings.theme.title}</h2>
           <div className="grid grid-cols-3 gap-2">
-            {THEMES.map(({ value, label, icon: Icon }) => (
+            {THEMES.map((value) => {
+              const Icon = THEME_ICONS[value]
+
+              return (
+                  <button
+                      key={value}
+                      type="button"
+                      onClick={() => setTheme(value)}
+                      className={cn(
+                          "border-line flex flex-col items-center gap-2 rounded-lg border px-3 py-4 text-sm transition-colors",
+                          isMounted && theme === value
+                              ? "border-accent-line bg-accent-soft text-accent"
+                              : "bg-surface text-ink-muted hover:bg-hover",
+                      )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {t.settings.theme[value]}
+                  </button>
+              )
+            })}
+          </div>
+        </Panel>
+
+        <Panel className="space-y-3">
+          <h2 className="text-ink font-semibold">{t.settings.language.title}</h2>
+          <p className="text-ink-muted text-sm">{t.settings.language.description}</p>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {LOCALES.map((option) => (
                 <button
-                    key={value}
+                    key={option}
                     type="button"
-                    onClick={() => setTheme(value)}
+                    onClick={() => changeLanguage(option)}
                     className={cn(
-                        "border-line flex flex-col items-center gap-2 rounded-lg border px-3 py-4 text-sm transition-colors",
-                        isMounted && theme === value
-                            ? "border-accent-line bg-accent-soft text-accent"
+                        "border-line rounded-lg border px-3 py-3 text-sm transition-colors",
+                        locale === option
+                            ? "border-accent-line bg-accent-soft text-accent font-medium"
                             : "bg-surface text-ink-muted hover:bg-hover",
                     )}
                 >
-                  <Icon className="h-5 w-5" />
-                  {label}
+                  {LOCALE_NAMES[option]}
                 </button>
             ))}
           </div>
@@ -108,7 +159,7 @@ export default function SettingsPage() {
         <Panel>
           {/* 제목이 곧 항목 이름이라, 별도 라벨 없이 한 줄에 둔다. */}
           <label className="flex cursor-pointer items-center justify-between gap-3">
-            <span className="text-ink font-semibold">자동 로그인</span>
+            <span className="text-ink font-semibold">{t.settings.autoLogin.title}</span>
             <input
                 type="checkbox"
                 checked={remember}
@@ -119,68 +170,46 @@ export default function SettingsPage() {
         </Panel>
 
         <Panel className="space-y-3">
-          <h2 className="text-ink font-semibold">이 기기의 기록</h2>
-          <p className="text-ink-muted text-sm">
-            로그인하지 않고 만든 번호는 이 브라우저에만 저장됩니다. 현재{" "}
-            <span className="text-ink font-medium">{localCount}건</span>이 있습니다.
-          </p>
-          <p className="text-ink-muted text-xs">
-            서버에 저장된 &lsquo;내 기록&rsquo;은 추첨 기록 화면에서 지울 수 있습니다.
-          </p>
+          <h2 className="text-ink font-semibold">{t.settings.account.title}</h2>
+          <p className="text-ink-muted text-sm leading-relaxed">{t.settings.account.withdrawDescription}</p>
 
-          <ConfirmButton
-              label="이 기기의 기록 삭제"
-              title="이 기기에 저장된 기록을 지울까요?"
-              description="브라우저에 저장된 기록만 사라지며, 서버에 저장된 기록은 그대로 남습니다."
-              disabled={localCount === 0}
-              onConfirm={clearLocal}
-          />
-        </Panel>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                  variant="destructive"
+                  disabled={isLeaving}
+                  className="bg-danger hover:bg-danger/90 border-none text-white shadow-none"
+              >
+                {isLeaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <UserMinus className="mr-2 h-4 w-4" />
+                )}
+                {isLeaving ? t.settings.account.withdrawing : t.settings.account.withdraw}
+              </Button>
+            </AlertDialogTrigger>
 
-        <Panel className="space-y-3">
-          <h2 className="text-ink font-semibold">계정</h2>
-          <Button variant="outline" onClick={() => void logout()} className="bg-surface border-line">
-            <LogOut className="mr-2 h-4 w-4" />
-            로그아웃
-          </Button>
+            <AlertDialogContent className="bg-surface border-line border">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-ink">{t.settings.account.confirmTitle}</AlertDialogTitle>
+                <AlertDialogDescription className="text-ink-muted leading-relaxed">
+                  {t.settings.account.confirmDescription}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="text-ink border-line bg-transparent">
+                  {t.common.cancel}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => void withdraw()}
+                    className="bg-danger hover:bg-danger/90 text-white"
+                >
+                  {t.settings.account.confirm}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </Panel>
       </div>
-  )
-}
-
-interface ConfirmButtonProps {
-  label: string
-  title: string
-  description: string
-  disabled?: boolean
-  onConfirm: () => void
-}
-
-function ConfirmButton({ label, title, description, disabled, onConfirm }: ConfirmButtonProps) {
-  return (
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-              variant="destructive"
-              disabled={disabled}
-              className="bg-danger hover:bg-danger/90 border-none text-white shadow-none"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {label}
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent className="bg-surface border-line border">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-ink">{title}</AlertDialogTitle>
-            <AlertDialogDescription className="text-ink-muted">{description}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="text-ink border-line bg-transparent">취소</AlertDialogCancel>
-            <AlertDialogAction onClick={onConfirm} className="bg-danger hover:bg-danger/90 text-white">
-              삭제
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
   )
 }

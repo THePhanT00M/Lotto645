@@ -63,6 +63,43 @@ const ja: Messages = {
       failed: "送信できませんでした。しばらくしてからもう一度お試しください。",
     },
   },
+  settings: {
+    title: "設定",
+    description: "画面の見え方とアカウントの動作を調整します。",
+    theme: {
+      title: "画面テーマ",
+      light: "ライト",
+      dark: "ダーク",
+      system: "システム",
+    },
+    language: {
+      title: "表示言語",
+      description: "選んだ言語はアカウントに保存され、他の端末でも同じように表示されます。",
+      saved: "言語を変更しました。",
+    },
+    autoLogin: {
+      title: "自動ログイン",
+      saved: "設定を保存しました。",
+      on: "次回から自動的にログインします。",
+      off: "ブラウザを閉じるとログアウトします。",
+    },
+    account: {
+      title: "アカウント",
+      withdrawDescription: "退会するとアカウントとプロフィールは削除され、元に戻せません。作成した番号の記録は、誰のものか分からない形で残ります。",
+      withdraw: "退会する",
+      withdrawing: "退会処理中",
+      confirmTitle: "本当に退会しますか？",
+      confirmDescription: "アカウント・プロフィール・アップロードした画像がすべて削除されます。同じメールアドレスで再登録はできますが、以前の記録は戻りません。",
+      confirm: "退会",
+      done: "退会処理が完了しました。",
+      failed: "退会できませんでした。",
+    },
+  },
+
+  auth: {
+    languageLabel: "希望する言語",
+    languageHint: "登録後も設定から変更できます。",
+  },
 }
 
 export default ja
