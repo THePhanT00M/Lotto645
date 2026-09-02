@@ -2,6 +2,7 @@
 
 import { Check, Trash2 } from "lucide-react"
 import { formatRelativeTime, type NotificationItem } from "@/hooks/use-notifications"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { cn } from "@/lib/utils"
 
 interface NotificationCardProps {
@@ -19,6 +20,7 @@ interface NotificationCardProps {
  * 어떻게 읽음 처리하는지 보이게 한다. 카드를 눌러도 읽음으로 바뀐다.
  */
 export default function NotificationCard({ notification, onRead, onRemove, compact }: NotificationCardProps) {
+  const { t } = useTranslation()
   const isUnread = !notification.is_read
 
   return (
@@ -51,7 +53,7 @@ export default function NotificationCard({ notification, onRead, onRemove, compa
             {isUnread && (
                 <IconButton
                     onClick={() => onRead(notification.id)}
-                    label="읽음으로 표시"
+                    label={t.notifications.markRead}
                     className="text-ink-muted hover:text-accent hover:bg-hover"
                     compact={compact}
                 >
@@ -61,7 +63,7 @@ export default function NotificationCard({ notification, onRead, onRemove, compa
 
             <IconButton
                 onClick={() => onRemove(notification.id)}
-                label="이 알림 삭제"
+                label={t.notifications.deleteOne}
                 className="text-ink-muted hover:text-danger hover:bg-danger/10"
                 compact={compact}
             >

@@ -4,6 +4,7 @@ import { CheckSquare, History, Square, Trash2, Trophy, X } from "lucide-react"
 import { useMemo, useState } from "react"
 import { EmptyState } from "@/components/common/empty-state"
 import { Notice } from "@/components/common/notice"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { PageHeader } from "@/components/common/page-header"
 import { Panel } from "@/components/common/panel"
 import HistoryItem from "@/components/history/history-item"
@@ -68,6 +69,7 @@ const groupByDraw = (entries: AnalyzedEntry[]): DrawGroup[] => {
  * 서버 기록을 지울 때는 행을 남기고 삭제 표시만 바꾼다.
  */
 export default function HistoryPage() {
+  const { t } = useTranslation()
   const { entries, isLoading, winCount, remove, removeMany, clearAll } = useDrawHistory()
   const { toast } = useToast()
 
@@ -106,16 +108,13 @@ export default function HistoryPage() {
 
   const handleDelete = async (entry: AnalyzedEntry) => {
     // 서버 기록은 다른 기기에서도 사라지므로 한 번 더 확인받는다.
-    if (entry.source === "user" && !confirm("해당 추첨번호를 삭제하시겠습니까?")) return
+    if (entry.source === "user" && !confirm(t.history.confirmOneTitle)) return
 
     try {
       await remove(entry)
-      toast({
-        title: "삭제 완료",
-        description: entry.source === "user" ? "서버에서 추첨 기록이 삭제되었습니다." : "로컬 기록이 삭제되었습니다.",
-      })
+      toast({ title: t.history.deleted })
     } catch (error) {
-      toast({ title: "삭제 실패", description: describeError(error), variant: "destructive" })
+      toast({ title: t.history.deleteFailed, description: describeError(error), variant: "destructive" })
     }
   }
 
@@ -123,9 +122,9 @@ export default function HistoryPage() {
     try {
       const removed = await removeMany(selectedEntries)
       stopSelecting()
-      toast({ title: "삭제 완료", description: `${removed}건을 삭제했습니다.` })
+      toast({ title: t.history.deletedCount(removed) })
     } catch (error) {
-      toast({ title: "삭제 실패", description: describeError(error), variant: "destructive" })
+      toast({ title: t.history.deleteFailed, description: describeError(error), variant: "destructive" })
     }
   }
 
@@ -133,9 +132,9 @@ export default function HistoryPage() {
     try {
       const removed = await clearAll()
       stopSelecting()
-      toast({ title: "전체 삭제 완료", description: `${removed}건을 삭제했습니다.` })
+      toast({ title: t.history.deletedCount(removed) })
     } catch (error) {
-      toast({ title: "삭제 실패", description: describeError(error), variant: "destructive" })
+      toast({ title: t.history.deleteFailed, description: describeError(error), variant: "destructive" })
     }
   }
 
@@ -145,20 +144,20 @@ export default function HistoryPage() {
       <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <PageHeader
             icon={History}
-            title="나의 추첨 기록"
-            description="기기 및 서버에 저장된 기록을 확인하고 당첨 결과를 확인하세요."
+            title={t.history.title}
+            description={t.history.description}
             actions={
               entries.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {isSelecting ? (
                         <Button variant="outline" onClick={stopSelecting} className="bg-surface border-line">
                           <X className="mr-2 h-4 w-4" />
-                          선택 취소
+                          {t.history.cancelSelect}
                         </Button>
                     ) : (
                         <Button variant="outline" onClick={() => setIsSelecting(true)} className="bg-surface border-line">
                           <CheckSquare className="mr-2 h-4 w-4" />
-                          선택 삭제
+                          {t.history.startSelect}
                         </Button>
                     )}
 
@@ -166,11 +165,11 @@ export default function HistoryPage() {
                         trigger={
                           <Button variant="destructive" className="bg-danger hover:bg-danger/90 border-none text-white shadow-none">
                             <Trash2 className="mr-2 h-4 w-4" />
-                            전체 삭제
+                            {t.history.deleteAll}
                           </Button>
                         }
-                        title="모든 기록을 삭제하시겠습니까?"
-                        description="이 기기에 저장된 기록과 서버에 저장된 '내 기록'이 모두 목록에서 사라집니다. 서버 기록은 실제로 지우지 않고 삭제 표시만 남깁니다."
+                        title={t.history.confirmAllTitle}
+                        description={`${t.history.confirmAllDescription} ${t.history.confirmServerNote}`}
                         onConfirm={handleClearAll}
                     />
                   </div>
@@ -183,9 +182,9 @@ export default function HistoryPage() {
               <div className="flex items-center gap-3">
                 <Button variant="ghost" size="custom" onClick={toggleAll} className="text-ink-muted h-8 px-2 text-sm">
                   {allSelected ? <CheckSquare className="mr-1.5 h-4 w-4" /> : <Square className="mr-1.5 h-4 w-4" />}
-                  {allSelected ? "전체 해제" : "전체 선택"}
+                  {allSelected ? t.history.clearSelection : t.history.selectAll}
                 </Button>
-                <span className="text-ink-muted text-sm">{selectedEntries.length}건 선택됨</span>
+                <span className="text-ink-muted text-sm">{t.history.selectedCount(selectedEntries.length)}</span>
               </div>
 
               <ConfirmDialog
@@ -196,23 +195,23 @@ export default function HistoryPage() {
                         className="bg-danger hover:bg-danger/90 h-9 border-none text-white shadow-none"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      선택 항목 삭제
+                      {t.history.deleteSelected}
                     </Button>
                   }
-                  title={`선택한 ${selectedEntries.length}건을 삭제하시겠습니까?`}
-                  description="서버에 저장된 기록은 실제로 지우지 않고 삭제 표시만 남깁니다."
+                  title={t.history.confirmSelectedCountTitle(selectedEntries.length)}
+                  description={t.history.confirmServerNote}
                   onConfirm={handleDeleteSelected}
               />
             </Panel>
         )}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <StatCard icon={History} label="총 저장된 기록" value={entries.length} />
-          <StatCard icon={Trophy} label="당첨된 기록 (5등 이상)" value={winCount} />
+          <StatCard icon={History} label={t.history.totalSaved} value={entries.length} />
+          <StatCard icon={Trophy} label={t.history.winners} value={winCount} />
         </div>
 
         {entries.length === 0 ? (
-            <EmptyState icon={History} message="저장된 추첨 기록이 없습니다." />
+            <EmptyState icon={History} message={t.history.empty} />
         ) : (
             <div className="space-y-8">
               {groups.map((group) => (
@@ -233,18 +232,12 @@ export default function HistoryPage() {
             </div>
         )}
 
-        <Notice title="안내사항">
+        <Notice title={t.history.noticeTitle}>
           <ul className="text-ink-muted mt-1 list-inside list-disc space-y-1 opacity-90">
-            <li>
-              <strong className="font-semibold text-amber-800 dark:text-amber-400">로컬 기록</strong>은 현재 브라우저에만
-              저장되며 기기를 변경하거나 캐시 삭제 시 사라집니다.
-            </li>
-            <li>
-              <strong className="font-semibold text-blue-800 dark:text-blue-400">내 기록</strong>은 서버에 저장되어 로그인
-              시 언제 어디서든 확인 및 삭제가 가능합니다.
-            </li>
-            <li>삭제한 서버 기록은 목록에서 사라지지만, 통계 집계를 위해 삭제 표시만 남긴 채 보관됩니다.</li>
-            <li>추첨 대기 상태의 기록은 실제 추첨 완료 후 다시 접속하시면 결과가 자동 업데이트됩니다.</li>
+            <li>{t.history.noticeLocal}</li>
+            <li>{t.history.noticeServer}</li>
+            <li>{t.history.noticeSoftDelete}</li>
+            <li>{t.history.noticePending}</li>
           </ul>
         </Notice>
       </div>
@@ -258,13 +251,15 @@ export default function HistoryPage() {
  * 회차가 바뀌는 자리에 선을 긋고 그 회차의 건수와 당첨 수를 함께 보여준다.
  */
 function DrawGroupHeader({ group }: { group: DrawGroup }) {
+  const { t } = useTranslation()
+
   return (
       <div className="flex items-center gap-2.5">
         <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2.5 py-1 text-sm font-bold">
-          {group.drawNo === null ? "회차 미지정" : `${group.drawNo}회차`}
+          {group.drawNo === null ? t.history.unassignedDraw : t.lotto.drawNo(group.drawNo)}
         </span>
 
-        <span className="text-ink-muted text-sm">{group.entries.length}건</span>
+        <span className="text-ink-muted text-sm">{t.history.count(group.entries.length)}</span>
 
         {group.winCount > 0 && (
             <span className="flex items-center gap-1 text-sm font-semibold text-amber-600 dark:text-amber-400">
@@ -301,6 +296,8 @@ interface ConfirmDialogProps {
 }
 
 function ConfirmDialog({ trigger, title, description, onConfirm }: ConfirmDialogProps) {
+  const { t } = useTranslation()
+
   return (
       <AlertDialog>
         <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
@@ -310,9 +307,9 @@ function ConfirmDialog({ trigger, title, description, onConfirm }: ConfirmDialog
             <AlertDialogDescription className="text-ink-muted">{description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="text-ink border-line bg-transparent">취소</AlertDialogCancel>
+            <AlertDialogCancel className="text-ink border-line bg-transparent">{t.common.cancel}</AlertDialogCancel>
             <AlertDialogAction onClick={() => void onConfirm()} className="bg-danger hover:bg-danger/90 text-white">
-              삭제
+              {t.common.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
