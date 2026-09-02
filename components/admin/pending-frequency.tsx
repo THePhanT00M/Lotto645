@@ -42,7 +42,7 @@ export default function PendingFrequency({ title, description, entries, iconClas
                         className="bg-surface border-line flex flex-col items-center gap-1 rounded-lg border p-2 shadow-sm"
                     >
                       <Ball number={number} size="sm" className="shadow-sm" />
-                      <span className="text-ink-muted text-xs font-medium">{count}회</span>
+                      <span className="text-ink-muted text-xs font-medium">{t.admin.stats.times(count)}</span>
                     </div>
                 ))
             )}

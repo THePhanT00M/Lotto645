@@ -23,7 +23,6 @@ export const MULTIPLE_SIZES = [5, 4, 3, 2] as const
 export type MultipleSize = (typeof MULTIPLE_SIZES)[number]
 
 /** 조합 크기를 "5쌍둥이" 형태의 라벨로 변환한다. */
-export const multipleLabel = (size: number): string => `${size}쌍둥이`
 
 /**
  * 선택한 6개 번호의 모든 부분 조합(2~5개)이 과거에 몇 번 함께 당첨됐는지 집계한다.

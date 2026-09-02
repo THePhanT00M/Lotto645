@@ -74,6 +74,7 @@ interface DrawRowProps {
 }
 
 function DrawRow({ draw, isSelected, onSelect, registerItem }: DrawRowProps) {
+  const { t } = useTranslation()
   return (
       <div
           ref={(element) => registerItem(draw.drawNo, element)}
@@ -86,7 +87,7 @@ function DrawRow({ draw, isSelected, onSelect, registerItem }: DrawRowProps) {
           )}
       >
         <div className="flex min-w-[120px] items-center gap-4">
-          <span className={cn("text-lg font-bold", isSelected ? "text-blue-600" : "text-ink")}>{draw.drawNo}회</span>
+          <span className={cn("text-lg font-bold", isSelected ? "text-blue-600" : "text-ink")}>{t.winning.drawNoShort(draw.drawNo)}</span>
           <span className="text-ink-muted text-xs">{draw.date}</span>
         </div>
 

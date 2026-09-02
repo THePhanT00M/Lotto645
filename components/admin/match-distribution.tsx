@@ -19,13 +19,13 @@ export default function MatchDistribution({ summary, drawNo }: MatchDistribution
       <Panel className="space-y-5">
         <div>
           <h3 className="text-ink text-xl font-bold">{t.admin.stats.matchDistribution}</h3>
-          <p className="text-ink-muted mt-1 text-sm">{drawNo}회차 당첨 번호와 일치하는 개수별 통계</p>
+          <p className="text-ink-muted mt-1 text-sm">{t.admin.stats.matchHint(drawNo ?? 0)}</p>
         </div>
 
         <div className="space-y-3">
           {summary.matchCounts.map(({ matchCount, count, percentage }) => (
               <div key={matchCount} className="flex items-center gap-4">
-                <div className="text-ink-muted w-16 text-sm font-medium">{matchCount}개 일치</div>
+                <div className="text-ink-muted w-16 text-sm font-medium">{t.admin.stats.matched(matchCount)}</div>
 
                 <div className="border-line relative h-7 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-[#3f3f3f]">
                   <div

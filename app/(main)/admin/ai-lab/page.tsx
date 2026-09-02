@@ -60,7 +60,7 @@ export default function AiLabPage() {
             <Notice title={t.admin.aiLab.loadFailed} tone="danger">
               <p className="opacity-90">{error}</p>
               <p className="opacity-90">
-                number_picks와 pick_insights 표가 아직 없다면 supabase/migrations의 SQL을 먼저 실행해 주세요.
+                {t.admin.update.migrationHint}
               </p>
             </Notice>
         )}

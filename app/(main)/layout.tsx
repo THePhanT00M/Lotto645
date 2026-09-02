@@ -5,6 +5,8 @@ import Footer from "@/components/layout/footer"
 import Header from "@/components/layout/header"
 import type { UserData } from "@/hooks/use-header-data"
 import { IMPERSONATION_COOKIE, readTicket } from "@/lib/auth/impersonation"
+import { getMessages } from "@/lib/i18n"
+import { resolveLocale } from "@/lib/i18n/server"
 import { isSessionRetired } from "@/lib/auth/session"
 import { createServerSupabase } from "@/lib/supabase/server"
 
@@ -16,6 +18,7 @@ import { createServerSupabase } from "@/lib/supabase/server"
  */
 export default async function MainLayout({ children }: { children: ReactNode }) {
   const supabase = await createServerSupabase()
+  const messages = getMessages(await resolveLocale())
 
   // 로그인 유지를 끈 채 브라우저를 닫았다 열었다면, 인증 쿠키가 남아 있어도
   // 로그인하지 않은 것으로 다룬다. 실제 정리는 브라우저 쪽에서 이어서 한다.
@@ -40,7 +43,7 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
 
     userData = {
       id: user.id,
-      name: profile?.nickname || user.user_metadata?.full_name || user.user_metadata?.name || "사용자",
+      name: profile?.nickname || user.user_metadata?.full_name || user.user_metadata?.name || messages.meta.defaultUser,
       email: user.email ?? "",
       avatarUrl: profile?.avatar_url ?? user.user_metadata?.avatar_url ?? null,
       role: profile?.role ?? "user",

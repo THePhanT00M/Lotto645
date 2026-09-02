@@ -7,6 +7,7 @@ import { LocaleProvider } from "@/components/i18n/locale-provider"
 import SplashScreen from "@/components/layout/splash-screen"
 import { ThemeProvider } from "@/components/layout/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { getMessages } from "@/lib/i18n"
 import { resolveLocale } from "@/lib/i18n/server"
 import "./globals.css"
 
@@ -33,8 +34,12 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 }
 
-export const metadata: Metadata = {
-  title: "로또 추첨기",
+/** 제목은 언어를 따르므로 요청마다 만든다. */
+export async function generateMetadata(): Promise<Metadata> {
+  return { ...metadata, title: getMessages(await resolveLocale()).meta.siteName }
+}
+
+const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon/favicon.ico" },

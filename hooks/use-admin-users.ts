@@ -79,7 +79,7 @@ const toUserData = (row: {
   level: number | null
 }): UserData => ({
   id: row.id,
-  name: row.nickname || "이름 없음",
+  name: row.nickname || "",
   email: row.email || "",
   avatarUrl: row.avatar_url,
   role: (row.role as UserData["role"]) ?? "user",

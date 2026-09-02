@@ -123,7 +123,7 @@ export default function NotificationBell({ userId, initialUnreadCount }: Notific
 
               {/* 머리말은 목록 영역보다 밝게 둬서 경계가 드러나게 한다. */}
               <div className="bg-surface border-line relative flex items-center justify-between border-b px-4 py-3">
-                <h2 className="text-ink text-base font-bold">알림센터</h2>
+                <h2 className="text-ink text-base font-bold">{t.header.center}</h2>
                 <Link
                     href="/account/notifications"
                     onClick={() => setIsOpen(false)}
@@ -143,11 +143,11 @@ export default function NotificationBell({ userId, initialUnreadCount }: Notific
                     <div className="flex items-center gap-1">
                       <ActionButton onClick={() => void markAllAsRead()} disabled={unreadCount === 0}>
                         <Check className="mr-1 h-3.5 w-3.5" />
-                        모두 읽음
+                        {t.header.markAllRead}
                       </ActionButton>
                       <ActionButton onClick={() => void removeAll()} tone="danger">
                         <Trash2 className="mr-1 h-3.5 w-3.5" />
-                        전체 삭제
+                        {t.header.clearAll}
                       </ActionButton>
                     </div>
                   </div>
@@ -157,10 +157,10 @@ export default function NotificationBell({ userId, initialUnreadCount }: Notific
                 {isLoading && notifications.length === 0 ? (
                     <div className="text-ink-muted flex items-center justify-center gap-2 py-10 text-sm">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      불러오는 중...
+                      {t.header.loading}
                     </div>
                 ) : notifications.length === 0 ? (
-                    <p className="text-ink-muted py-10 text-center text-sm">새로운 알림이 없습니다.</p>
+                    <p className="text-ink-muted py-10 text-center text-sm">{t.header.noNew}</p>
                 ) : (
                     <ul className="flex flex-col gap-2">
                       {notifications.map((notification) => (
@@ -183,7 +183,7 @@ export default function NotificationBell({ userId, initialUnreadCount }: Notific
                     onClick={() => setIsOpen(false)}
                     className="text-ink-muted hover:text-ink block py-2.5 text-center text-xs transition-colors"
                 >
-                  알림 전체보기
+                  {t.header.seeAll}
                 </Link>
               </div>
             </div>

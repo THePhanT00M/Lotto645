@@ -87,30 +87,6 @@ export const FEATURE_KEYS = [
 
 export const FEATURE_COUNT = FEATURE_KEYS.length
 
-/** 화면에 보여줄 때 쓰는 이름 */
-export const FEATURE_LABELS: Record<(typeof FEATURE_KEYS)[number], string> = {
-  hullArea: "테두리 넓이",
-  hullPerimeter: "테두리 둘레",
-  mstLength: "연결선 길이",
-  nearestMean: "이웃 간 거리",
-  spreadMajor: "주축 퍼짐",
-  spreadMinor: "부축 퍼짐",
-  eccentricity: "직선성",
-  axisSin: "기울기(세로 성분)",
-  axisCos: "기울기(가로 성분)",
-  collinearTriples: "일직선 3점",
-  orthogonalPairs: "상하좌우 인접",
-  diagonalPairs: "대각 인접",
-  rowsUsed: "걸친 가로줄",
-  columnsUsed: "걸친 세로줄",
-  maxPerRow: "한 줄 최대 집중",
-  maxPerColumn: "한 칸열 최대 집중",
-  edgeCells: "가장자리 칸",
-  centerCol: "무게중심 가로",
-  centerRow: "무게중심 세로",
-  spanCol: "가로 폭",
-  spanRow: "세로 폭",
-}
 
 /** 번호 조합에서 용지 모양 특징을 뽑는다. */
 export const extractFeatures = (numbers: readonly number[]): PatternFeatures => {

@@ -2,6 +2,11 @@ import type { Messages } from "@/lib/i18n/messages/types"
 
 const ja: Messages = {
   common: {
+    multiple: (size: number) => `${size}つ組`,
+    justNow: "たった今",
+    minutesAgo: (value: number) => `${value}分前`,
+    hoursAgo: (value: number) => `${value}時間前`,
+    daysAgo: (value: number) => `${value}日前`,
     save: "保存",
     cancel: "キャンセル",
     delete: "削除",
@@ -276,6 +281,10 @@ const ja: Messages = {
   },
 
   history: {
+    mine: "自分の記録",
+    local: "この端末",
+    ai: "AI おすすめ",
+    selectAria: (numbers: string) => `${numbers} を選択`,
     title: "自分の履歴",
     description: "この端末とアカウントに保存された番号を確認し、当選結果を見ます。",
     totalSaved: "保存した件数",
@@ -308,6 +317,10 @@ const ja: Messages = {
   },
 
   winning: {
+    drawNoShort: (drawNo: number) => `第${drawNo}回`,
+    searchDraw: "回次を検索",
+    quickJump: "すばやく移動",
+    latest: (drawNo: number) => `最新の回（第${drawNo}回）`,
     title: "歴代の当選番号",
     description: "見たい回次に移動して当選番号を確認します。",
     listTitle: "回次一覧",
@@ -331,6 +344,12 @@ const ja: Messages = {
     confirmAllDescription: "消したお知らせは元に戻せません。",
   },
   draw: {
+    drawAll: "一度に引く",
+    redraw: "もう一度引く",
+    reset: "リセット",
+    saved: "記録を保存しました",
+    complete: "抽選完了！",
+    fixedPlusAuto: (fixed: number, auto: number) => `固定${fixed}個 + 自動${auto}個`,
     start: "はじめる",
     again: "もう一度引く",
     drawnNumbers: "抽選番号",
@@ -352,6 +371,18 @@ const ja: Messages = {
   },
 
   analysis: {
+    noticeReference: (draws: number) => `この分析は過去${draws}回の実際の当選番号に基づいています。統計は参考程度にご覧ください。`,
+    noticeRandom: "ロトの番号は毎回無作為に抽選され、過去の統計がこれからの当選確率に影響することはありません。",
+    analyzeHint: "引いた番号を分析したり、AI に新しいおすすめを頼めます。",
+    analyzeNumbers: "この番号を分析",
+    backToAi: "AI おすすめに戻る",
+    noticeBasis: (draws: number) => `この分析は過去${draws}回の実際の当選番号に基づいています。統計は参考程度にご覧ください。`,
+    comboHint: "選んだ番号で作れるすべての組み合わせと、それぞれが過去に出た回数です。",
+    comboHit: (count: number) => `${count}組が過去に当選`,
+    appearedDraw: (drawNo: number) => `第${drawNo}回`,
+    showing: (first: number, last: number, total: number) => `全${total}件中 ${first}-${last}件を表示`,
+    perPageOption: (count: number) => `${count}件`,
+    slipLabel: (numbers: string) => `マークシートに記した番号 ${numbers}`,
     title: "おすすめ番号について",
     heading: "番号分析と AI おすすめ",
     recommend: "AI おすすめ",
@@ -368,6 +399,13 @@ const ja: Messages = {
     lastPage: "最後のページ",
     perPage: "表示",
     recommendation: {
+      intro: (draws: number, features: number) => `過去${draws.toLocaleString()}回の当選番号をマークシート上の点として並べ、6つの点が作る形を${features}種の幾何的な特徴で測って学習した結果です。すでに出た組み合わせに近すぎる番号は除いています。`,
+      overlap: (drawNo: number, overlap: number, limit: number) => `最も重なる回は第${drawNo}回で${overlap}個です。すでに出た組み合わせと${limit}個を超えて重ならないよう絞り込んでいます。`,
+      avoided: (count: number) => `この回ですでにおすすめした${count.toLocaleString()}組も候補から外しました。`,
+      ensemble: (count: number) => `ネットワーク${count}個の平均`,
+      accuracyLine: (validation: string, training: string) => `検証精度 ${validation}%（学習 ${training}%）`,
+      brierLine: (before: string, after: string) => `スコア補正 Brier ${before} → ${after}`,
+      trainTime: (ms: number) => `学習 ${ms}ms`,
       title: "AI おすすめ番号",
       building: "AI おすすめ番号を作成中",
       shape: "マークシート上の形",
@@ -443,6 +481,12 @@ const ja: Messages = {
   },
 
   header: {
+    center: "お知らせセンター",
+    markAllRead: "すべて既読",
+    clearAll: "すべて削除",
+    loading: "読み込み中",
+    noNew: "新しいお知らせはありません。",
+    seeAll: "お知らせをすべて見る",
     notifications: "お知らせ",
     notificationsWithCount: (count: number) => `お知らせ${count}件`,
     notificationCenter: "お知らせセンター",
@@ -570,6 +614,10 @@ const ja: Messages = {
       irreversible: "送信したお知らせは取り消せません。",
     },
     update: {
+      updating: "更新中",
+      retry: "手動でもう一度更新",
+      inserted: (drawNo: number) => `第${drawNo}回のデータを追加しました`,
+      migrationHint: "number_picks と pick_insights の表がまだ無い場合は、supabase/migrations の SQL を先に実行してください。",
       title: "当選番号の更新",
       description: "宝くじ発行機関の API を確認して最新の当選番号を取り込みます。",
       waiting: "更新待ち",
@@ -583,6 +631,17 @@ const ja: Messages = {
       bonus: "ボーナス",
     },
     stats: {
+      tabRanks: "等級別",
+      tabMatches: "一致数",
+      tabCompare: "AI と通常",
+      waitingTitle: (drawNo: number) => `第${drawNo}回の結果待ち`,
+      waitingBody: (count: number) => `${count}件の番号が発表を待っています。次の回が発表されると自動で分析されます。`,
+      matchHint: (drawNo: number) => `第${drawNo}回の当選番号と一致した個数の統計`,
+      matched: (count: number) => `${count}個一致`,
+      rankHint: (drawNo: number) => `第${drawNo}回を対象とした抽選の等級別統計`,
+      times: (count: number) => `${count}回`,
+      ai: "AI おすすめ",
+      manual: "通常抽選",
       title: "管理者ダッシュボード",
       description: (drawNo: number) => `第${drawNo}回に対するサイトの当選比率と分析データ`,
       latestDraw: "最新回の当選番号",
@@ -611,6 +670,10 @@ const ja: Messages = {
       loadFailedHint: "統計の読み込み中にエラーが発生しました。",
     },
     recipients: {
+      recipients: "送る相手",
+      everyoneNotice: (count: number) => `登録済みの${count.toLocaleString()}名全員に送ります。相手を選ぶ必要はありません。`,
+      all: "全体",
+      showing: (count: number) => `${count}名を表示中`,
       hint: "全員に送るか、条件に合う会員だけを選べます。",
       selected: "選んだ会員",
       selectedHint: (count: number) => `${count}名を選択中`,
@@ -631,6 +694,16 @@ const ja: Messages = {
       pending: "未対応",
       toggleFailed: "表示を変更できませんでした",
     },
+  },
+  notFound: {
+    title: "ページが見つかりません。",
+    description: "アドレスが正しくないか、削除された可能性があります。",
+    goHome: "ホームへ",
+  },
+
+  meta: {
+    siteName: "ロト抽選機",
+    defaultUser: "会員",
   },
 }
 

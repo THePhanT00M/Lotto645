@@ -48,7 +48,7 @@ export default function MachineControls({
                 className="rounded-full border-blue-600 px-6 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
             >
               <Zap className="mr-2 h-4 w-4" />
-              한번에 뽑기
+              {t.draw.drawAll}
             </Button>
         )}
 
@@ -59,7 +59,7 @@ export default function MachineControls({
                 className="rounded-full bg-gray-200 px-6 text-gray-900 transition-colors hover:bg-gray-300 dark:bg-white/10 dark:text-gray-100 dark:hover:bg-white/20"
             >
               <RefreshCcw className={`mr-2 h-4 w-4 ${isDrawing || isAutoDrawing ? "animate-spin" : ""}`} />
-              다시 뽑기
+              {t.draw.redraw}
             </Button>
         )}
       </div>

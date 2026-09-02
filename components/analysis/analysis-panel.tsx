@@ -94,7 +94,7 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
                       <h3 className="text-ink font-bold">{t.analysis.heading}</h3>
                     </div>
                     <p className="text-ink-muted text-sm">
-                      추첨된 번호를 분석하거나 AI의 새로운 추천을 받을 수 있습니다.
+                      {t.analysis.analyzeHint}
                     </p>
                   </div>
 
@@ -102,11 +102,11 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
                     {recommendation &&
                         (target === "ai" ? (
                             <ToggleButton icon={SearchCheck} onClick={() => setTarget("user")} disabled={isGenerating}>
-                              추첨 번호 분석
+                              {t.analysis.analyzeNumbers}
                             </ToggleButton>
                         ) : (
                             <ToggleButton icon={RotateCcw} onClick={() => setTarget("ai")}>
-                              AI 추천 번호 돌아가기
+                              {t.analysis.backToAi}
                             </ToggleButton>
                         ))}
 
@@ -133,12 +133,10 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
 
         <Notice title={t.analysis.noticeTitle} tone="warning">
           <p className="opacity-90">
-            이 분석은 과거 <span className="font-medium">{draws.length}회</span>의 실제 로또 당첨번호를 기반으로 합니다.
-            통계 데이터는 참고용으로만 사용하시기 바랍니다.
+            {t.analysis.noticeReference(draws.length)}
           </p>
           <p className="opacity-90">
-            로또 번호는 매 회차마다 무작위로 추첨되며,{" "}
-            <span className="font-medium">과거의 통계가 미래 당첨 확률에 영향을 미치지 않습니다.</span>
+            {t.analysis.noticeRandom}
           </p>
         </Notice>
       </Panel>

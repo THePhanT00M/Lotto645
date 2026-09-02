@@ -44,7 +44,7 @@ export default function AdminStatsPage() {
               <SectionHeading icon={Calendar} title={t.admin.stats.latestDraw} />
               <div className="relative flex items-center justify-center py-1">
                 <div className="text-center text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {latestDraw.drawNo}회차
+                  {t.lotto.drawNo(latestDraw.drawNo)}
                 </div>
                 <div className="text-ink-muted absolute right-0 text-sm">{latestDraw.date}</div>
               </div>
@@ -86,13 +86,13 @@ export default function AdminStatsPage() {
         <Tabs defaultValue="ranks" className="space-y-4">
           <TabsList className="border-line grid w-full grid-cols-3 rounded-lg border bg-gray-100 p-1 dark:bg-[#0f0f0f]">
             <TabsTrigger value="ranks" className={TAB_TRIGGER_CLASS}>
-              등수별 통계
+              {t.admin.stats.tabRanks}
             </TabsTrigger>
             <TabsTrigger value="matches" className={TAB_TRIGGER_CLASS}>
-              일치 개수
+              {t.admin.stats.tabMatches}
             </TabsTrigger>
             <TabsTrigger value="comparison" className={TAB_TRIGGER_CLASS}>
-              AI vs 일반
+              {t.admin.stats.tabCompare}
             </TabsTrigger>
           </TabsList>
 
@@ -115,11 +115,10 @@ export default function AdminStatsPage() {
               <div className="border-accent-line bg-accent-soft flex flex-col gap-2 rounded-xl border p-4">
                 <h3 className="text-accent flex items-center gap-2 font-semibold">
                   <Calendar className="h-5 w-5" />
-                  {upcomingDrawNo}회차 결과 대기 중
+                  {t.admin.stats.waitingTitle(upcomingDrawNo ?? 0)}
                 </h3>
                 <p className="text-ink-muted text-sm">
-                  {pendingCount}개의 추첨 번호가 당첨 결과 발표를 기다리고 있습니다. 다음 회차 발표 후 자동으로
-                  분석됩니다.
+                  {t.admin.stats.waitingBody(pendingCount)}
                 </p>
               </div>
 

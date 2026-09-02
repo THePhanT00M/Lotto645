@@ -1,8 +1,9 @@
 "use client"
 
 import { Check, Trash2 } from "lucide-react"
-import { formatRelativeTime, type NotificationItem } from "@/hooks/use-notifications"
+import { relativeTime, type NotificationItem } from "@/hooks/use-notifications"
 import { useTranslation } from "@/components/i18n/locale-provider"
+import type { Messages } from "@/lib/i18n/messages/types"
 import { cn } from "@/lib/utils"
 
 interface NotificationCardProps {
@@ -48,7 +49,7 @@ export default function NotificationCard({ notification, onRead, onRemove, compa
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
-            <span className="text-ink-muted text-xs">{formatRelativeTime(notification.created_at)}</span>
+            <span className="text-ink-muted text-xs">{describeTime(t, relativeTime(notification.created_at))}</span>
 
             {isUnread && (
                 <IconButton
@@ -112,4 +113,14 @@ function IconButton({
         {children}
       </button>
   )
+}
+
+/** 지난 시간을 그때의 언어로 적는다. */
+const describeTime = (t: Messages, value: ReturnType<typeof relativeTime>): string => {
+  if (value.unit === "now") return t.common.justNow
+  if (value.unit === "minutes") return t.common.minutesAgo(value.value)
+  if (value.unit === "hours") return t.common.hoursAgo(value.value)
+  if (value.unit === "days") return t.common.daysAgo(value.value)
+
+  return String(value.value)
 }

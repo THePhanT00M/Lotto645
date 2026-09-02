@@ -53,7 +53,7 @@ const NumberDisplay = forwardRef<HTMLDivElement, NumberDisplayProps>(function Nu
                     className="flex items-center text-sm text-green-600"
                 >
                   <Check className="mr-1 h-4 w-4" />
-                  기록 저장됨
+                  {t.draw.saved}
                 </motion.span>
             )}
           </div>

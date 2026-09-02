@@ -27,7 +27,7 @@ export default function Congratulation() {
           className="w-full rounded-lg border border-blue-100 bg-gradient-to-r from-blue-50 to-purple-50 p-4 text-center dark:border-blue-900/40 dark:from-blue-900/20 dark:to-purple-900/20"
       >
         <h2 className="mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-xl font-bold text-transparent dark:from-blue-400 dark:to-purple-400">
-          추첨 완료!
+          {t.draw.complete}
         </h2>
         <p className="text-gray-700 dark:text-gray-300">🍀 {t.draw.goodLuck} 🍀</p>
       </motion.div>
