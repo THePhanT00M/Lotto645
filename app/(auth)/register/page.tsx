@@ -8,7 +8,9 @@ import AuthShell from "@/components/auth/auth-shell"
 import SocialLogin, { type SocialProvider } from "@/components/auth/social-login"
 import { Button } from "@/components/ui/button"
 import { isValidEmail, useAuthForm } from "@/hooks/use-auth-form"
+import { useNextPath } from "@/hooks/use-next-path"
 import { useToast } from "@/hooks/use-toast"
+import { loginHref } from "@/lib/auth/redirect"
 import { supabase } from "@/lib/supabase/client"
 
 /** Supabase가 요구하는 최소 비밀번호 길이 */
@@ -23,6 +25,7 @@ const MIN_PASSWORD_LENGTH = 6
 export default function RegisterPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const nextPath = useNextPath()
 
   const form = useAuthForm({ name: "", email: "", password: "", confirmPassword: "" })
   const { values, errors, setErrors, isSubmitting, setIsSubmitting, handleChange } = form
@@ -41,7 +44,7 @@ export default function RegisterPage() {
         password: values.password,
         options: {
           data: { full_name: values.name },
-          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`,
         },
       })
 
@@ -54,7 +57,7 @@ export default function RegisterPage() {
       }
 
       toast({ title: "회원가입 신청 완료", description: "이메일 인증 링크가 전송되었습니다." })
-      router.push("/login")
+      router.push(loginHref(nextPath))
     } catch (error) {
       const isWeakPassword = typeof error === "object" && error !== null && "code" in error && error.code === "weak_password"
 
@@ -71,7 +74,9 @@ export default function RegisterPage() {
   const signUpWithProvider = async (provider: SocialProvider) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/api/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`,
+      },
     })
 
     if (error) {
@@ -142,7 +147,7 @@ export default function RegisterPage() {
 
           <p className="text-ink-muted text-center text-sm">
             이미 계정이 있으신가요?
-            <Link href="/login" className="ml-1 font-medium text-blue-600 dark:text-blue-400">
+            <Link href={loginHref(nextPath)} className="ml-1 font-medium text-blue-600 dark:text-blue-400">
               로그인
             </Link>
           </p>

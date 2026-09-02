@@ -1,5 +1,6 @@
 import { LogIn } from "lucide-react"
 import Link from "next/link"
+import LoginLink from "@/components/auth/login-link"
 import { Button } from "@/components/ui/button"
 
 /** 로그인이 필요한 화면에 들어왔을 때 보여주는 안내. */
@@ -17,7 +18,7 @@ export default function SignInRequired() {
 
         <div className="mt-6 flex gap-2">
           <Button asChild className="bg-blue-600 text-white hover:bg-blue-700">
-            <Link href="/login">로그인</Link>
+            <LoginLink>로그인</LoginLink>
           </Button>
           <Button asChild variant="outline" className="bg-surface border-line">
             <Link href="/">홈으로</Link>

@@ -1,7 +1,8 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { loginHref } from "@/lib/auth/redirect"
 import { supabase } from "@/lib/supabase/client"
 import type { UserData } from "@/hooks/use-header-data"
 import { useToast } from "@/hooks/use-toast"
@@ -16,6 +17,7 @@ const ADMIN_LEVEL = 2
  */
 export function useAdminUsers() {
   const router = useRouter()
+  const pathname = usePathname()
   const { toast } = useToast()
 
   const [users, setUsers] = useState<UserData[]>([])
@@ -27,7 +29,7 @@ export function useAdminUsers() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        router.push("/login")
+        router.push(loginHref(pathname))
         return
       }
 

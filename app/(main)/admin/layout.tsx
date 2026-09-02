@@ -1,6 +1,7 @@
 import { ShieldAlert } from "lucide-react"
 import Link from "next/link"
 import type { ReactNode } from "react"
+import LoginLink from "@/components/auth/login-link"
 import { Button } from "@/components/ui/button"
 import { getAdminAccess } from "@/lib/auth/admin"
 
@@ -32,7 +33,7 @@ function AccessDenied({ signedIn }: { signedIn: boolean }) {
         <div className="mt-6 flex gap-2">
           {!signedIn && (
               <Button asChild variant="outline" className="bg-surface border-line">
-                <Link href="/login">로그인</Link>
+                <LoginLink>로그인</LoginLink>
               </Button>
           )}
           <Button asChild className="bg-blue-600 text-white hover:bg-blue-700">
