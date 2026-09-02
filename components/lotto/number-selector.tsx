@@ -8,6 +8,7 @@ import NumberGrid from "@/components/lotto/number-grid"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useNumberSelector, type SelectorMode } from "@/hooks/use-number-selector"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { PICK_COUNT } from "@/lib/lotto/constants"
 
 /** 선택 완료 후 결과 영역으로 스크롤하기까지의 대기 시간 */
@@ -16,10 +17,11 @@ const SCROLL_DELAY_MS = 100
 /** 스크롤 뒤 축하 배너를 띄우기까지의 대기 시간 */
 const CONGRATS_DELAY_MS = 500
 
-const MODE_TABS: { value: SelectorMode; label: string; icon: typeof Check; hint: string }[] = [
-  { value: "select", label: "번호 선택", icon: Check, hint: "원하는 번호를 선택하세요. 최대 6개까지 선택할 수 있습니다." },
-  { value: "fix", label: "번호 고정", icon: Lock, hint: "고정할 번호를 선택하세요. 고정된 번호는 항상 선택 결과에 포함됩니다." },
-  { value: "exclude", label: "번호 제외", icon: X, hint: "제외할 번호를 선택하세요. 제외된 번호는 선택 결과에 포함되지 않습니다." },
+/** 이름과 안내는 화면에서 그때의 언어로 붙인다. */
+const MODE_TABS: { value: SelectorMode; icon: typeof Check }[] = [
+  { value: "select", icon: Check },
+  { value: "fix", icon: Lock },
+  { value: "exclude", icon: X },
 ]
 
 interface NumberSelectorProps {
@@ -38,6 +40,7 @@ export default function NumberSelector({
                                          drawnNumbers,
                                          targetDrawNo,
                                        }: NumberSelectorProps) {
+  const { t } = useTranslation()
   const [showCongrats, setShowCongrats] = useState(false)
   const resultRef = useRef<HTMLDivElement>(null)
 
@@ -51,7 +54,7 @@ export default function NumberSelector({
   })
 
   const { selected, fixed, excluded, isComplete, applyNumbers } = selector
-  const activeHint = MODE_TABS.find((tab) => tab.value === selector.mode)?.hint
+  const activeHint = t.draw.modes[`${selector.mode}Hint` as const]
 
   // 추첨기 탭에서 넘어온 번호를 그대로 반영한다.
   useEffect(() => {
@@ -76,14 +79,14 @@ export default function NumberSelector({
         <div>
           <Tabs value={selector.mode} onValueChange={(value) => selector.setMode(value as SelectorMode)}>
             <TabsList className="grid w-full grid-cols-3 rounded-sm bg-gray-200 p-1 dark:bg-[#262626]">
-              {MODE_TABS.map(({ value, label, icon: Icon }) => (
+              {MODE_TABS.map(({ value, icon: Icon }) => (
                   <TabsTrigger
                       key={value}
                       value={value}
                       className="text-ink-muted flex items-center gap-1 rounded-sm data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm dark:data-[state=active]:bg-black dark:data-[state=active]:text-white"
                   >
                     <Icon className="h-4 w-4" />
-                    <span>{label}</span>
+                    <span>{t.draw.modes[value]}</span>
                   </TabsTrigger>
               ))}
             </TabsList>
@@ -93,15 +96,15 @@ export default function NumberSelector({
 
           <div className="mt-4 w-full rounded-lg bg-gray-200 p-2 dark:bg-[#262626]">
             <div className="mb-3 grid grid-cols-3 gap-2 text-center">
-              <CountTile icon={Check} iconClass="text-blue-500" label="선택">
+              <CountTile icon={Check} iconClass="text-blue-500" label={t.draw.counts.selected}>
                 <span className="text-ink">
                   {selected.filter((n) => !fixed.includes(n)).length}/{autoFillCount}
                 </span>
               </CountTile>
-              <CountTile icon={Lock} iconClass="text-green-500" label="고정">
+              <CountTile icon={Lock} iconClass="text-green-500" label={t.draw.counts.fixed}>
                 <span className="text-green-600">{fixed.length}</span>
               </CountTile>
-              <CountTile icon={X} iconClass="text-red-500" label="제외">
+              <CountTile icon={X} iconClass="text-red-500" label={t.draw.counts.excluded}>
                 <span className="text-red-600">{excluded.length}</span>
               </CountTile>
             </div>

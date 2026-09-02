@@ -1,6 +1,7 @@
 "use client"
 
 import { Play, RefreshCcw, Zap } from "lucide-react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { Button } from "@/components/ui/button"
 import { PICK_COUNT } from "@/lib/lotto/constants"
 
@@ -24,6 +25,7 @@ export default function MachineControls({
                                           onDrawAll,
                                           onReset,
                                         }: MachineControlsProps) {
+  const { t } = useTranslation()
   const isIdle = drawnCount === 0
 
   return (
@@ -35,7 +37,7 @@ export default function MachineControls({
                 className="rounded-full bg-blue-600 px-6 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500"
             >
               <Play className="mr-2 h-4 w-4" />
-              {isIdle ? "시작하기" : "번호 뽑기"}
+              {isIdle ? t.draw.start : t.draw.again}
             </Button>
         )}
 

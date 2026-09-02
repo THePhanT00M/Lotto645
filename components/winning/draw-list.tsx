@@ -4,6 +4,7 @@ import { BallRow } from "@/components/lotto/ball-row"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { useDrawBrowser } from "@/hooks/use-draw-browser"
 import type { WinningLottoNumbers } from "@/lib/lotto/types"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { cn } from "@/lib/utils"
 
 type Browser = ReturnType<typeof useDrawBrowser>
@@ -14,6 +15,7 @@ interface DrawListProps {
 
 /** 회차별 목록. 위아래 양방향으로 무한 스크롤한다. */
 export default function DrawList({ browser }: DrawListProps) {
+  const { t } = useTranslation()
   const {
     draws,
     currentDraw,
@@ -31,7 +33,7 @@ export default function DrawList({ browser }: DrawListProps) {
   return (
       <div className="bg-panel border-line flex h-[650px] flex-col rounded-xl border">
         <div className="border-line bg-panel sticky top-0 z-10 flex h-[69px] items-center justify-between rounded-t-xl border-b p-4">
-          <h3 className="text-ink font-bold">회차별 목록</h3>
+          <h3 className="text-ink font-bold">{t.winning.listTitle}</h3>
         </div>
 
         {/* overflow-anchor를 끄지 않으면 브라우저 자동 보정과 수동 스크롤 보정이 충돌한다. */}
@@ -56,7 +58,7 @@ export default function DrawList({ browser }: DrawListProps) {
           <div ref={bottomTriggerRef}>
             {isLoadingOlder && <DrawListSkeleton />}
             {!hasMoreOlder && draws.length > 0 && (
-                <p className="text-ink-muted py-4 text-center text-xs">모든 데이터를 불러왔습니다.</p>
+                <p className="text-ink-muted py-4 text-center text-xs">{t.winning.allLoaded}</p>
             )}
           </div>
         </div>

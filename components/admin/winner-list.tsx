@@ -1,3 +1,5 @@
+"use client"
+
 import { ListChecks } from "lucide-react"
 import { rankStyle } from "@/components/common/rank-badge"
 import { Panel } from "@/components/common/panel"
@@ -5,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { rankLabel } from "@/lib/lotto/rank"
 import type { AnalyzedResult } from "@/lib/lotto/stats"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 interface WinnerListProps {
   winners: AnalyzedResult[]
@@ -12,19 +15,20 @@ interface WinnerListProps {
 
 /** 이번 회차에 당첨된 추첨 기록 목록. */
 export default function WinnerList({ winners }: WinnerListProps) {
+  const { t } = useTranslation()
   return (
       <Panel className="p-0">
         <div className="border-line border-b p-5">
           <div className="flex items-center gap-2">
             <ListChecks className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <h3 className="text-ink text-xl font-bold">당첨 번호 상세 내역</h3>
+            <h3 className="text-ink text-xl font-bold">{t.admin.stats.winners}</h3>
           </div>
-          <p className="text-ink-muted mt-1 text-sm">이번 회차에 당첨된 모든 추첨 번호 리스트입니다.</p>
+          <p className="text-ink-muted mt-1 text-sm">{t.admin.stats.winnersHint}</p>
         </div>
 
         <ScrollArea className="max-h-[400px] w-full p-4">
           {winners.length === 0 ? (
-              <p className="text-ink-muted flex h-40 items-center justify-center">이번 회차 당첨 내역이 없습니다.</p>
+              <p className="text-ink-muted flex h-40 items-center justify-center">{t.admin.stats.noWinners}</p>
           ) : (
               <div className="grid gap-3">
                 {winners.map(({ result, match }) => (

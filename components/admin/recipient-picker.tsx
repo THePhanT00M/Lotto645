@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 import { Panel } from "@/components/common/panel"
 import type { UserData } from "@/hooks/use-header-data"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 /** 필터 칩에 노출할 등급 */
 const LEVELS = [0, 1, 2, 3] as const
@@ -27,6 +28,7 @@ interface RecipientPickerProps {
  * 전 회원 발송은 실수가 크므로 기본값은 고른 회원이다.
  */
 export default function RecipientPicker({ users, target, onChange }: RecipientPickerProps) {
+  const { t } = useTranslation()
   const [keyword, setKeyword] = useState("")
   const [level, setLevel] = useState<LevelFilter>("all")
 
@@ -66,21 +68,21 @@ export default function RecipientPicker({ users, target, onChange }: RecipientPi
             <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             받는 사람
           </h2>
-          <p className="text-ink-muted mt-1 text-sm">전체에게 보내거나, 조건에 맞는 회원만 고를 수 있습니다.</p>
+          <p className="text-ink-muted mt-1 text-sm">{t.admin.recipients.hint}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <ModeButton
               active={target.kind === "selected"}
               onClick={() => onChange({ kind: "selected", userIds: selectedIds })}
-              label="고른 회원"
-              hint={`${selectedIds.length}명 선택됨`}
+              label={t.admin.recipients.selected}
+              hint={t.admin.recipients.selectedHint(selectedIds.length)}
           />
           <ModeButton
               active={target.kind === "all"}
               onClick={() => onChange({ kind: "all" })}
-              label="전체 회원"
-              hint={`${users.length.toLocaleString()}명 전원`}
+              label={t.admin.recipients.everyone}
+              hint={t.admin.recipients.everyoneHint(users.length)}
           />
         </div>
 
@@ -95,7 +97,7 @@ export default function RecipientPicker({ users, target, onChange }: RecipientPi
                 <Search className="text-ink-muted absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <input
                     type="text"
-                    placeholder="이름 또는 이메일 검색"
+                    placeholder={t.admin.recipients.search}
                     value={keyword}
                     onChange={(event) => setKeyword(event.target.value)}
                     className="bg-surface border-line text-ink w-full rounded-lg border py-2 pr-3 pl-9 text-sm outline-none focus:ring-2 focus:ring-blue-500"
@@ -121,13 +123,13 @@ export default function RecipientPicker({ users, target, onChange }: RecipientPi
                     disabled={filtered.length === 0}
                     className="text-accent font-medium disabled:opacity-40"
                 >
-                  {allFilteredSelected ? "이 목록 해제" : "이 목록 전체 선택"}
+                  {allFilteredSelected ? t.admin.recipients.clearList : t.admin.recipients.selectAllInList}
                 </button>
               </div>
 
               <ul className="bg-surface border-line max-h-[420px] flex-1 space-y-1 overflow-y-auto rounded-lg border p-1">
                 {filtered.length === 0 ? (
-                    <li className="text-ink-muted py-10 text-center text-sm">조건에 맞는 회원이 없습니다.</li>
+                    <li className="text-ink-muted py-10 text-center text-sm">{t.admin.recipients.noMatch}</li>
                 ) : (
                     filtered.map((user) => {
                       const isSelected = selectedIds.includes(user.id)

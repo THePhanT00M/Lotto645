@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import NotificationCard from "@/components/notifications/notification-card"
 import { useNotifications } from "@/hooks/use-notifications"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 /** 배지에 그대로 노출할 최대 개수 */
 const MAX_BADGE_COUNT = 99
@@ -29,6 +30,7 @@ interface NotificationBellProps {
  * 배지는 알림 센터와 같은 상태를 보므로 읽음 처리를 하면 그 자리에서 줄어든다.
  */
 export default function NotificationBell({ userId, initialUnreadCount }: NotificationBellProps) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   // 좁은 화면에서 화면 폭에 맞추려고 계산한 벨 기준 가로 위치. sm 이상에서는 null.
   const [mobileBox, setMobileBox] = useState<{ left: number; width: number } | null>(null)
@@ -92,7 +94,7 @@ export default function NotificationBell({ userId, initialUnreadCount }: Notific
         <button
             type="button"
             onClick={() => setIsOpen((prev) => !prev)}
-            aria-label={badgeCount > 0 ? `알림 ${badgeCount}건` : "알림"}
+            aria-label={badgeCount > 0 ? t.header.notificationsWithCount(badgeCount) : t.header.notifications}
             aria-expanded={isOpen}
             className="hover:bg-hover relative cursor-pointer rounded-lg p-2 transition-colors"
         >
@@ -107,7 +109,7 @@ export default function NotificationBell({ userId, initialUnreadCount }: Notific
         {isOpen && (
             <div
                 role="dialog"
-                aria-label="알림 센터"
+                aria-label={t.header.notificationCenter}
                 // 화면(viewport)이 아니라 벨을 기준으로 놓아, 스크롤해도 연 자리에 그대로 남는다.
                 style={mobileBox ? { left: mobileBox.left, width: mobileBox.width, right: "auto" } : undefined}
                 className={cn(
@@ -125,7 +127,7 @@ export default function NotificationBell({ userId, initialUnreadCount }: Notific
                 <Link
                     href="/account/notifications"
                     onClick={() => setIsOpen(false)}
-                    aria-label="알림 설정"
+                    aria-label={t.header.notificationSettings}
                     className="hover:bg-hover rounded-md p-1.5 transition-colors"
                 >
                   <Settings className="text-ink-muted h-4 w-4" />
@@ -135,7 +137,7 @@ export default function NotificationBell({ userId, initialUnreadCount }: Notific
               {notifications.length > 0 && (
                   <div className="flex items-center justify-between px-4 pt-3 pb-2">
                     <span className="text-ink-muted text-xs">
-                      {unreadCount > 0 ? `읽지 않은 알림 ${unreadCount}건` : "모두 확인했습니다"}
+                      {unreadCount > 0 ? t.header.unreadCount(unreadCount) : t.header.allChecked}
                     </span>
 
                     <div className="flex items-center gap-1">

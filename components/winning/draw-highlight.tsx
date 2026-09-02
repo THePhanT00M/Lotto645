@@ -1,6 +1,7 @@
 "use client"
 
 import { Calendar, ChevronLeft, ChevronRight, Trophy } from "lucide-react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { Panel } from "@/components/common/panel"
 import { BallRow } from "@/components/lotto/ball-row"
 import { Button } from "@/components/ui/button"
@@ -60,6 +61,7 @@ function NavButton({
   disabled: boolean
   onClick: () => void
 }) {
+  const { t } = useTranslation()
   const isPrev = direction === "prev"
 
   return (
@@ -70,7 +72,7 @@ function NavButton({
           className="bg-surface border-line text-ink h-10 px-3 hover:bg-gray-100 dark:hover:bg-[#333]"
       >
         {isPrev && <ChevronLeft className="h-4 w-4 sm:mr-2" />}
-        <span className="hidden sm:inline">{isPrev ? "이전 회차" : "다음 회차"}</span>
+        <span className="hidden sm:inline">{isPrev ? t.winning.previousDraw : t.winning.nextDraw}</span>
         {!isPrev && <ChevronRight className="h-4 w-4 sm:ml-2" />}
       </Button>
   )

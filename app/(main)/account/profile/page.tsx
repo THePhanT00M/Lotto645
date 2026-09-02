@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import AvatarPicker from "@/components/account/avatar-picker"
 import BannerPicker from "@/components/account/banner-picker"
 import ProfileSkeleton from "@/components/account/profile-skeleton"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { Notice } from "@/components/common/notice"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
@@ -34,6 +35,7 @@ interface Profile {
  */
 export default function ProfilePage() {
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [nickname, setNickname] = useState("")
   const [phone, setPhone] = useState("")
@@ -55,7 +57,7 @@ export default function ProfilePage() {
 
         // 실패를 조용히 넘기면 빈 프로필이 그려져, 정보가 사라진 것처럼 보인다.
         if (!data.success) {
-          setLoadError(data.message ?? "잠시 후 다시 시도해주세요.")
+          setLoadError(data.message ?? t.auth.errors.unknown)
           return
         }
 
@@ -88,11 +90,11 @@ export default function ProfilePage() {
 
       if (!data.success) throw new Error(data.message)
 
-      toast({ title: "저장 완료", description: "프로필이 수정되었습니다." })
+      toast({ title: t.profile.saved, description: t.profile.savedDescription })
     } catch (error) {
       toast({
-        title: "저장 실패",
-        description: error instanceof Error ? error.message : "잠시 후 다시 시도해주세요.",
+        title: t.profile.saveFailed,
+        description: error instanceof Error ? error.message : t.auth.errors.unknown,
         variant: "destructive",
       })
     } finally {
@@ -107,13 +109,13 @@ export default function ProfilePage() {
         <div>
           <h1 className="text-ink flex items-center gap-2 text-2xl font-bold">
             <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            프로필
+            {t.profile.title}
           </h1>
-          <p className="text-ink-muted mt-1 text-sm">계정에 표시되는 정보를 확인하고 수정합니다.</p>
+          <p className="text-ink-muted mt-1 text-sm">{t.profile.description}</p>
         </div>
 
         {loadError && (
-            <Notice title="프로필을 불러오지 못했습니다" tone="danger">
+            <Notice title={t.profile.loadFailed} tone="danger">
               <p className="opacity-90">{loadError}</p>
             </Notice>
         )}
@@ -130,38 +132,38 @@ export default function ProfilePage() {
 
               <div className="flex flex-wrap items-center justify-end gap-1.5 pb-1">
                 <Badge>Lv.{profile?.level ?? 0}</Badge>
-                {profile?.role === "admin" && <Badge tone="accent">관리자</Badge>}
+                {profile?.role === "admin" && <Badge tone="accent">{t.profile.admin}</Badge>}
               </div>
             </div>
 
             <div className="mt-3 min-w-0">
-              <div className="text-ink truncate text-xl font-bold">{nickname || "이름 없음"}</div>
+              <div className="text-ink truncate text-xl font-bold">{nickname || t.profile.noName}</div>
               <div className="text-ink-muted truncate text-sm">{profile?.email}</div>
               {profile?.joinedAt && (
                   <div className="text-ink-muted mt-1 text-xs">
-                    {new Date(profile.joinedAt).toLocaleDateString()} 가입
+                    {t.profile.joinedAt(new Date(profile.joinedAt).toLocaleDateString())}
                   </div>
               )}
             </div>
 
             <div className="border-line mt-5 space-y-5 border-t pt-5">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="닉네임" htmlFor="nickname">
+                <Field label={t.profile.nickname} htmlFor="nickname">
                   <Input
                       id="nickname"
                       value={nickname}
                       onChange={(event) => setNickname(event.target.value)}
-                      placeholder="표시할 이름"
+                      placeholder={t.profile.nicknamePlaceholder}
                       className="bg-surface border-line"
                   />
                 </Field>
 
-                <Field label="연락처" htmlFor="phone">
+                <Field label={t.profile.phone} htmlFor="phone">
                   <Input
                       id="phone"
                       value={phone}
                       onChange={(event) => setPhone(event.target.value.replace(/[^0-9-]/g, ""))}
-                      placeholder="010-0000-0000"
+                      placeholder={t.profile.phonePlaceholder}
                       className="bg-surface border-line"
                   />
                 </Field>
@@ -170,7 +172,7 @@ export default function ProfilePage() {
               <div className="flex justify-end">
                 <Button onClick={save} disabled={isSaving} className="bg-blue-600 text-white hover:bg-blue-700">
                   {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  저장
+                  {t.common.save}
                 </Button>
               </div>
             </div>

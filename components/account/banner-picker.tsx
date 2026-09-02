@@ -1,6 +1,7 @@
 "use client"
 
 import { Camera, Loader2, Trash2 } from "lucide-react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import ImageCropDialog from "@/components/account/image-crop-dialog"
 import { useImageFile } from "@/hooks/use-image-file"
 import { useProfileImage } from "@/hooks/use-profile-image"
@@ -31,6 +32,7 @@ interface BannerPickerProps {
  * 쓸 영역을 정한 뒤 올린다.
  */
 export default function BannerPicker({ url, seed, onChange }: BannerPickerProps) {
+  const { t } = useTranslation()
   const { file, clear, open, input } = useImageFile()
   const { isSaving, upload, remove } = useProfileImage("banner", onChange)
 
@@ -51,7 +53,7 @@ export default function BannerPicker({ url, seed, onChange }: BannerPickerProps)
             type="button"
             onClick={open}
             disabled={isSaving}
-            aria-label="배너 바꾸기"
+            aria-label={t.image.changeBanner}
             className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-100"
         >
           {isSaving ? (
@@ -59,7 +61,7 @@ export default function BannerPicker({ url, seed, onChange }: BannerPickerProps)
           ) : (
               <span className="flex items-center gap-1.5 text-sm font-medium text-white">
                 <Camera className="h-4 w-4" />
-                배너 바꾸기
+                {t.image.changeBanner}
               </span>
           )}
         </button>
@@ -69,7 +71,7 @@ export default function BannerPicker({ url, seed, onChange }: BannerPickerProps)
         {url && (
             <button
                 type="button"
-                aria-label="배너 삭제"
+                aria-label={t.image.deleteBanner}
                 onClick={() => void remove()}
                 disabled={isSaving}
                 className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-md bg-black/45 text-white transition-colors hover:bg-black/65 disabled:opacity-50"
@@ -80,7 +82,7 @@ export default function BannerPicker({ url, seed, onChange }: BannerPickerProps)
 
         <ImageCropDialog
             file={file}
-            title="배너 자르기"
+            title={t.image.cropBanner}
             aspect={ASPECT}
             outputWidth={OUTPUT_WIDTH}
             isSaving={isSaving}

@@ -3,6 +3,7 @@
 import { Bell, Settings, User } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { cn } from "@/lib/utils"
 
 const ICONS = {
@@ -12,16 +13,17 @@ const ICONS = {
 } as const
 
 interface AccountNavProps {
-  links: readonly { href: string; label: string }[]
+  links: readonly { href: string; key: "profile" | "notifications" | "settings" }[]
 }
 
 /** 계정 화면 사이드 메뉴. 좁은 화면에서는 가로로 늘어선다. */
 export default function AccountNav({ links }: AccountNavProps) {
   const pathname = usePathname()
+  const { t } = useTranslation()
 
   return (
       <nav className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
-        {links.map(({ href, label }) => {
+        {links.map(({ href, key }) => {
           const Icon = ICONS[href as keyof typeof ICONS] ?? User
           const isActive = pathname === href
 
@@ -37,7 +39,7 @@ export default function AccountNav({ links }: AccountNavProps) {
                   )}
               >
                 <Icon className="h-4 w-4" />
-                {label}
+                {t.nav[key]}
               </Link>
           )
         })}

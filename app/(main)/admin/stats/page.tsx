@@ -1,6 +1,7 @@
 "use client"
 
 import { Award, BarChart3, Calendar, Sparkles, Target, TrendingUp } from "lucide-react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import MatchDistribution from "@/components/admin/match-distribution"
 import PendingFrequency from "@/components/admin/pending-frequency"
 import RankDistribution from "@/components/admin/rank-distribution"
@@ -21,6 +22,7 @@ import { useAdminStats } from "@/hooks/use-admin-stats"
  * AI 추천과 일반 추첨을 비교한다. 다음 회차 대기 번호의 빈도도 함께 본다.
  */
 export default function AdminStatsPage() {
+  const { t } = useTranslation()
   const { isLoading, error, latestDraw, upcomingDrawNo, stats, winners, pendingCount, pendingFrequency } =
       useAdminStats()
 
@@ -33,13 +35,13 @@ export default function AdminStatsPage() {
       <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <PageHeader
             icon={BarChart3}
-            title="관리자 통계 대시보드"
-            description={`최신 회차(${drawNo}회차)에 대한 사이트 당첨 비율 및 분석 데이터`}
+            title={t.admin.stats.title}
+            description={t.admin.stats.description(drawNo ?? 0)}
         />
 
         {latestDraw && (
             <Panel>
-              <SectionHeading icon={Calendar} title="최신 회차 당첨 번호" />
+              <SectionHeading icon={Calendar} title={t.admin.stats.latestDraw} />
               <div className="relative flex items-center justify-center py-1">
                 <div className="text-center text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {latestDraw.drawNo}회차
@@ -57,27 +59,27 @@ export default function AdminStatsPage() {
         )}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatTile icon={Target} label={`총 추첨 횟수 (${drawNo}회)`} value={String(stats.overall.total)} />
+          <StatTile icon={Target} label={t.admin.stats.totalDraws(drawNo ?? 0)} value={String(stats.overall.total)} />
           <StatTile
               icon={Award}
-              label="전체 당첨률"
+              label={t.admin.stats.overallRate}
               value={`${stats.overall.winRate}%`}
               valueClass="text-green-600 dark:text-green-500"
-              hint={`${stats.overall.winCount}개 당첨`}
+              hint={t.admin.stats.overallHint(stats.overall.winCount)}
           />
           <StatTile
               icon={Sparkles}
-              label="AI 추천 당첨률"
+              label={t.admin.stats.aiRate}
               value={`${stats.ai.winRate}%`}
               valueClass="text-blue-600 dark:text-blue-400"
-              hint={`${stats.ai.winCount}/${stats.ai.total}개 당첨`}
+              hint={t.admin.stats.aiHint(stats.ai.winCount, stats.ai.total)}
           />
           <StatTile
               icon={TrendingUp}
-              label="일반 추첨 당첨률"
+              label={t.admin.stats.manualRate}
               value={`${stats.manual.winRate}%`}
               valueClass="text-purple-600 dark:text-purple-400"
-              hint={`${stats.manual.winCount}/${stats.manual.total}개 당첨`}
+              hint={t.admin.stats.manualHint(stats.manual.winCount, stats.manual.total)}
           />
         </div>
 
@@ -123,14 +125,14 @@ export default function AdminStatsPage() {
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <PendingFrequency
-                    title="AI 추천 번호 출현 빈도 (상위)"
-                    description="다음 회차 대기 중인 AI 추천 번호 중 많이 선택된 번호"
+                    title={t.admin.stats.aiFrequency}
+                    description={t.admin.stats.aiFrequencyHint}
                     entries={pendingFrequency.ai}
                     iconClass="text-blue-600 dark:text-blue-400"
                 />
                 <PendingFrequency
-                    title="일반 추첨 번호 출현 빈도 (상위)"
-                    description="다음 회차 대기 중인 일반 추첨 번호 중 많이 선택된 번호"
+                    title={t.admin.stats.manualFrequency}
+                    description={t.admin.stats.manualFrequencyHint}
                     entries={pendingFrequency.manual}
                     iconClass="text-purple-600 dark:text-purple-400"
                 />
@@ -170,12 +172,14 @@ function StatsSkeleton() {
 }
 
 function StatsError({ message }: { message: string }) {
+  const { t } = useTranslation()
+
   return (
       <div className="mx-auto w-full max-w-shell flex min-h-[50vh] items-center justify-center p-6">
         <div className="flex flex-col items-center rounded-lg border border-red-200 bg-[#fff0f0] p-8 dark:border-[#5c2b2b] dark:bg-[#3e1b1b]">
           <BarChart3 className="text-danger mb-4 h-16 w-16" />
-          <h2 className="text-danger text-xl font-bold">데이터 로딩 실패</h2>
-          <p className="text-ink-muted mt-2 text-center">통계 데이터를 불러오는 중 오류가 발생했습니다.</p>
+          <h2 className="text-danger text-xl font-bold">{t.admin.stats.loadFailed}</h2>
+          <p className="text-ink-muted mt-2 text-center">{t.admin.stats.loadFailedHint}</p>
           <code className="text-danger mt-4 w-full rounded bg-gray-100 p-2 text-center text-sm dark:bg-[#272727]">
             {message}
           </code>

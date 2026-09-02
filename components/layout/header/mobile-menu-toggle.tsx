@@ -1,6 +1,7 @@
 "use client"
 
 import { Menu, X } from "lucide-react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 interface MobileMenuToggleProps {
   showMobileMenu: boolean
@@ -9,11 +10,12 @@ interface MobileMenuToggleProps {
 
 /** 모바일 메뉴 열기/닫기 버튼. */
 export default function MobileMenuToggle({ showMobileMenu, onToggle }: MobileMenuToggleProps) {
+  const { t } = useTranslation()
   return (
       <button
           type="button"
           onClick={onToggle}
-          aria-label={showMobileMenu ? "메뉴 닫기" : "메뉴 열기"}
+          aria-label={showMobileMenu ? t.nav.closeMenu : t.nav.openMenu}
           aria-expanded={showMobileMenu}
           className="rounded-lg p-2 transition-colors hover:bg-hover lg:hidden"
       >

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { useToast } from "@/hooks/use-toast"
 import { authorizedFetch } from "@/lib/auth/client"
 import { emitAvatarChanged } from "@/lib/auth/profile-events"
@@ -8,8 +9,8 @@ import type { ProfileImageKind } from "@/lib/profile/constants"
 
 /** 종류별 엔드포인트와 응답 필드 */
 const ENDPOINTS = {
-  avatar: { path: "/api/profile/avatar", field: "avatarUrl", label: "사진" },
-  banner: { path: "/api/profile/banner", field: "bannerUrl", label: "배너" },
+  avatar: { path: "/api/profile/avatar", field: "avatarUrl" },
+  banner: { path: "/api/profile/banner", field: "bannerUrl" },
 } as const
 
 /** 관리자가 남의 사진을 다룰 때 쓰는 경로 */
@@ -32,9 +33,11 @@ export function useProfileImage(
     /** 관리자가 다른 회원의 사진을 다룰 때만 넘긴다. 없으면 자기 것이다. */
     targetUserId?: string,
 ) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [isSaving, setIsSaving] = useState(false)
-  const { field, label } = ENDPOINTS[kind]
+  const { field } = ENDPOINTS[kind]
+  const label = kind === "avatar" ? t.image.avatarLabel : t.image.bannerLabel
   const path = targetUserId ? ADMIN_AVATAR_PATH : ENDPOINTS[kind].path
 
   const send = async (init: RequestInit, done: string, query = "") => {
@@ -55,8 +58,8 @@ export function useProfileImage(
     } catch (error) {
       toast({
         variant: "destructive",
-        title: `${label}을 바꾸지 못했습니다`,
-        description: error instanceof Error ? error.message : "잠시 후 다시 시도해주세요.",
+        title: t.image.failed(label),
+        description: error instanceof Error ? error.message : t.auth.errors.unknown,
       })
     } finally {
       setIsSaving(false)
@@ -69,11 +72,11 @@ export function useProfileImage(
     body.append("file", image, `${kind}.${FILE_EXTENSIONS[image.type] ?? "jpg"}`)
     if (targetUserId) body.append("userId", targetUserId)
 
-    return send({ method: "POST", body }, `${label}을 바꿨습니다.`)
+    return send({ method: "POST", body }, t.image.changed(label))
   }
 
   const remove = () =>
-      send({ method: "DELETE" }, `${label}을 지웠습니다.`, targetUserId ? `?userId=${targetUserId}` : "")
+      send({ method: "DELETE" }, t.image.removed(label), targetUserId ? `?userId=${targetUserId}` : "")
 
   return { isSaving, upload, remove }
 }

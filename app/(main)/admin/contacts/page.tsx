@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Circle, Loader2, Mail, RefreshCw } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { EmptyState } from "@/components/common/empty-state"
 import { Notice } from "@/components/common/notice"
 import { PageHeader } from "@/components/common/page-header"
@@ -30,6 +31,7 @@ interface ContactMessage {
  * 이메일로 보내므로 여기서는 무엇이 남았는지만 가린다.
  */
 export default function AdminContactsPage() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [messages, setMessages] = useState<ContactMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -47,7 +49,7 @@ export default function AdminContactsPage() {
       setMessages(Array.isArray(data.messages) ? data.messages : [])
       setError(null)
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "문의를 불러오지 못했습니다.")
+      setError(caught instanceof Error ? caught.message : t.admin.contacts.loadFailed)
     } finally {
       setIsLoading(false)
     }
@@ -76,8 +78,8 @@ export default function AdminContactsPage() {
     } catch (caught) {
       toast({
         variant: "destructive",
-        title: "표시를 바꾸지 못했습니다",
-        description: caught instanceof Error ? caught.message : "잠시 후 다시 시도해주세요.",
+        title: t.admin.contacts.toggleFailed,
+        description: caught instanceof Error ? caught.message : t.auth.errors.unknown,
       })
     }
   }
@@ -90,25 +92,25 @@ export default function AdminContactsPage() {
       <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <PageHeader
             icon={Mail}
-            title="문의 관리"
-            description={`전체 ${messages.length.toLocaleString()}건 · 답변 대기 ${pending.toLocaleString()}건`}
+            title={t.admin.contacts.title}
+            description={t.admin.contacts.summary(messages.length, pending)}
             actions={
               <Button variant="outline" onClick={() => void load()} className="bg-surface border-line">
                 <RefreshCw className="mr-2 h-4 w-4" />
-                새로고침
+                {t.common.refresh}
               </Button>
             }
         />
 
         {error && (
-            <Notice title="문의를 불러오지 못했습니다" tone="danger">
+            <Notice title={t.admin.contacts.loadFailed} tone="danger">
               <p className="opacity-90">{error}</p>
             </Notice>
         )}
 
         {messages.length === 0 ? (
             <Panel>
-              <EmptyState icon={Mail} message="아직 들어온 문의가 없습니다." />
+              <EmptyState icon={Mail} message={t.admin.contacts.empty} />
             </Panel>
         ) : (
             <div className="space-y-2">
@@ -119,7 +121,7 @@ export default function AdminContactsPage() {
                         <h3 className="text-ink truncate font-semibold">{message.subject}</h3>
                         <p className="text-ink-muted mt-0.5 truncate text-xs">
                           {message.email}
-                          {!message.user_id && " · 비회원"}
+                          {!message.user_id && ` · ${t.admin.contacts.guest}`}
                           {" · "}
                           {new Date(message.created_at).toLocaleString()}
                         </p>
@@ -139,7 +141,7 @@ export default function AdminContactsPage() {
                         ) : (
                             <Circle className="mr-1 h-3.5 w-3.5" />
                         )}
-                        {message.answered_at ? "답변 완료" : "답변 대기"}
+                        {message.answered_at ? t.admin.contacts.answered : t.admin.contacts.pending}
                       </Button>
                     </div>
 

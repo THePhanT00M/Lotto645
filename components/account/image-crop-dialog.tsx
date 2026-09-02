@@ -3,6 +3,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { Loader2, ZoomIn } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -41,6 +42,7 @@ export default function ImageCropDialog({
                                           onCancel,
                                           onConfirm,
                                         }: ImageCropDialogProps) {
+  const { t } = useTranslation()
   const frameRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ pointerX: number; pointerY: number; offsetX: number; offsetY: number } | null>(null)
 
@@ -135,7 +137,7 @@ export default function ImageCropDialog({
           <DialogPrimitive.Content className="bg-panel border-line fixed top-1/2 left-1/2 z-50 w-[min(92vw,26rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl border p-5 shadow-lg">
             <DialogPrimitive.Title className="text-ink text-lg font-bold">{title}</DialogPrimitive.Title>
             <DialogPrimitive.Description className="text-ink-muted mt-1 text-sm">
-              끌어서 위치를 잡고, 아래에서 크기를 맞춥니다.
+              {t.image.cropHint}
             </DialogPrimitive.Description>
 
             <div
@@ -197,18 +199,18 @@ export default function ImageCropDialog({
                   step={0.01}
                   value={zoom}
                   onChange={(event) => changeZoom(Number(event.target.value))}
-                  aria-label="확대"
+                  aria-label={t.image.zoom}
                   className="h-1 w-full accent-blue-600"
               />
             </div>
 
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="outline" onClick={onCancel} disabled={isSaving} className="bg-surface border-line">
-                취소
+                {t.common.cancel}
               </Button>
               <Button onClick={confirm} disabled={isSaving || !source} className="bg-blue-600 text-white hover:bg-blue-700">
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                적용
+                {t.image.apply}
               </Button>
             </div>
           </DialogPrimitive.Content>

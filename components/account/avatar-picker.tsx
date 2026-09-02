@@ -1,6 +1,7 @@
 "use client"
 
 import { Camera, Loader2, Trash2, User } from "lucide-react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import ImageCropDialog from "@/components/account/image-crop-dialog"
 import { useImageFile } from "@/hooks/use-image-file"
 import { useProfileImage } from "@/hooks/use-profile-image"
@@ -24,6 +25,7 @@ interface AvatarPickerProps {
  * 서버를 거치므로 스토리지 쓰기 권한을 브라우저에 열어 줄 필요가 없다.
  */
 export default function AvatarPicker({ url, seed, onChange }: AvatarPickerProps) {
+  const { t } = useTranslation()
   const { file, clear, open, input } = useImageFile()
   const { isSaving, upload, remove } = useProfileImage("avatar", onChange)
 
@@ -38,7 +40,7 @@ export default function AvatarPicker({ url, seed, onChange }: AvatarPickerProps)
             type="button"
             onClick={open}
             disabled={isSaving}
-            aria-label="프로필 사진 바꾸기"
+            aria-label={t.image.changeAvatar}
             className="group bg-surface border-line ring-panel absolute inset-0 overflow-hidden rounded-full border ring-4 disabled:cursor-not-allowed"
         >
           {url ? (
@@ -71,7 +73,7 @@ export default function AvatarPicker({ url, seed, onChange }: AvatarPickerProps)
         {url && (
             <button
                 type="button"
-                aria-label="프로필 사진 삭제"
+                aria-label={t.image.deleteAvatar}
                 disabled={isSaving}
                 onClick={() => void remove()}
                 className="border-panel absolute right-0 bottom-0 flex h-6 w-6 items-center justify-center rounded-full border-2 bg-black/70 text-white transition-colors hover:bg-black disabled:opacity-50"
@@ -82,7 +84,7 @@ export default function AvatarPicker({ url, seed, onChange }: AvatarPickerProps)
 
         <ImageCropDialog
             file={file}
-            title="프로필 사진 자르기"
+            title={t.image.cropAvatar}
             aspect={1}
             outputWidth={OUTPUT_WIDTH}
             round

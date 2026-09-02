@@ -1,5 +1,8 @@
+"use client"
+
 import { Panel } from "@/components/common/panel"
 import type { StatsSummary } from "@/lib/lotto/stats"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 /** 막대 안쪽에 개수를 표기할 최소 비율 */
 const INLINE_LABEL_THRESHOLD = 5
@@ -11,10 +14,11 @@ interface MatchDistributionProps {
 
 /** 당첨 번호와 몇 개나 일치했는지를 막대 그래프로 보여준다. */
 export default function MatchDistribution({ summary, drawNo }: MatchDistributionProps) {
+  const { t } = useTranslation()
   return (
       <Panel className="space-y-5">
         <div>
-          <h3 className="text-ink text-xl font-bold">번호 일치 개수 분포</h3>
+          <h3 className="text-ink text-xl font-bold">{t.admin.stats.matchDistribution}</h3>
           <p className="text-ink-muted mt-1 text-sm">{drawNo}회차 당첨 번호와 일치하는 개수별 통계</p>
         </div>
 

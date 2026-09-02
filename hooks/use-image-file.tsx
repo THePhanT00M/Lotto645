@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { useToast } from "@/hooks/use-toast"
 import { ACCEPTED_TYPES, MAX_SOURCE_BYTES } from "@/lib/profile/constants"
 
@@ -11,6 +12,7 @@ import { ACCEPTED_TYPES, MAX_SOURCE_BYTES } from "@/lib/profile/constants"
  * 파일을 받으므로 화면마다 다시 쓰지 않는다.
  */
 export function useImageFile() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
@@ -30,8 +32,8 @@ export function useImageFile() {
             event.target.value = ""
 
             if (!picked) return
-            if (!ACCEPTED_TYPES.includes(picked.type)) return reject("PNG·JPG·WEBP·GIF 형식만 올릴 수 있습니다.")
-            if (picked.size > MAX_SOURCE_BYTES) return reject("원본은 15MB 이하만 고를 수 있습니다.")
+            if (!ACCEPTED_TYPES.includes(picked.type)) return reject(t.image.wrongType)
+            if (picked.size > MAX_SOURCE_BYTES) return reject(t.image.tooLarge)
 
             setFile(picked)
           }}

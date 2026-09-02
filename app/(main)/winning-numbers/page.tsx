@@ -1,6 +1,7 @@
 "use client"
 
 import { Trophy } from "lucide-react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { PageHeader } from "@/components/common/page-header"
 import DrawHighlight from "@/components/winning/draw-highlight"
 import DrawList from "@/components/winning/draw-list"
@@ -18,11 +19,12 @@ import { useToast } from "@/hooks/use-toast"
 export default function WinningNumbersPage() {
   const browser = useDrawBrowser()
   const { toast } = useToast()
+  const { t } = useTranslation()
 
   const jump = async (drawNo: number) => {
     const moved = await browser.jumpTo(drawNo)
     if (!moved) {
-      toast({ title: "이동할 수 없습니다", description: "존재하지 않는 회차입니다.", variant: "destructive" })
+      toast({ title: t.winning.notFoundTitle, description: t.winning.notFound, variant: "destructive" })
     }
   }
 
@@ -30,7 +32,7 @@ export default function WinningNumbersPage() {
 
   return (
       <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
-        <PageHeader icon={Trophy} title="역대 당첨번호" description="원하는 회차로 이동하여 당첨 번호를 확인하세요." />
+        <PageHeader icon={Trophy} title={t.winning.title} description={t.winning.description} />
 
         {browser.currentDraw && (
             <DrawHighlight draw={browser.currentDraw} latestDrawNo={browser.latestDrawNo} onNavigate={jump} />

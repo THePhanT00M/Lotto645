@@ -1,7 +1,10 @@
+"use client"
+
 import { rankStyle } from "@/components/common/rank-badge"
 import { Panel } from "@/components/common/panel"
 import { rankLabel } from "@/lib/lotto/rank"
 import type { StatsSummary } from "@/lib/lotto/stats"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 interface RankDistributionProps {
   summary: StatsSummary
@@ -10,10 +13,11 @@ interface RankDistributionProps {
 
 /** 등수별 당첨 분포를 카드 그리드로 보여준다. */
 export default function RankDistribution({ summary, drawNo }: RankDistributionProps) {
+  const { t } = useTranslation()
   return (
       <Panel className="space-y-5">
         <div>
-          <h3 className="text-ink text-xl font-bold">당첨 등수별 분포</h3>
+          <h3 className="text-ink text-xl font-bold">{t.admin.stats.rankDistribution}</h3>
           <p className="text-ink-muted mt-1 text-sm">{drawNo}회차 대상 추첨의 등수별 통계</p>
         </div>
 

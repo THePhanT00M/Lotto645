@@ -1,5 +1,7 @@
+"use client"
+
+import { useTranslation } from "@/components/i18n/locale-provider"
 import type { DrawStatus, Rank } from "@/lib/lotto/rank"
-import { rankLabel } from "@/lib/lotto/rank"
 import { cn } from "@/lib/utils"
 
 /** 등수별 배지 색. 파스텔 배경 + 진한 텍스트로 라이트/다크 모두 읽히게 한다. */
@@ -26,21 +28,22 @@ interface RankBadgeProps {
 
 /** 기록 한 건의 당첨 상태를 배지로 보여준다. */
 export function RankBadge({ status, showComparedDraw = false, className }: RankBadgeProps) {
+  const { t } = useTranslation()
   const base = "rounded-md border px-3 py-1 text-sm font-semibold"
 
   if (status.kind === "pending") {
-    return <div className={cn(base, PENDING_STYLE, className)}>추첨 대기</div>
+    return <div className={cn(base, PENDING_STYLE, className)}>{t.lotto.pending}</div>
   }
 
   if (status.kind === "missing") {
-    return <div className={cn(base, MISS_STYLE, className)}>데이터 없음</div>
+    return <div className={cn(base, MISS_STYLE, className)}>{t.lotto.noData}</div>
   }
 
-  const label = rankLabel(status.match.rank)
+  const label = status.match.rank === null ? t.lotto.miss : t.lotto.rank(status.match.rank)
 
   return (
       <div className={cn(base, rankStyle(status.match.rank), className)}>
-        {showComparedDraw ? `${status.drawNo}회 기준: ${label}` : `결과: ${label}`}
+        {showComparedDraw ? `${t.lotto.drawNo(status.drawNo)} · ${label}` : label}
       </div>
   )
 }

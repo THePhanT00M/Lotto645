@@ -1,6 +1,7 @@
 "use client"
 
 import { Calculator, HelpCircle } from "lucide-react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { PageHeader } from "@/components/common/page-header"
 import { Panel, Surface } from "@/components/common/panel"
 import { FAQ_SECTIONS, type FaqSection } from "@/components/faq/faq-data"
@@ -10,32 +11,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 /**
  * 자주 묻는 질문
  *
- * 질문 내용은 `faq-data.ts`에 모아 두고 이 화면은 렌더링만 담당한다.
+ * 질문과 답은 문구 사전에 두고, 이 화면은 어느 묶음을 어떻게 그릴지만 맡는다.
  */
 export default function FaqPage() {
+  const { t } = useTranslation()
+
   return (
       <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
-        <PageHeader
-            icon={HelpCircle}
-            title="자주 묻는 질문 (FAQ)"
-            description="Lotto645 서비스 이용에 대한 궁금증을 해결해 드립니다."
-        />
+        <PageHeader icon={HelpCircle} title={t.faq.title} description={t.faq.description} />
 
-        <Tabs defaultValue={FAQ_SECTIONS[0].value} className="space-y-4">
+        <Tabs defaultValue={FAQ_SECTIONS[0].key} className="space-y-4">
           <TabsList className="border-line grid w-full grid-cols-3 rounded-lg border bg-gray-100 p-1 dark:bg-[#0f0f0f]">
             {FAQ_SECTIONS.map((section) => (
                 <TabsTrigger
-                    key={section.value}
-                    value={section.value}
+                    key={section.key}
+                    value={section.key}
                     className="text-ink-muted data-[state=active]:text-ink rounded-md font-medium transition-colors data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-[#272727]"
                 >
-                  {section.tabLabel}
+                  {t.faq[section.key].tabLabel}
                 </TabsTrigger>
             ))}
           </TabsList>
 
           {FAQ_SECTIONS.map((section) => (
-              <TabsContent key={section.value} value={section.value}>
+              <TabsContent key={section.key} value={section.key}>
                 <FaqPanel section={section} />
               </TabsContent>
           ))}
@@ -43,40 +42,37 @@ export default function FaqPage() {
 
         <div className="border-accent-line bg-accent-soft text-accent mt-8 flex items-center justify-center gap-3 rounded-lg border p-4 text-sm">
           <Calculator className="h-5 w-5 flex-shrink-0" />
-          <p>
-            더 궁금한 점이 있으신가요? 페이지 하단의 <strong className="font-semibold">문의하기</strong>를 이용해 주세요.
-          </p>
+          <p>{t.faq.contactHint}</p>
         </div>
       </div>
   )
 }
 
 function FaqPanel({ section }: { section: FaqSection }) {
-  const { icon: Icon, accentClass } = section
+  const { t } = useTranslation()
+  const { title, items } = t.faq[section.key]
+  const Icon = section.icon
 
   return (
-      <Panel>
-        <div className="mb-4 flex items-center gap-2">
-          <Icon className={`h-5 w-5 ${accentClass}`} />
-          <h2 className="text-ink text-lg font-bold">{section.title}</h2>
-        </div>
+      <Panel className="space-y-4">
+        <h2 className="text-ink flex items-center gap-2 font-semibold">
+          <Icon className={`h-5 w-5 ${section.accentClass}`} />
+          {title}
+        </h2>
 
-        {/* 질문 목록은 한 단계 밝은 카드에 올려 패널과 구분한다. */}
-        <Surface className="px-4 py-1">
+        <Surface>
           <Accordion type="single" collapsible className="w-full">
-            {section.items.map((item, index) => (
+            {items.map((item, index) => (
                 <AccordionItem
                     key={item.question}
-                    value={`${section.value}-${index}`}
-                    className={index === section.items.length - 1 ? "border-none" : "border-line border-b"}
+                    value={`${section.key}-${index}`}
+                    className="border-line last:border-b-0"
                 >
-                  <AccordionTrigger className="text-ink text-left hover:no-underline">
+                  <AccordionTrigger className="text-ink text-left text-sm font-semibold hover:no-underline">
                     {item.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-ink-muted space-y-2 leading-relaxed">
-                    {item.answer.map((paragraph) => (
-                        <p key={paragraph}>{paragraph}</p>
-                    ))}
+                  <AccordionContent className="text-ink-muted text-sm leading-relaxed">
+                    {item.answer}
                   </AccordionContent>
                 </AccordionItem>
             ))}

@@ -2,6 +2,7 @@
 
 import { AlertTriangle, CheckCircle, DatabaseZap, Loader2, RefreshCw } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { PageHeader } from "@/components/common/page-header"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
@@ -22,24 +23,25 @@ type UpdateState =
  * 알림을 보낸다. 알림 실패는 데이터 삽입 성공을 가리지 않도록 따로 처리한다.
  */
 export default function UpdateDrawPage() {
-  const [state, setState] = useState<UpdateState>({ kind: "loading", message: "업데이트 대기 중..." })
+  const { t } = useTranslation()
+  const [state, setState] = useState<UpdateState>({ kind: "loading", message: t.admin.update.waiting })
 
   const runUpdate = useCallback(async () => {
-    setState({ kind: "loading", message: "최신 회차 확인 및 업데이트 시작..." })
+    setState({ kind: "loading", message: t.admin.update.checking })
 
     try {
       const response = await authorizedFetch("/api/update-draw")
       const result = await response.json()
 
       if (!response.ok || !result.success) {
-        setState({ kind: "error", message: result.message ?? "알 수 없는 오류가 발생했습니다." })
+        setState({ kind: "error", message: result.message ?? t.admin.update.unknownError })
         return
       }
 
       setState({ kind: "success", message: result.message, draw: result.data })
       await notifyMembers()
     } catch (error) {
-      setState({ kind: "error", message: error instanceof Error ? error.message : "네트워크 오류 발생" })
+      setState({ kind: "error", message: error instanceof Error ? error.message : t.admin.update.networkError })
     }
   }, [])
 
@@ -53,8 +55,8 @@ export default function UpdateDrawPage() {
       <div className="mx-auto w-full max-w-2xl space-y-6 p-4 sm:p-6">
         <PageHeader
             icon={DatabaseZap}
-            title="당첨 번호 업데이트"
-            description="동행복권 API를 확인하여 최신 당첨 번호를 업데이트 진행합니다."
+            title={t.admin.update.title}
+            description={t.admin.update.description}
         />
 
         <Panel>
@@ -77,14 +79,14 @@ export default function UpdateDrawPage() {
           </Button>
 
           <div className={cn("mt-6 rounded-lg border p-5 transition-colors", STATE_STYLES[state.kind].box)}>
-            <h2 className={cn("mb-3 flex items-center font-semibold", STATE_STYLES[state.kind].title)}>업데이트 상태:</h2>
+            <h2 className={cn("mb-3 flex items-center font-semibold", STATE_STYLES[state.kind].title)}>{t.admin.update.statusTitle}</h2>
 
             <div className={cn("flex items-center", STATE_STYLES[state.kind].body)}>
               {state.kind === "loading" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {state.kind === "success" && <CheckCircle className="mr-2 h-4 w-4" />}
               {state.kind === "error" && <AlertTriangle className="mr-2 h-4 w-4 flex-shrink-0" />}
               <span>
-                {state.kind === "error" && <strong>오류: </strong>}
+                {state.kind === "error" && <strong>{t.admin.update.errorPrefix}: </strong>}
                 {state.message}
               </span>
             </div>
@@ -115,13 +117,15 @@ const STATE_STYLES = {
 } as const
 
 function DrawSummary({ draw }: { draw: WinningLottoNumbers }) {
+  const { t } = useTranslation()
+
   return (
       <div className="border-accent-line mt-4 border-t pt-4">
         <h3 className="text-ink mb-2 font-medium">{draw.drawNo}회 데이터가 삽입되었습니다:</h3>
         <dl className="text-ink-muted space-y-1 text-sm">
-          <SummaryRow label="날짜">{draw.date}</SummaryRow>
-          <SummaryRow label="번호">{draw.numbers.join(", ")}</SummaryRow>
-          <SummaryRow label="보너스">{draw.bonusNo}</SummaryRow>
+          <SummaryRow label={t.admin.update.date}>{draw.date}</SummaryRow>
+          <SummaryRow label={t.admin.update.numbers}>{draw.numbers.join(", ")}</SummaryRow>
+          <SummaryRow label={t.admin.update.bonus}>{draw.bonusNo}</SummaryRow>
         </dl>
       </div>
   )

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { Check, Lock, Sparkles } from "lucide-react"
 import { forwardRef } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { Ball, BallBadge, EmptyBall } from "@/components/lotto/ball"
 import { PICK_COUNT } from "@/lib/lotto/constants"
 import { cn } from "@/lib/utils"
@@ -23,6 +24,7 @@ const NumberDisplay = forwardRef<HTMLDivElement, NumberDisplayProps>(function Nu
     { numbers, fixedNumbers = [], isSaved = false, isAiRecommended = false, className },
     ref,
 ) {
+  const { t } = useTranslation()
   if (numbers.length === 0) return null
 
   // 6개가 다 모였을 때만 정렬해, 뽑히는 순서를 그대로 보여준다.
@@ -40,7 +42,7 @@ const NumberDisplay = forwardRef<HTMLDivElement, NumberDisplayProps>(function Nu
           <div className="w-24" aria-hidden />
           <h3 className="flex items-center gap-2 text-lg font-medium">
             {isAiRecommended && <Sparkles className="h-5 w-5 text-blue-600" />}
-            {isAiRecommended ? "AI 추천 번호" : "추첨 번호"}
+            {isAiRecommended ? t.draw.aiNumbers : t.draw.drawnNumbers}
           </h3>
           <div className="flex w-24 justify-end">
             {isSaved && numbers.length === PICK_COUNT && (

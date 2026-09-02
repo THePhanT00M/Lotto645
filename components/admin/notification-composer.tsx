@@ -2,10 +2,17 @@
 
 import { Loader2, PencilLine, Send, Trash2 } from "lucide-react"
 import { Panel } from "@/components/common/panel"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-/** 자주 쓰는 문구. 눌러서 채우고 그대로 고쳐 쓴다. */
+/**
+ * 자주 쓰는 문구. 눌러서 채우고 그대로 고쳐 쓴다.
+ *
+ * 이 글은 회원에게 그대로 나가는 알림 본문이라 한국어로 둔다. 알림은 표에
+ * 한 가지 말로만 담기므로, 화면 언어를 따라 바꿔도 받는 사람마다 다르게
+ * 보낼 수는 없다.
+ */
 const TEMPLATES = [
   {
     label: "당첨 안내",
@@ -53,6 +60,7 @@ export default function NotificationComposer({
                                                isSending,
                                                onSend,
                                              }: NotificationComposerProps) {
+  const { t } = useTranslation()
   const canSend = title.trim() !== "" && message.trim() !== "" && recipientCount > 0 && !isSending
 
   const applyTemplate = (template: (typeof TEMPLATES)[number]) => {
@@ -67,7 +75,7 @@ export default function NotificationComposer({
             <PencilLine className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             내용
           </h2>
-          <p className="text-ink-muted mt-1 text-sm">작성한 그대로 알림 센터에 표시됩니다.</p>
+          <p className="text-ink-muted mt-1 text-sm">{t.admin.notify.composeHint}</p>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
@@ -83,30 +91,30 @@ export default function NotificationComposer({
           ))}
         </div>
 
-        <Field label="제목" current={title.length} limit={TITLE_LIMIT}>
+        <Field label={t.admin.notify.subject} current={title.length} limit={TITLE_LIMIT}>
           <input
               type="text"
               value={title}
               maxLength={TITLE_LIMIT}
               onChange={(event) => onTitleChange(event.target.value)}
-              placeholder="예) 서비스 점검 안내"
+              placeholder={t.admin.notify.subjectPlaceholder}
               className="bg-surface border-line text-ink w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
           />
         </Field>
 
-        <Field label="내용" current={message.length} limit={MESSAGE_LIMIT}>
+        <Field label={t.admin.notify.body} current={message.length} limit={MESSAGE_LIMIT}>
           <textarea
               value={message}
               maxLength={MESSAGE_LIMIT}
               onChange={(event) => onMessageChange(event.target.value)}
-              placeholder="회원에게 전할 내용을 입력하세요."
+              placeholder={t.admin.notify.bodyPlaceholder}
               rows={5}
               className="bg-surface border-line text-ink w-full resize-none rounded-lg border px-3 py-2 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-blue-500"
           />
         </Field>
 
         <div className="space-y-2">
-          <span className="text-ink-muted text-sm font-medium">미리보기</span>
+          <span className="text-ink-muted text-sm font-medium">{t.admin.notify.preview}</span>
           <div className="bg-canvas border-line rounded-lg border p-3">
             <PreviewCard title={title} message={message} />
           </div>
@@ -126,11 +134,11 @@ export default function NotificationComposer({
             ) : (
                 <>
                   <Send className="mr-2 h-4 w-4" />
-                  {recipientCount > 0 ? `${recipientCount.toLocaleString()}명에게 발송` : "받는 사람을 선택하세요"}
+                  {recipientCount > 0 ? t.admin.notify.send(recipientCount) : t.admin.notify.pickRecipients}
                 </>
             )}
           </Button>
-          <p className="text-ink-muted text-center text-xs">발송한 알림은 회수할 수 없습니다.</p>
+          <p className="text-ink-muted text-center text-xs">{t.admin.notify.irreversible}</p>
         </div>
       </Panel>
   )
@@ -162,24 +170,26 @@ function Field({
 
 /** 알림 센터에 실제로 그려지는 카드와 같은 모양. */
 function PreviewCard({ title, message }: { title: string; message: string }) {
+  const { t } = useTranslation()
+
   return (
       <div className="bg-surface border-line rounded-lg border p-3 shadow-sm">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-1.5">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
             <span className={cn("truncate text-sm font-semibold", title ? "text-ink" : "text-ink-muted")}>
-              {title || "제목이 여기에 표시됩니다"}
+              {title || t.admin.notify.previewTitle}
             </span>
           </div>
 
           <div className="text-ink-muted flex shrink-0 items-center gap-1">
-            <span className="text-xs">방금 전</span>
+            <span className="text-xs">{t.admin.notify.justNow}</span>
             <Trash2 className="h-3.5 w-3.5" />
           </div>
         </div>
 
         <p className="text-ink-muted mt-1 line-clamp-2 text-xs leading-relaxed">
-          {message || "내용이 여기에 표시됩니다."}
+          {message || t.admin.notify.previewBody}
         </p>
       </div>
   )
