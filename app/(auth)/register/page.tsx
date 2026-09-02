@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { isValidEmail, useAuthForm } from "@/hooks/use-auth-form"
 import { useNextPath } from "@/hooks/use-next-path"
 import { useToast } from "@/hooks/use-toast"
+import { describeAuthError } from "@/lib/auth/error-messages"
 import { loginHref } from "@/lib/auth/redirect"
 import { supabase } from "@/lib/supabase/client"
 
@@ -60,12 +61,10 @@ export default function RegisterPage() {
       router.push(loginHref(nextPath))
     } catch (error) {
       const isWeakPassword = typeof error === "object" && error !== null && "code" in error && error.code === "weak_password"
+      const message = describeAuthError(error, "회원가입 중 오류가 발생했습니다.")
 
-      setErrors(
-          isWeakPassword
-              ? { password: "비밀번호는 8자 이상이며 영문 대소문자, 숫자, 특수문자를 모두 포함해야 합니다." }
-              : { email: error instanceof Error ? error.message : "회원가입 중 오류가 발생했습니다." },
-      )
+      // 비밀번호 규칙은 비밀번호 칸에, 나머지는 이메일 칸에 붙여야 눈이 간다.
+      setErrors(isWeakPassword ? { password: message } : { email: message })
     } finally {
       setIsSubmitting(false)
     }

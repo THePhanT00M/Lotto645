@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { isValidEmail, useAuthForm } from "@/hooks/use-auth-form"
 import { useNextPath } from "@/hooks/use-next-path"
 import { useToast } from "@/hooks/use-toast"
+import { describeAuthError } from "@/lib/auth/error-messages"
 import { registerHref } from "@/lib/auth/redirect"
 import { getRememberLogin, setRememberLogin } from "@/lib/auth/session-persistence"
 import { supabase } from "@/lib/supabase/client"
@@ -61,12 +62,9 @@ export default function LoginPage() {
       })
 
       if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          // 어느 쪽이 틀렸는지 알리지 않되 두 입력 모두 강조한다.
-          setErrors({ email: "이메일 또는 비밀번호가 일치하지 않습니다.", password: " " })
-          return
-        }
-        throw error
+        // 어느 쪽이 틀렸는지 알리지 않되 두 입력 모두 강조한다.
+        setErrors({ email: describeAuthError(error, "로그인하지 못했습니다."), password: " " })
+        return
       }
 
       router.push(nextPath)
@@ -75,7 +73,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "로그인 실패",
-        description: error instanceof Error ? error.message : "오류가 발생했습니다.",
+        description: describeAuthError(error, "오류가 발생했습니다."),
       })
     } finally {
       setIsSubmitting(false)
@@ -104,7 +102,7 @@ export default function LoginPage() {
       toast({ title: "메일을 보냈습니다", description: data.message })
       setView("login")
     } catch (error) {
-      setErrors({ email: error instanceof Error ? error.message : "메일 전송에 실패했습니다." })
+      setErrors({ email: describeAuthError(error, "메일 전송에 실패했습니다.") })
     } finally {
       setIsSubmitting(false)
     }

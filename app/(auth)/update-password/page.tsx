@@ -9,13 +9,14 @@ import AuthShell from "@/components/auth/auth-shell"
 import { Button } from "@/components/ui/button"
 import { useAuthForm } from "@/hooks/use-auth-form"
 import { useToast } from "@/hooks/use-toast"
+import { describeAuthError } from "@/lib/auth/error-messages"
 import { supabase } from "@/lib/supabase/client"
 
 /** Supabase 가 요구하는 최소 길이 */
 const MIN_PASSWORD_LENGTH = 8
 
-/** 주소에 실려 온 토큰이 세션으로 바뀌기를 기다리는 시간 */
-const SESSION_WAIT_MS = 1500
+/** 주소창과 방문 기록에 토큰이 남지 않게 지운다. */
+const clearTokenFromUrl = () => window.history.replaceState(null, "", window.location.pathname)
 
 type Stage = "checking" | "ready" | "expired"
 
@@ -30,6 +31,9 @@ export default function UpdatePasswordPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [stage, setStage] = useState<Stage>("checking")
+  // 어느 계정의 비밀번호를 바꾸는지 보여 준다. 링크가 만료된 채 이미 로그인해
+  // 있으면 엉뚱한 계정을 바꿀 수 있어, 눈으로 먼저 확인하게 한다.
+  const [account, setAccount] = useState<string | null>(null)
 
   const form = useAuthForm({ password: "", confirmPassword: "" })
   const { values, errors, setErrors, isSubmitting, setIsSubmitting, handleChange } = form
@@ -37,29 +41,42 @@ export default function UpdatePasswordPage() {
   useEffect(() => {
     let cancelled = false
 
-    const check = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (cancelled) return
+    const start = async () => {
+      // 링크에 실려 온 토큰을 먼저 직접 읽어 세션으로 세운다. 라이브러리가 주소를
+      // 알아서 읽어 주기를 기다리면, 이미 로그인해 있던 사람은 그 세션이 먼저
+      // 잡혀 '남의 링크로 내 비밀번호를 바꾸는' 상태가 된다.
+      const hash = new URLSearchParams(window.location.hash.slice(1))
+      const accessToken = hash.get("access_token")
+      const refreshToken = hash.get("refresh_token")
 
-      if (session) {
-        setStage("ready")
-        // 주소창에 토큰이 남지 않게 지운다. 화면을 공유하거나 기록이 남을 수 있다.
-        window.history.replaceState(null, "", window.location.pathname)
+      if (accessToken && refreshToken && hash.get("type") === "recovery") {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+        if (cancelled) return
+
+        clearTokenFromUrl()
+        setStage(error ? "expired" : "ready")
+        if (!error) await readAccount()
         return
       }
 
-      // 주소에서 토큰을 읽어 세션으로 바꾸는 데 잠깐 걸린다. 한 번 더 본다.
-      await new Promise((resolve) => setTimeout(resolve, SESSION_WAIT_MS))
+      // 라이브러리가 먼저 읽어 갔거나, 로그인한 사람이 직접 들어온 경우.
+      const { data: { session } } = await supabase.auth.getSession()
       if (cancelled) return
 
-      const { data: { session: retried } } = await supabase.auth.getSession()
-      if (cancelled) return
-
-      setStage(retried ? "ready" : "expired")
-      if (retried) window.history.replaceState(null, "", window.location.pathname)
+      clearTokenFromUrl()
+      setStage(session ? "ready" : "expired")
+      if (session) setAccount(session.user.email ?? null)
     }
 
-    void check()
+    const readAccount = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!cancelled) setAccount(user?.email ?? null)
+    }
+
+    void start()
     return () => {
       cancelled = true
     }
@@ -89,10 +106,7 @@ export default function UpdatePasswordPage() {
       router.push("/account/profile")
       router.refresh()
     } catch (error) {
-      setErrors({
-        password: error instanceof Error ? error.message : "비밀번호를 바꾸지 못했습니다.",
-        confirmPassword: " ",
-      })
+      setErrors({ password: describeAuthError(error, "비밀번호를 바꾸지 못했습니다."), confirmPassword: " " })
     } finally {
       setIsSubmitting(false)
     }
@@ -130,7 +144,17 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-      <AuthShell description="새로 쓸 비밀번호를 입력해 주세요.">
+      <AuthShell
+          description={
+            account ? (
+                <>
+                  <span className="text-ink font-medium">{account}</span> 계정의 비밀번호를 바꿉니다.
+                </>
+            ) : (
+                "새로 쓸 비밀번호를 입력해 주세요."
+            )
+          }
+      >
         <form
             className="space-y-6"
             onSubmit={(event) => {
