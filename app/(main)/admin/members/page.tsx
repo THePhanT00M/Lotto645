@@ -3,6 +3,7 @@
 import { RefreshCw, Search, Users } from "lucide-react"
 import { useMemo, useState } from "react"
 import MemberRow from "@/components/admin/member-row"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { EmptyState } from "@/components/common/empty-state"
 import { Notice } from "@/components/common/notice"
 import { PageHeader } from "@/components/common/page-header"
@@ -24,6 +25,7 @@ import { ADMIN_LEVEL } from "@/lib/auth/levels"
 export default function AdminMembersPage() {
   const { members, isLoading, error, reload, changeLevel, patch } = useAdminMembers()
   const { userData } = useHeaderData(true)
+  const { t } = useTranslation()
   const [keyword, setKeyword] = useState("")
 
   const found = useMemo(() => {
@@ -45,18 +47,18 @@ export default function AdminMembersPage() {
       <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
         <PageHeader
             icon={Users}
-            title="회원 관리"
-            description={`전체 ${members.length.toLocaleString()}명 · 관리자 ${adminCount}명`}
+            title={t.admin.members.title}
+            description={t.admin.members.summary(members.length, adminCount)}
             actions={
               <Button variant="outline" onClick={() => void reload()} className="bg-surface border-line">
                 <RefreshCw className="mr-2 h-4 w-4" />
-                새로고침
+                {t.common.refresh}
               </Button>
             }
         />
 
         {error && (
-            <Notice title="회원 목록을 불러오지 못했습니다" tone="danger">
+            <Notice title={t.admin.members.loadFailed} tone="danger">
               <p className="opacity-90">{error}</p>
             </Notice>
         )}
@@ -67,13 +69,13 @@ export default function AdminMembersPage() {
             <Input
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
-                placeholder="닉네임·이메일·연락처로 찾기"
+                placeholder={t.admin.members.search}
                 className="bg-surface border-line pl-9"
             />
           </div>
 
           {found.length === 0 ? (
-              <EmptyState icon={Users} message={keyword ? "찾는 회원이 없습니다." : "아직 가입한 회원이 없습니다."} />
+              <EmptyState icon={Users} message={keyword ? t.admin.members.notFound : t.admin.members.empty} />
           ) : (
               <div className="space-y-2">
                 {found.map((member) => (
@@ -89,11 +91,11 @@ export default function AdminMembersPage() {
           )}
         </Panel>
 
-        <Notice title="등급 안내">
+        <Notice title={t.admin.members.guideTitle}>
           <ul className="text-ink-muted mt-1 list-inside list-disc space-y-1 opacity-90">
-            <li>등급 {ADMIN_LEVEL} 이상이면 관리자 화면에 들어올 수 있습니다.</li>
-            <li>등급을 바꾸면 권한(role)도 함께 맞춰집니다.</li>
-            <li>자기 등급은 이 화면에서 바꿀 수 없습니다. 스스로 내리면 다시 들어올 수 없습니다.</li>
+            <li>{t.admin.members.guideAdminLevel(ADMIN_LEVEL)}</li>
+            <li>{t.admin.members.guideRole}</li>
+            <li>{t.admin.members.guideSelf}</li>
           </ul>
         </Notice>
       </div>

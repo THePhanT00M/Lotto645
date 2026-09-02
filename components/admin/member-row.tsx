@@ -2,6 +2,7 @@
 
 import { ImageUp, KeyRound, Loader2, LogIn, ShieldCheck, Trash2, User } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import ImageCropDialog from "@/components/account/image-crop-dialog"
 import { Button } from "@/components/ui/button"
 import { useImageFile } from "@/hooks/use-image-file"
@@ -28,6 +29,7 @@ interface MemberRowProps {
 
 /** 회원 한 명. 등급과 프로필 사진을 이 자리에서 바꾼다. */
 export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvatar }: MemberRowProps) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const { file, clear, open, input } = useImageFile()
   const [isEntering, setIsEntering] = useState(false)
@@ -57,12 +59,12 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
 
       if (!data.success) throw new Error(data.message)
 
-      toast({ title: "메일을 보냈습니다", description: data.message })
+      toast({ title: t.admin.members.mailSent, description: data.message })
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "메일을 보내지 못했습니다",
-        description: error instanceof Error ? error.message : "잠시 후 다시 시도해주세요.",
+        title: t.admin.members.mailFailed,
+        description: error instanceof Error ? error.message : t.auth.errors.unknown,
       })
     } finally {
       setIsSendingReset(false)
@@ -89,8 +91,8 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
       setIsEntering(false)
       toast({
         variant: "destructive",
-        title: "계정 전환에 실패했습니다",
-        description: error instanceof Error ? error.message : "잠시 후 다시 시도해주세요.",
+        title: t.admin.members.impersonateFailed,
+        description: error instanceof Error ? error.message : t.auth.errors.unknown,
       })
     }
   }
@@ -113,27 +115,27 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
 
           <div className="min-w-0">
             <div className="text-ink flex items-center gap-1.5 truncate font-semibold">
-              {member.nickname || "이름 없음"}
+              {member.nickname || t.admin.members.noName}
               {member.level >= ADMIN_LEVEL && (
                   <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
               )}
             </div>
             <div className="text-ink-muted truncate text-xs">{member.email ?? "-"}</div>
             <div className="text-ink-muted truncate text-xs">
-              {member.phone_number || "연락처 없음"} · {new Date(member.created_at).toLocaleDateString()} 가입
+              {member.phone_number || t.admin.members.noPhone} · {t.admin.members.joinedAt(new Date(member.created_at).toLocaleDateString())}
             </div>
           </div>
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2 pl-13 sm:pl-0">
           <label className="text-ink-muted flex items-center gap-1.5 text-xs">
-            등급
+            {t.admin.members.level}
             <select
                 value={member.level}
                 disabled={isSelf}
                 onChange={(event) => onChangeLevel(member.id, Number(event.target.value))}
                 className="bg-surface-2 border-line text-ink h-8 rounded-md border px-2 text-sm disabled:opacity-50"
-                title={isSelf ? "자기 등급은 바꿀 수 없습니다." : `${ADMIN_LEVEL} 이상이면 관리자 화면에 들어올 수 있습니다.`}
+                title={isSelf ? t.admin.members.selfLevelHint : t.admin.members.levelHint(ADMIN_LEVEL)}
             >
               {LEVELS.map((level) => (
                   <option key={level} value={level}>
@@ -148,7 +150,7 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
               size="custom"
               onClick={() => void sendReset()}
               disabled={isSendingReset}
-              title="비밀번호를 새로 정할 수 있는 링크를 보냅니다."
+              title={t.admin.members.resetPasswordHint}
               className="bg-surface border-line h-8 px-2 text-xs"
           >
             {isSendingReset ? (
@@ -156,7 +158,7 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
             ) : (
                 <KeyRound className="mr-1 h-3.5 w-3.5" />
             )}
-            비번 재설정
+            {t.admin.members.resetPassword}
           </Button>
 
           <Button
@@ -164,11 +166,11 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
               size="custom"
               onClick={() => void enter()}
               disabled={isSelf || isEntering}
-              title={isSelf ? "이미 자기 계정으로 보고 있습니다." : "이 회원 화면을 그대로 확인합니다."}
+              title={isSelf ? t.admin.members.impersonateSelfHint : t.admin.members.impersonateHint}
               className="bg-surface border-line h-8 px-2 text-xs"
           >
             {isEntering ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <LogIn className="mr-1 h-3.5 w-3.5" />}
-            이 계정으로
+            {t.admin.members.impersonate}
           </Button>
 
           <Button
@@ -179,7 +181,7 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
               className="bg-surface border-line h-8 px-2 text-xs"
           >
             {isSaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <ImageUp className="mr-1 h-3.5 w-3.5" />}
-            사진 변경
+            {t.admin.members.changePhoto}
           </Button>
 
           {member.avatar_url && (
@@ -191,14 +193,14 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
                   className="text-ink-muted hover:text-danger h-8 px-2 text-xs"
               >
                 <Trash2 className="mr-1 h-3.5 w-3.5" />
-                기본으로
+                {t.admin.members.resetPhoto}
               </Button>
           )}
         </div>
 
         <ImageCropDialog
             file={file}
-            title={`${member.nickname || "회원"} 사진 자르기`}
+            title={t.admin.members.cropPhoto(member.nickname || t.admin.members.noName)}
             aspect={1}
             outputWidth={OUTPUT_WIDTH}
             round
