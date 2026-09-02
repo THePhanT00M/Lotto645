@@ -4,6 +4,7 @@ import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import type { UserData } from "@/hooks/use-header-data"
+import { profileColor } from "@/lib/profile/colors"
 import { cn } from "@/lib/utils"
 
 interface ProfileDropdownProps {
@@ -49,8 +50,11 @@ export default function ProfileDropdown({ userData, onLogout, onNavigate }: Prof
           {userData?.avatarUrl ? (
               <img src={userData.avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
           ) : (
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-[#1e1e1e]">
-                <User className="text-ink-muted h-4 w-4" />
+              <span
+                  className="flex h-8 w-8 items-center justify-center rounded-full"
+                  style={{ backgroundColor: profileColor(userData?.id) }}
+              >
+                <User className="h-4 w-4 text-white/90" />
               </span>
           )}
 

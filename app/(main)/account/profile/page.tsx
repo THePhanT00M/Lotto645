@@ -120,13 +120,13 @@ export default function ProfilePage() {
 
         {/* 배너와 겹친 아바타로 이 화면이 '나'를 다루는 곳임을 먼저 보여 준다. */}
         <Panel className="overflow-hidden p-0">
-          <BannerPicker url={bannerUrl} onChange={setBannerUrl} />
+          <BannerPicker url={bannerUrl} seed={profile?.id ?? null} onChange={setBannerUrl} />
 
           <div className="px-5 pb-5">
             {/* 아바타만 배너에 걸치고 이름은 그 아래로 내린다. 옆에 두면 글자 높이에
                 따라 배너를 침범해 잘린 것처럼 보인다. */}
             <div className="-mt-10 flex items-end justify-between gap-3">
-              <AvatarPicker url={avatarUrl} onChange={setAvatarUrl} />
+              <AvatarPicker url={avatarUrl} seed={profile?.id ?? null} onChange={setAvatarUrl} />
 
               <div className="flex flex-wrap items-center justify-end gap-1.5 pb-1">
                 <Badge>Lv.{profile?.level ?? 0}</Badge>

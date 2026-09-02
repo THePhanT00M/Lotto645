@@ -4,6 +4,7 @@ import { Camera, Loader2, Trash2, User } from "lucide-react"
 import ImageCropDialog from "@/components/account/image-crop-dialog"
 import { useImageFile } from "@/hooks/use-image-file"
 import { useProfileImage } from "@/hooks/use-profile-image"
+import { profileColor } from "@/lib/profile/colors"
 import { cn } from "@/lib/utils"
 
 /** 저장할 아바타 크기. 화면에 80px 로 보이므로 고해상도 화면까지 덮는다. */
@@ -11,6 +12,8 @@ const OUTPUT_WIDTH = 512
 
 interface AvatarPickerProps {
   url: string | null
+  /** 사진이 없을 때 채울 색을 정하는 값. 회원 id 를 넘긴다. */
+  seed: string | null
   onChange: (avatarUrl: string | null) => void
 }
 
@@ -20,7 +23,7 @@ interface AvatarPickerProps {
  * 사진을 누르면 파일을 고르고, 쓸 영역을 정한 뒤 올린다. 올리기와 지우기 모두
  * 서버를 거치므로 스토리지 쓰기 권한을 브라우저에 열어 줄 필요가 없다.
  */
-export default function AvatarPicker({ url, onChange }: AvatarPickerProps) {
+export default function AvatarPicker({ url, seed, onChange }: AvatarPickerProps) {
   const { file, clear, open, input } = useImageFile()
   const { isSaving, upload, remove } = useProfileImage("avatar", onChange)
 
@@ -41,8 +44,11 @@ export default function AvatarPicker({ url, onChange }: AvatarPickerProps) {
           {url ? (
               <img src={url} alt="" className="h-full w-full object-cover" />
           ) : (
-              <span className="flex h-full w-full items-center justify-center">
-                <User className="text-ink-muted h-8 w-8" />
+              <span
+                  className="flex h-full w-full items-center justify-center"
+                  style={{ backgroundColor: profileColor(seed) }}
+              >
+                <User className="h-8 w-8 text-white/90" />
               </span>
           )}
 

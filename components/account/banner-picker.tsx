@@ -4,6 +4,7 @@ import { Camera, Loader2, Trash2 } from "lucide-react"
 import ImageCropDialog from "@/components/account/image-crop-dialog"
 import { useImageFile } from "@/hooks/use-image-file"
 import { useProfileImage } from "@/hooks/use-profile-image"
+import { profileGradient } from "@/lib/profile/colors"
 
 /**
  * 배너 비율
@@ -18,6 +19,8 @@ const OUTPUT_WIDTH = 1200
 
 interface BannerPickerProps {
   url: string | null
+  /** 기본 그라데이션을 정하는 값. 회원 id 를 넘긴다. */
+  seed: string | null
   onChange: (bannerUrl: string | null) => void
 }
 
@@ -27,7 +30,7 @@ interface BannerPickerProps {
  * 올린 그림이 없으면 기본 그라데이션을 보여 준다. 띠를 누르면 파일을 고르고,
  * 쓸 영역을 정한 뒤 올린다.
  */
-export default function BannerPicker({ url, onChange }: BannerPickerProps) {
+export default function BannerPicker({ url, seed, onChange }: BannerPickerProps) {
   const { file, clear, open, input } = useImageFile()
   const { isSaving, upload, remove } = useProfileImage("banner", onChange)
 
@@ -41,7 +44,7 @@ export default function BannerPicker({ url, onChange }: BannerPickerProps) {
         {url ? (
             <img src={url} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-500 to-purple-500" />
+            <div className="absolute inset-0" style={{ backgroundImage: profileGradient(seed) }} />
         )}
 
         <button
