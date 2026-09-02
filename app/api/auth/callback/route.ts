@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { sanitizeNextPath } from '@/lib/auth/redirect'
 import { supabase } from '@/lib/supabase/client'
 
 /**
@@ -11,7 +12,8 @@ export async function GET(request: Request) {
     // URL에서 인증 코드(code)와 리다이렉트할 경로(next)를 가져옵니다.
     const code = searchParams.get('code')
     // 'next' 파라미터가 있으면 해당 경로로, 없으면 메인 페이지('/')로 리다이렉트합니다.
-    const next = searchParams.get('next') ?? '/'
+    // 외부 주소가 섞여 들어오면 다른 사이트로 튕겨 나갈 수 있어 같은 사이트 경로만 받습니다.
+    const next = sanitizeNextPath(searchParams.get('next')) ?? '/'
 
     if (code) {
         // 전달받은 인증 코드를 Supabase 세션으로 교환합니다.

@@ -1,7 +1,7 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useState } from "react"
+import LoginLink from "@/components/auth/login-link"
 import MobileMenuToggle from "@/components/layout/header/mobile-menu-toggle"
 import Navigation from "@/components/layout/header/navigation"
 import NotificationBell from "@/components/layout/header/notification-bell"
@@ -77,9 +77,9 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
                     </div>
                   </>
               ) : (
-                  <Link href="/login" className="text-ink-muted hover:text-ink font-medium transition-colors">
+                  <LoginLink className="text-ink-muted hover:text-ink font-medium transition-colors">
                     로그인
-                  </Link>
+                  </LoginLink>
               )}
 
               <MobileMenuToggle showMobileMenu={showMobileMenu} onToggle={toggleMobileMenu} />

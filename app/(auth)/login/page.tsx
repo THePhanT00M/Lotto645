@@ -9,7 +9,9 @@ import AuthShell from "@/components/auth/auth-shell"
 import SocialLogin, { type SocialProvider } from "@/components/auth/social-login"
 import { Button } from "@/components/ui/button"
 import { isValidEmail, useAuthForm } from "@/hooks/use-auth-form"
+import { useNextPath } from "@/hooks/use-next-path"
 import { useToast } from "@/hooks/use-toast"
+import { registerHref } from "@/lib/auth/redirect"
 import { getRememberLogin, setRememberLogin } from "@/lib/auth/session-persistence"
 import { supabase } from "@/lib/supabase/client"
 
@@ -21,12 +23,15 @@ type View = "login" | "forgot"
  *
  * 이메일·비밀번호 로그인과 소셜 로그인을 제공하고, 같은 화면에서
  * 비밀번호 재설정 메일 발송으로 전환할 수 있다.
+ *
+ * 로그인을 마치면 메인이 아니라 로그인 버튼을 누른 화면으로 돌려보낸다.
  */
 export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [view, setView] = useState<View>("login")
   const [rememberLogin, setRemember] = useState(true)
+  const nextPath = useNextPath()
 
   // 지난번 선택을 그대로 보여 준다.
   useEffect(() => setRemember(getRememberLogin()), [])
@@ -64,7 +69,7 @@ export default function LoginPage() {
         throw error
       }
 
-      router.push("/")
+      router.push(nextPath)
       router.refresh()
     } catch (error) {
       toast({
@@ -104,7 +109,10 @@ export default function LoginPage() {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/api/auth/callback` },
+      // 소셜 로그인은 화면을 떠났다가 콜백으로 돌아오므로, 돌아갈 경로도 주소에 실어 보낸다.
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`,
+      },
     })
 
     if (error) {
@@ -202,7 +210,7 @@ export default function LoginPage() {
             {isLogin ? (
                 <p className="text-ink-muted text-sm">
                   아직 계정이 없으신가요?
-                  <Link href="/register" className="ml-1 font-medium text-blue-600 dark:text-blue-400">
+                  <Link href={registerHref(nextPath)} className="ml-1 font-medium text-blue-600 dark:text-blue-400">
                     회원가입
                   </Link>
                 </p>
