@@ -6,6 +6,7 @@ import RecommendationCard from "@/components/analysis/recommendation-card"
 import { AnalysisSkeleton } from "@/components/analysis/analysis-skeleton"
 import MultipleNumberAnalysis from "@/components/analysis/multiple-number-analysis"
 import { Notice } from "@/components/common/notice"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { Panel, Surface } from "@/components/common/panel"
 import { SectionHeading } from "@/components/common/page-header"
 import { Button } from "@/components/ui/button"
@@ -30,6 +31,7 @@ interface AnalysisPanelProps {
  * 뽑은 번호를 과거 당첨 이력과 대조하고, AI 추천 번호로 갈아 끼워 볼 수 있는 패널.
  */
 export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
+  const { t } = useTranslation()
   const { draws, latestDrawNo, isLoading } = useWinningDraws()
 
   const [target, setTarget] = useState<AnalysisTarget>("user")
@@ -78,7 +80,7 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
 
   return (
       <Panel className="space-y-4">
-        <SectionHeading icon={Info} title="추천 번호 정보" />
+        <SectionHeading icon={Info} title={t.analysis.title} />
 
         {isLoading ? (
             <AnalysisSkeleton />
@@ -89,7 +91,7 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <MousePointerClick className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      <h3 className="text-ink font-bold">번호 분석 및 AI 추천</h3>
+                      <h3 className="text-ink font-bold">{t.analysis.heading}</h3>
                     </div>
                     <p className="text-ink-muted text-sm">
                       추첨된 번호를 분석하거나 AI의 새로운 추천을 받을 수 있습니다.
@@ -114,7 +116,7 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
                         className="flex-1 bg-blue-600 text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 sm:flex-none"
                     >
                       <Sparkles className={`mr-2 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
-                      {isGenerating ? "분석 중..." : "AI 추천"}
+                      {isGenerating ? t.analysis.generating : t.analysis.recommend}
                     </Button>
                   </div>
                 </div>
@@ -129,7 +131,7 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
             </div>
         )}
 
-        <Notice title="분석 유의사항" tone="warning">
+        <Notice title={t.analysis.noticeTitle} tone="warning">
           <p className="opacity-90">
             이 분석은 과거 <span className="font-medium">{draws.length}회</span>의 실제 로또 당첨번호를 기반으로 합니다.
             통계 데이터는 참고용으로만 사용하시기 바랍니다.

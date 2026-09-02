@@ -4,6 +4,7 @@ import { BarChart3, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } fro
 import { useMemo, useState } from "react"
 import { Ball } from "@/components/lotto/ball"
 import { MULTIPLE_SIZES, multipleLabel, type MultipleNumber, type MultipleSize } from "@/lib/lotto/analytics"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { cn } from "@/lib/utils"
 
 const PAGE_SIZE_OPTIONS = [15, 30, 50] as const
@@ -14,6 +15,7 @@ interface MultipleNumberAnalysisProps {
 
 /** 선택한 번호의 부분 조합이 과거에 얼마나 함께 당첨됐는지 보여준다. */
 export default function MultipleNumberAnalysis({ multiples }: MultipleNumberAnalysisProps) {
+  const { t } = useTranslation()
   const [size, setSize] = useState<MultipleSize>(5)
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE_OPTIONS[0])
@@ -43,7 +45,7 @@ export default function MultipleNumberAnalysis({ multiples }: MultipleNumberAnal
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center sm:gap-0">
           <div className="flex items-center">
             <BarChart3 className="mr-2 h-5 w-5 text-blue-600" />
-            <h3 className="text-ink font-bold">당첨 패턴 통계</h3>
+            <h3 className="text-ink font-bold">{t.analysis.patternTitle}</h3>
           </div>
 
           <div className="border-line flex self-end overflow-hidden rounded-md border sm:self-auto">
@@ -103,6 +105,7 @@ export default function MultipleNumberAnalysis({ multiples }: MultipleNumberAnal
 
 /** 조합 하나와 그 등장 이력 카드. */
 function MultipleCard({ item }: { item: MultipleNumber }) {
+  const { t } = useTranslation()
   const hasHit = item.count > 0
 
   return (
@@ -126,7 +129,7 @@ function MultipleCard({ item }: { item: MultipleNumber }) {
                 hasHit ? "text-blue-600 dark:text-blue-400" : "text-ink-muted",
             )}
         >
-          {hasHit ? `${item.count}회 함께 등장` : "함께 등장한 적 없음"}
+          {hasHit ? t.analysis.together(item.count) : t.analysis.neverTogether}
         </div>
 
         {hasHit && (
@@ -156,6 +159,7 @@ interface PaginationProps {
 }
 
 function Pagination({ page, totalPages, pageSize, totalItems, onPageChange, onPageSizeChange }: PaginationProps) {
+  const { t } = useTranslation()
   const first = page * pageSize + 1
   const last = Math.min((page + 1) * pageSize, totalItems)
 
@@ -166,10 +170,10 @@ function Pagination({ page, totalPages, pageSize, totalItems, onPageChange, onPa
         </div>
 
         <div className="flex items-center">
-          <PageButton onClick={() => onPageChange(0)} disabled={page === 0} label="첫 페이지">
+          <PageButton onClick={() => onPageChange(0)} disabled={page === 0} label={t.analysis.firstPage}>
             <ChevronsLeft className="h-4 w-4" />
           </PageButton>
-          <PageButton onClick={() => onPageChange(page - 1)} disabled={page === 0} label="이전 페이지">
+          <PageButton onClick={() => onPageChange(page - 1)} disabled={page === 0} label={t.analysis.previousPage}>
             <ChevronLeft className="h-4 w-4" />
           </PageButton>
 
@@ -177,16 +181,16 @@ function Pagination({ page, totalPages, pageSize, totalItems, onPageChange, onPa
             {page + 1} / {totalPages}
           </span>
 
-          <PageButton onClick={() => onPageChange(page + 1)} disabled={page >= totalPages - 1} label="다음 페이지">
+          <PageButton onClick={() => onPageChange(page + 1)} disabled={page >= totalPages - 1} label={t.analysis.nextPage}>
             <ChevronRight className="h-4 w-4" />
           </PageButton>
-          <PageButton onClick={() => onPageChange(totalPages - 1)} disabled={page >= totalPages - 1} label="마지막 페이지">
+          <PageButton onClick={() => onPageChange(totalPages - 1)} disabled={page >= totalPages - 1} label={t.analysis.lastPage}>
             <ChevronsRight className="h-4 w-4" />
           </PageButton>
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="text-ink-muted text-xs">표시:</span>
+          <span className="text-ink-muted text-xs">{t.analysis.perPage}</span>
           <select
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}

@@ -2,12 +2,12 @@
 
 import { Brain, Layers, Ruler, ShieldCheck, Sigma, Sparkles, Waypoints } from "lucide-react"
 import { Fragment } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import PaperPattern from "@/components/analysis/paper-pattern"
 import { BallRow } from "@/components/lotto/ball-row"
 import { LINE, SkeletonLine, SkeletonLines } from "@/components/common/skeleton-text"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ALL_NUMBERS } from "@/lib/lotto/constants"
-import { FEATURE_LABELS } from "@/lib/lotto/features"
 import { GRID_COLUMNS } from "@/lib/lotto/grid"
 import { cn } from "@/lib/utils"
 import type { EngineStats, Recommendation } from "@/lib/lotto/engine"
@@ -20,6 +20,8 @@ interface RecommendationCardProps {
 
 /** 추천 결과와 그 근거가 된 용지 모양을 보여준다. */
 export default function RecommendationCard({ recommendation, stats, isGenerating }: RecommendationCardProps) {
+  const { t } = useTranslation()
+
   if (isGenerating) return <GeneratingSkeleton />
   if (!recommendation || !stats) return null
 
@@ -30,7 +32,7 @@ export default function RecommendationCard({ recommendation, stats, isGenerating
       <div className="bg-surface border-line rounded-lg border p-4">
         <div className="flex items-center">
           <Sparkles className="mr-2 h-5 w-5 text-blue-600" />
-          <h3 className="text-ink font-bold">AI 추천 번호</h3>
+          <h3 className="text-ink font-bold">{t.analysis.recommendation.title}</h3>
         </div>
 
         <p className="text-ink-muted mt-2 mb-4 text-sm leading-relaxed">
@@ -47,13 +49,12 @@ export default function RecommendationCard({ recommendation, stats, isGenerating
           <div className="bg-surface-2 rounded-lg p-3">
             <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
               <Waypoints className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              용지 위 모양
+              {t.analysis.recommendation.shape}
             </h4>
             <PaperPattern numbers={numbers} compare={nearestDraw?.numbers} className="w-full" />
             {nearestDraw && (
                 <p className="text-ink-muted mt-2 text-center text-xs">
-                  점선은 모양이 가장 닮은 <span className="text-ink font-medium">{nearestDraw.drawNo}회</span> (
-                  {nearestDraw.date})
+                  {t.analysis.recommendation.nearest(nearestDraw.drawNo, nearestDraw.date)}
                 </p>
             )}
           </div>
@@ -61,21 +62,21 @@ export default function RecommendationCard({ recommendation, stats, isGenerating
           <div className="space-y-3">
             <ScoreBar
                 icon={Brain}
-                label="패턴 판별 점수"
-                hint="규칙적으로 찍은 조합과 실제 당첨 조합을 가르도록 학습한 신경망의 출력. 검증 데이터로 눈금을 다시 매겨 실제 비율에 가깝게 보정한 값입니다."
+                label={t.analysis.recommendation.networkScore}
+                hint={t.analysis.recommendation.networkHint}
                 value={networkScore}
             />
             <ScoreBar
                 icon={Sigma}
-                label="분포 적합도"
-                hint="역대 당첨 조합이 이루는 분포의 중심에서 얼마나 가까운지 (마할라노비스 거리)"
+                label={t.analysis.recommendation.typicality}
+                hint={t.analysis.recommendation.typicalityHint}
                 value={typicality}
             />
 
             <div className="bg-surface-2 rounded-lg p-3">
               <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
                 <ShieldCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
-                과거 회차와의 거리
+                {t.analysis.recommendation.pastDistance}
               </h4>
               <p className="text-ink-muted text-xs leading-relaxed">
                 {closestPastDraw ? (
@@ -90,7 +91,7 @@ export default function RecommendationCard({ recommendation, stats, isGenerating
                       )}
                     </>
                 ) : (
-                    <>과거 회차와 겹치는 번호가 없습니다.</>
+                    <>{t.analysis.recommendation.noOverlap}</>
                 )}
               </p>
             </div>
@@ -98,15 +99,15 @@ export default function RecommendationCard({ recommendation, stats, isGenerating
             <div className="bg-surface-2 rounded-lg p-3">
               <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
                 <Ruler className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                모양 지표
+                {t.analysis.recommendation.metrics}
               </h4>
               <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                <Metric label={FEATURE_LABELS.hullArea} value={features.hullArea.toFixed(1)} />
-                <Metric label={FEATURE_LABELS.mstLength} value={features.mstLength.toFixed(1)} />
-                <Metric label={FEATURE_LABELS.eccentricity} value={features.eccentricity.toFixed(2)} />
-                <Metric label={FEATURE_LABELS.nearestMean} value={features.nearestMean.toFixed(2)} />
-                <Metric label={FEATURE_LABELS.rowsUsed} value={`${features.rowsUsed}줄`} />
-                <Metric label={FEATURE_LABELS.columnsUsed} value={`${features.columnsUsed}줄`} />
+                <Metric label={t.features.hullArea} value={features.hullArea.toFixed(1)} />
+                <Metric label={t.features.mstLength} value={features.mstLength.toFixed(1)} />
+                <Metric label={t.features.eccentricity} value={features.eccentricity.toFixed(2)} />
+                <Metric label={t.features.nearestMean} value={features.nearestMean.toFixed(2)} />
+                <Metric label={t.features.rowsUsed} value={t.analysis.recommendation.lines(features.rowsUsed)} />
+                <Metric label={t.features.columnsUsed} value={t.analysis.recommendation.lines(features.columnsUsed)} />
               </dl>
             </div>
           </div>
@@ -124,7 +125,7 @@ export default function RecommendationCard({ recommendation, stats, isGenerating
             점수 보정 Brier {stats.brierBefore.toFixed(3)} → {stats.brierAfter.toFixed(3)}
           </span>
           <span>학습 {Math.round(stats.trainMs)}ms</span>
-          <span>· 과거 데이터 기반 예측이며 당첨을 보장하지 않습니다.</span>
+          <span>· {t.analysis.recommendation.disclaimer}</span>
         </p>
       </div>
   )
@@ -175,10 +176,12 @@ function Metric({ label, value }: { label: string; value: string }) {
  * 알 수 없다. 글줄 수와 항목 수는 실제로 감기는 만큼 잡았다.
  */
 function GeneratingSkeleton() {
+  const { t } = useTranslation()
+
   return (
       <div
           role="status"
-          aria-label="AI 추천 번호를 만드는 중"
+          aria-label={t.analysis.recommendation.building}
           className="bg-surface border-line rounded-lg border p-4"
       >
         <div className="flex h-6 items-center">

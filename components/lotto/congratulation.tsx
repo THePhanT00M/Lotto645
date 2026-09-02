@@ -3,12 +3,14 @@
 import confetti from "canvas-confetti"
 import { motion } from "framer-motion"
 import { useEffect } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
 /** 폭죽이 터지기까지의 지연. 스크롤 이동이 끝난 뒤 보이도록 한다. */
 const CONFETTI_DELAY_MS = 300
 
 /** 추첨 완료 축하 배너. 표시될 때 한 번 폭죽을 터뜨린다. */
 export default function Congratulation() {
+  const { t } = useTranslation()
   useEffect(() => {
     const timer = setTimeout(() => {
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } })
@@ -27,7 +29,7 @@ export default function Congratulation() {
         <h2 className="mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-xl font-bold text-transparent dark:from-blue-400 dark:to-purple-400">
           추첨 완료!
         </h2>
-        <p className="text-gray-700 dark:text-gray-300">🍀 행운이 함께하길 바랍니다! 🍀</p>
+        <p className="text-gray-700 dark:text-gray-300">🍀 {t.draw.goodLuck} 🍀</p>
       </motion.div>
   )
 }
