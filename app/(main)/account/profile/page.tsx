@@ -3,6 +3,8 @@
 import { Loader2, Save, User } from "lucide-react"
 import { useEffect, useState } from "react"
 import AvatarPicker from "@/components/account/avatar-picker"
+import BannerPicker from "@/components/account/banner-picker"
+import { Notice } from "@/components/common/notice"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +20,7 @@ interface Profile {
   nickname: string | null
   phone_number: string | null
   avatar_url: string | null
+  banner_url: string | null
   role: string
   level: number
   joinedAt: string | null
@@ -35,6 +38,8 @@ export default function ProfilePage() {
   const [nickname, setNickname] = useState("")
   const [phone, setPhone] = useState("")
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -46,12 +51,19 @@ export default function ProfilePage() {
         const response = await authorizedFetch("/api/profile")
         const data = await response.json()
 
-        if (cancelled || !data.success) return
+        if (cancelled) return
+
+        // 실패를 조용히 넘기면 빈 프로필이 그려져, 정보가 사라진 것처럼 보인다.
+        if (!data.success) {
+          setLoadError(data.message ?? "잠시 후 다시 시도해주세요.")
+          return
+        }
 
         setProfile(data.profile)
         setNickname(data.profile.nickname ?? "")
         setPhone(data.profile.phone_number ?? "")
         setAvatarUrl(data.profile.avatar_url ?? null)
+        setBannerUrl(data.profile.banner_url ?? null)
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -100,9 +112,15 @@ export default function ProfilePage() {
           <p className="text-ink-muted mt-1 text-sm">계정에 표시되는 정보를 확인하고 수정합니다.</p>
         </div>
 
+        {loadError && (
+            <Notice title="프로필을 불러오지 못했습니다" tone="danger">
+              <p className="opacity-90">{loadError}</p>
+            </Notice>
+        )}
+
         {/* 배너와 겹친 아바타로 이 화면이 '나'를 다루는 곳임을 먼저 보여 준다. */}
         <Panel className="overflow-hidden p-0">
-          <div className="h-20 bg-gradient-to-br from-blue-600 via-indigo-500 to-purple-500" />
+          <BannerPicker url={bannerUrl} onChange={setBannerUrl} />
 
           <div className="px-5 pb-5">
             <div className="-mt-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -215,7 +233,7 @@ function ProfileSkeleton() {
         </div>
 
         <Panel className="overflow-hidden p-0">
-          <Skeleton className="h-20 rounded-none" />
+          <Skeleton className="aspect-[5/1] w-full rounded-none" />
 
           <div className="px-5 pb-5">
             <div className="-mt-10 flex items-end gap-4">

@@ -6,7 +6,7 @@ import { getAdminClient } from "@/lib/supabase/admin"
 const TABLE = "profiles"
 
 /** 사용자가 직접 고칠 수 있는 항목 */
-const EDITABLE_FIELDS = ["nickname", "phone_number", "avatar_url"] as const
+const EDITABLE_FIELDS = ["nickname", "phone_number"] as const
 
 /**
  * GET /api/profile
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = getAdminClient()
     const [{ data: profile, error }, { data: auth }] = await Promise.all([
-      supabase.from(TABLE).select("nickname, phone_number, avatar_url, role, level, created_at").eq("id", userId).single(),
+      supabase.from(TABLE).select("nickname, phone_number, avatar_url, banner_url, role, level, created_at").eq("id", userId).single(),
       supabase.auth.admin.getUserById(userId),
     ])
 

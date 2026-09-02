@@ -1,16 +1,14 @@
 "use client"
 
 import { Camera, Loader2, User } from "lucide-react"
-import { useRef, useState } from "react"
+import ImageCropDialog from "@/components/account/image-crop-dialog"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
-import { authorizedFetch } from "@/lib/auth/client"
-import { emitAvatarChanged } from "@/lib/auth/profile-events"
+import { useImageFile } from "@/hooks/use-image-file"
+import { useProfileImage } from "@/hooks/use-profile-image"
 import { cn } from "@/lib/utils"
 
-/** 서버와 같은 제한. 올리기 전에 걸러 헛걸음을 줄인다. */
-const MAX_BYTES = 2 * 1024 * 1024
-const ACCEPTED = ["image/png", "image/jpeg", "image/webp", "image/gif"]
+/** 저장할 아바타 크기. 화면에 80px 로 보이므로 고해상도 화면까지 덮는다. */
+const OUTPUT_WIDTH = 512
 
 interface AvatarPickerProps {
   url: string | null
@@ -20,53 +18,16 @@ interface AvatarPickerProps {
 /**
  * 아바타 보기·바꾸기
  *
- * 사진을 누르면 파일 선택이 열린다. 올리기와 지우기 모두 서버를 거치므로
- * 스토리지 쓰기 권한을 브라우저에 열어 줄 필요가 없다.
+ * 사진을 누르면 파일을 고르고, 쓸 영역을 정한 뒤 올린다. 올리기와 지우기 모두
+ * 서버를 거치므로 스토리지 쓰기 권한을 브라우저에 열어 줄 필요가 없다.
  */
 export default function AvatarPicker({ url, onChange }: AvatarPickerProps) {
-  const { toast } = useToast()
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [isBusy, setIsBusy] = useState(false)
+  const { file, clear, open, input } = useImageFile()
+  const { isSaving, upload, remove } = useProfileImage("avatar", onChange)
 
-  const send = async (init: RequestInit, done: string) => {
-    setIsBusy(true)
-
-    try {
-      const response = await authorizedFetch("/api/profile/avatar", init)
-      const data = await response.json()
-
-      if (!data.success) throw new Error(data.message)
-
-      const next: string | null = data.avatarUrl ?? null
-      onChange(next)
-      emitAvatarChanged(next)
-      toast({ title: done })
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "사진을 바꾸지 못했습니다",
-        description: error instanceof Error ? error.message : "잠시 후 다시 시도해주세요.",
-      })
-    } finally {
-      setIsBusy(false)
-    }
-  }
-
-  const upload = (file: File) => {
-    if (!ACCEPTED.includes(file.type)) {
-      toast({ variant: "destructive", title: "PNG·JPG·WEBP·GIF 형식만 올릴 수 있습니다." })
-      return
-    }
-
-    if (file.size > MAX_BYTES) {
-      toast({ variant: "destructive", title: "이미지는 2MB 이하만 올릴 수 있습니다." })
-      return
-    }
-
-    const body = new FormData()
-    body.append("file", file)
-
-    void send({ method: "POST", body }, "사진을 바꿨습니다.")
+  const apply = async (image: Blob) => {
+    await upload(image)
+    clear()
   }
 
   return (
@@ -74,8 +35,8 @@ export default function AvatarPicker({ url, onChange }: AvatarPickerProps) {
         <div className="relative">
           <button
               type="button"
-              onClick={() => inputRef.current?.click()}
-              disabled={isBusy}
+              onClick={open}
+              disabled={isSaving}
               aria-label="프로필 사진 바꾸기"
               className="group bg-surface border-line ring-panel relative block h-20 w-20 overflow-hidden rounded-full border ring-4 disabled:cursor-not-allowed"
           >
@@ -90,10 +51,10 @@ export default function AvatarPicker({ url, onChange }: AvatarPickerProps) {
             <span
                 className={cn(
                     "absolute inset-0 flex items-center justify-center bg-black/50 transition-opacity",
-                    isBusy ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                    isSaving ? "opacity-100" : "opacity-0 group-hover:opacity-100",
                 )}
             >
-              {isBusy ? (
+              {isSaving ? (
                   <Loader2 className="h-5 w-5 animate-spin text-white" />
               ) : (
                   <Camera className="h-5 w-5 text-white" />
@@ -101,7 +62,7 @@ export default function AvatarPicker({ url, onChange }: AvatarPickerProps) {
             </span>
           </button>
 
-          {/* 손가락으로 쓰는 화면에는 hover가 없어, 누를 수 있다는 표시를 따로 둔다. */}
+          {/* 손가락으로 쓰는 화면에는 hover 가 없어, 누를 수 있다는 표시를 따로 둔다. */}
           <span className="border-panel pointer-events-none absolute right-0 bottom-0 flex h-6 w-6 items-center justify-center rounded-full border-2 bg-blue-600">
             <Camera className="h-3 w-3 text-white" />
           </span>
@@ -114,8 +75,8 @@ export default function AvatarPicker({ url, onChange }: AvatarPickerProps) {
                   type="button"
                   variant="ghost"
                   size="custom"
-                  disabled={isBusy}
-                  onClick={() => void send({ method: "DELETE" }, "사진을 지웠습니다.")}
+                  disabled={isSaving}
+                  onClick={() => void remove()}
                   className="text-ink-muted hover:text-danger h-6 px-2 text-xs"
               >
                 삭제
@@ -123,18 +84,18 @@ export default function AvatarPicker({ url, onChange }: AvatarPickerProps) {
           )}
         </div>
 
-        <input
-            ref={inputRef}
-            type="file"
-            accept={ACCEPTED.join(",")}
-            className="hidden"
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              // 같은 파일을 다시 골라도 change가 일어나도록 값을 비운다.
-              event.target.value = ""
-              if (file) upload(file)
-            }}
+        <ImageCropDialog
+            file={file}
+            title="프로필 사진 자르기"
+            aspect={1}
+            outputWidth={OUTPUT_WIDTH}
+            round
+            isSaving={isSaving}
+            onCancel={clear}
+            onConfirm={(image) => void apply(image)}
         />
+
+        {input}
       </div>
   )
 }

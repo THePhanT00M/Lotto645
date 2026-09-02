@@ -4,10 +4,9 @@ import { resolveUserId } from "@/lib/auth/api-user"
 import { clearProfileImage, saveProfileImage, validateImage } from "@/lib/profile/images"
 
 /**
- * POST /api/profile/avatar
+ * POST /api/profile/banner
  *
- * 잘라 낸 사진을 아바타로 올린다. 스토리지 쓰기를 브라우저에 열어 주지 않으려고
- * 업로드도 서버가 서비스 롤로 대신 한다.
+ * 잘라 낸 사진을 프로필 배너로 올린다.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -21,27 +20,27 @@ export async function POST(request: NextRequest) {
     const invalid = validateImage(file)
     if (invalid) return fail(invalid, 400)
 
-    return ok({ avatarUrl: await saveProfileImage(userId, file, "avatar") })
+    return ok({ bannerUrl: await saveProfileImage(userId, file, "banner") })
   } catch (error) {
-    console.error("아바타 업로드 실패:", errorMessage(error))
+    console.error("배너 업로드 실패:", errorMessage(error))
     return fail(errorMessage(error))
   }
 }
 
 /**
- * DELETE /api/profile/avatar
+ * DELETE /api/profile/banner
  *
- * 아바타를 지우고 기본 아이콘으로 되돌린다.
+ * 배너를 지우고 기본 그라데이션으로 되돌린다.
  */
 export async function DELETE(request: NextRequest) {
   try {
     const userId = await resolveUserId(request)
     if (!userId) return fail("로그인이 필요합니다.", 401)
 
-    await clearProfileImage(userId, "avatar")
-    return ok({ avatarUrl: null })
+    await clearProfileImage(userId, "banner")
+    return ok({ bannerUrl: null })
   } catch (error) {
-    console.error("아바타 삭제 실패:", errorMessage(error))
+    console.error("배너 삭제 실패:", errorMessage(error))
     return fail(errorMessage(error))
   }
 }
