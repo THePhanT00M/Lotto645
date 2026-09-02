@@ -90,12 +90,18 @@ export default function LoginPage() {
 
     setIsSubmitting(true)
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
+      // 서버가 대신 보낸다. 브라우저에서 보내면 링크에 딸린 코드를 풀 검증값이
+      // 이 브라우저에만 남아, 메일을 다른 기기에서 열면 열리지 않는다.
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: values.email }),
       })
-      if (error) throw error
+      const data = await response.json()
 
-      toast({ title: "이메일 전송 완료", description: "비밀번호 재설정 링크를 확인해주세요." })
+      if (!data.success) throw new Error(data.message)
+
+      toast({ title: "메일을 보냈습니다", description: data.message })
       setView("login")
     } catch (error) {
       setErrors({ email: error instanceof Error ? error.message : "메일 전송에 실패했습니다." })

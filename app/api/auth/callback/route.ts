@@ -1,30 +1,33 @@
 import { NextResponse } from 'next/server'
 import { sanitizeNextPath } from '@/lib/auth/redirect'
-import { supabase } from '@/lib/supabase/client'
+import { createServerSupabase } from '@/lib/supabase/server'
 
 /**
  * Supabase 인증 콜백 핸들러
- * 이메일 확인, 비밀번호 재설정, OAuth 로그인 후 인증 코드를 세션으로 교환합니다.
+ *
+ * 가입 확인 메일처럼 브라우저에서 시작한 인증은 PKCE 로 진행된다. 코드를
+ * 세션으로 바꾸려면 그 브라우저에 저장된 검증값이 필요하므로, 쿠키를 함께
+ * 다루는 서버 클라이언트를 써야 한다. 브라우저용 클라이언트로는 검증값을
+ * 찾지 못해 언제나 실패한다.
+ *
+ * 바꾼 세션도 이 클라이언트가 쿠키에 적어 주므로, 돌아간 화면은 이미
+ * 로그인된 상태가 된다.
  */
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
 
-    // URL에서 인증 코드(code)와 리다이렉트할 경로(next)를 가져옵니다.
     const code = searchParams.get('code')
-    // 'next' 파라미터가 있으면 해당 경로로, 없으면 메인 페이지('/')로 리다이렉트합니다.
     // 외부 주소가 섞여 들어오면 다른 사이트로 튕겨 나갈 수 있어 같은 사이트 경로만 받습니다.
     const next = sanitizeNextPath(searchParams.get('next')) ?? '/'
 
     if (code) {
-        // 전달받은 인증 코드를 Supabase 세션으로 교환합니다.
+        const supabase = await createServerSupabase()
         const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-        if (!error) {
-            // 인증 성공 시 지정된 경로로 리다이렉트합니다.
-            return NextResponse.redirect(`${origin}${next}`)
-        }
+        if (!error) return NextResponse.redirect(`${origin}${next}`)
+
+        console.error('인증 코드를 세션으로 바꾸지 못했습니다:', error.message)
     }
 
-    // 인증 실패 시 에러 메시지 쿼리 파라미터와 함께 로그인 페이지로 리다이렉트합니다.
     return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
 }
