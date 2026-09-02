@@ -12,6 +12,8 @@ import { isValidEmail, useAuthForm } from "@/hooks/use-auth-form"
 import { useNextPath } from "@/hooks/use-next-path"
 import { useToast } from "@/hooks/use-toast"
 import { describeAuthError } from "@/lib/auth/error-messages"
+import { writeLocaleCookie } from "@/lib/i18n/client"
+import { toLocale } from "@/lib/i18n/locales"
 import { registerHref } from "@/lib/auth/redirect"
 import { getRememberLogin, setRememberLogin } from "@/lib/auth/session-persistence"
 import { supabase } from "@/lib/supabase/client"
@@ -67,6 +69,9 @@ export default function LoginPage() {
         return
       }
 
+      // 계정에 담긴 언어를 이 브라우저에도 옮겨, 다음 화면부터 그 말로 보이게 한다.
+      await applyAccountLocale()
+
       router.push(nextPath)
       router.refresh()
     } catch (error) {
@@ -77,6 +82,18 @@ export default function LoginPage() {
       })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  /** 로그인한 계정이 골라 둔 언어를 이 브라우저에 적어 둔다. */
+  const applyAccountLocale = async () => {
+    try {
+      const response = await fetch("/api/profile")
+      const data = await response.json()
+
+      if (data.success && data.profile?.language) writeLocaleCookie(toLocale(data.profile.language))
+    } catch {
+      // 언어를 못 읽어도 로그인 자체는 끝났다. 지금 쿠키에 있는 언어로 이어 간다.
     }
   }
 

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import LoginLink from "@/components/auth/login-link"
+import LanguageSelect from "@/components/i18n/language-select"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import MobileMenuToggle from "@/components/layout/header/mobile-menu-toggle"
 import Navigation from "@/components/layout/header/navigation"
 import NotificationBell from "@/components/layout/header/notification-bell"
@@ -21,6 +23,7 @@ interface HeaderProps {
 
 /** 사이트 상단 헤더. 로그인 상태에 따라 우측 영역이 바뀐다. */
 export default function Header({ initialUser, initialUnreadCount }: HeaderProps) {
+  const { t } = useTranslation()
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(initialUser))
   const [showMobileMenu, setShowMobileMenu] = useState(false)
 
@@ -67,6 +70,7 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
             />
 
             <div className="flex items-center gap-2">
+              <LanguageSelect />
               <ThemeToggle />
 
               {isLoggedIn ? (
@@ -78,7 +82,7 @@ export default function Header({ initialUser, initialUnreadCount }: HeaderProps)
                   </>
               ) : (
                   <LoginLink className="text-ink-muted hover:text-ink font-medium transition-colors">
-                    로그인
+                    {t.nav.login}
                   </LoginLink>
               )}
 

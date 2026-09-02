@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, Bell, FlaskConical, RefreshCw, Users } from "lucide-react"
+import { BarChart3, Bell, FlaskConical, Mail, RefreshCw, Users } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/admin/members", label: "회원 관리", icon: Users },
   { href: "/admin/stats", label: "통계", icon: BarChart3 },
   { href: "/admin/ai-lab", label: "AI 추천 데이터", icon: FlaskConical },
+  { href: "/admin/contacts", label: "문의 관리", icon: Mail },
   { href: "/admin/notifications", label: "알림 발송", icon: Bell },
   { href: "/admin/update", label: "회차 갱신", icon: RefreshCw },
 ] as const

@@ -3,9 +3,11 @@ import localFont from "next/font/local"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Suspense, type ReactNode } from "react"
+import { LocaleProvider } from "@/components/i18n/locale-provider"
 import SplashScreen from "@/components/layout/splash-screen"
 import { ThemeProvider } from "@/components/layout/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { resolveLocale } from "@/lib/i18n/server"
 import "./globals.css"
 
 /** 본문에 쓰는 한글 폰트. 굵기별 파일을 직접 싣는다. */
@@ -45,14 +47,18 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const locale = await resolveLocale()
+
   return (
-      <html lang="ko" suppressHydrationWarning>
+      <html lang={locale} suppressHydrationWarning>
         <body className={`${notoSansKR.variable} bg-canvas flex min-h-screen flex-col font-sans`}>
           <Suspense fallback={<SplashScreen />}>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-              {children}
-              <Toaster />
+              <LocaleProvider locale={locale}>
+                {children}
+                <Toaster />
+              </LocaleProvider>
               <Analytics />
               <SpeedInsights />
             </ThemeProvider>
