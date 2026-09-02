@@ -1,10 +1,15 @@
 "use client"
 
 import { Brain, Layers, Ruler, ShieldCheck, Sigma, Sparkles, Waypoints } from "lucide-react"
+import { Fragment } from "react"
 import PaperPattern from "@/components/analysis/paper-pattern"
 import { BallRow } from "@/components/lotto/ball-row"
+import { LINE, SkeletonLine, SkeletonLines } from "@/components/common/skeleton-text"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ALL_NUMBERS } from "@/lib/lotto/constants"
 import { FEATURE_LABELS } from "@/lib/lotto/features"
+import { GRID_COLUMNS } from "@/lib/lotto/grid"
+import { cn } from "@/lib/utils"
 import type { EngineStats, Recommendation } from "@/lib/lotto/engine"
 
 interface RecommendationCardProps {
@@ -162,27 +167,134 @@ function Metric({ label, value }: { label: string; value: string }) {
   )
 }
 
+/**
+ * 생성 중 자리표시
+ *
+ * 완성된 카드와 같은 골격·같은 여백으로 그린다. 큰 사각형 몇 개로 때우면
+ * 결과가 들어오는 순간 높이가 튀어 화면이 흔들리고, 무엇이 만들어지는 중인지도
+ * 알 수 없다. 글줄 수와 항목 수는 실제로 감기는 만큼 잡았다.
+ */
 function GeneratingSkeleton() {
   return (
-      <div className="bg-surface border-line space-y-4 rounded-lg border p-4">
-        <div className="flex items-center space-x-2">
-          <Skeleton className="h-5 w-5 rounded-md" />
-          <Skeleton className="h-6 w-40" />
+      <div
+          role="status"
+          aria-label="AI 추천 번호를 만드는 중"
+          className="bg-surface border-line rounded-lg border p-4"
+      >
+        <div className="flex h-6 items-center">
+          <Skeleton className="mr-2 h-5 w-5 rounded-md" />
+          <Skeleton className="h-4 w-28" />
         </div>
-        <Skeleton className="h-10 w-full" />
-        <div className="flex justify-center gap-2 py-4">
-          {Array.from({ length: 6 }, (_, i) => (
-              <Skeleton key={i} className="h-10 w-10 rounded-full sm:h-12 sm:w-12" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Skeleton className="h-[300px] rounded-lg" />
-          <div className="space-y-3">
-            <Skeleton className="h-20 rounded-lg" />
-            <Skeleton className="h-20 rounded-lg" />
-            <Skeleton className="h-24 rounded-lg" />
+
+        <SkeletonLines
+            className="mt-2 mb-4"
+            line={LINE.smRelaxed}
+            bar="h-3.5"
+            widths={["w-full", "w-full md:w-24"]}
+            narrowWidths={["w-2/5"]}
+            narrowUntil="md"
+        />
+
+        <div className="bg-surface-2 rounded-lg px-2 py-4">
+          <div className="mx-auto flex max-w-xs items-center gap-2">
+            {Array.from({ length: 6 }, (_, index) => (
+                <Skeleton key={index} className="aspect-square w-full min-w-0 rounded-full" />
+            ))}
           </div>
         </div>
+
+        <div className="mt-4 grid grid-cols-1 items-start gap-4 md:grid-cols-2">
+          <div className="bg-surface-2 rounded-lg p-3">
+            <BlockHeading width="w-24" />
+
+            {/* 용지 칸을 그대로 깔아 둔다. 사각형 하나로는 무엇이 그려질지 짐작할 수 없다. */}
+            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${GRID_COLUMNS}, minmax(0, 1fr))` }}>
+              {ALL_NUMBERS.map((number) => (
+                  <Skeleton key={number} className="aspect-square w-full rounded-[3px]" />
+              ))}
+            </div>
+
+<SkeletonLine className="mt-2" align="center" width="w-2/3" />
+          </div>
+
+          <div className="space-y-3">
+            <ScoreBarSkeleton labelWidth="w-24" hintWidths={["w-full", "w-3/4"]} />
+            <ScoreBarSkeleton labelWidth="w-20" hintWidths={["w-full lg:w-4/5"]} narrowHintWidths={["w-1/3"]} />
+
+            <div className="bg-surface-2 rounded-lg p-3">
+              <BlockHeading width="w-32" />
+              <SkeletonLines
+                  line={LINE.xsRelaxed}
+                  widths={["w-full", "w-full lg:w-11/12"]}
+                  narrowWidths={["w-1/2"]}
+              />
+            </div>
+
+            <div className="bg-surface-2 rounded-lg p-3">
+              <BlockHeading width="w-16" />
+
+              {/* 이름과 값이 각각 한 칸을 차지하므로 두 칸씩 여섯 줄이 된다. */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                {Array.from({ length: 6 }, (_, index) => (
+                    <Fragment key={index}>
+                      <div className={cn("flex items-center", LINE.xs)}>
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                      <div className={cn("flex items-center justify-end", LINE.xs)}>
+                        <Skeleton className="h-3 w-10" />
+                      </div>
+                    </Fragment>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 꼬리말은 폭이 좁으면 저절로 여러 줄로 감기므로 높이를 고정하지 않는다. */}
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+          {["w-20", "w-36", "w-32", "w-14", "w-56"].map((width) => (
+              <div key={width} className="flex h-[15px] items-center">
+                <Skeleton className={cn("h-2.5", width)} />
+              </div>
+          ))}
+        </div>
+      </div>
+  )
+}
+
+/** 아이콘과 제목이 나란히 놓이는 소제목 자리 */
+function BlockHeading({ width }: { width: string }) {
+  return (
+      <div className="mb-2 flex h-5 items-center gap-1.5">
+        <Skeleton className="h-4 w-4 rounded-md" />
+        <Skeleton className={cn("h-3.5", width)} />
+      </div>
+  )
+}
+
+/** ScoreBar 자리. 제목·수치·막대·설명까지 같은 순서로 놓는다. */
+function ScoreBarSkeleton({
+                            labelWidth,
+                            hintWidths,
+                            narrowHintWidths,
+                          }: {
+  labelWidth: string
+  hintWidths: readonly string[]
+  narrowHintWidths?: readonly string[]
+}) {
+  return (
+      <div className="bg-surface-2 rounded-lg p-3">
+        <div className="mb-1 flex h-5 items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-4 w-4 rounded-md" />
+            <Skeleton className={cn("h-3.5", labelWidth)} />
+          </div>
+          <Skeleton className="h-3.5 w-12" />
+        </div>
+
+        <Skeleton className="h-2 w-full rounded-full" />
+
+        <SkeletonLines className="mt-1.5" line={LINE.xsRelaxed} widths={hintWidths} narrowWidths={narrowHintWidths} />
       </div>
   )
 }

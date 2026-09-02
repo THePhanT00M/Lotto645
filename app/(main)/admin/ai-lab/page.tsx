@@ -1,6 +1,7 @@
 "use client"
 
 import { Database, Download, FlaskConical, RefreshCw, Target, Trophy } from "lucide-react"
+import AiLabSkeleton from "@/components/admin/ai-lab-skeleton"
 import RecordCard from "@/components/admin/record-card"
 import { StatTile } from "@/components/admin/stat-tiles"
 import { EmptyState } from "@/components/common/empty-state"
@@ -8,7 +9,6 @@ import { Notice } from "@/components/common/notice"
 import { PageHeader } from "@/components/common/page-header"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { toCsv, usePickInsights, type MatchBucket } from "@/hooks/use-pick-insights"
 import { FEATURE_LABELS } from "@/lib/lotto/features"
 
@@ -33,7 +33,7 @@ export default function AiLabPage() {
     URL.revokeObjectURL(url)
   }
 
-  if (isLoading) return <LabSkeleton />
+  if (isLoading) return <AiLabSkeleton />
 
   return (
       <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
@@ -163,23 +163,5 @@ function MatchDistribution({ buckets }: { buckets: MatchBucket[] }) {
 
         <p className="text-ink-muted text-xs">주황색 눈금은 무작위로 찍었을 때의 기대 비율입니다.</p>
       </Panel>
-  )
-}
-
-function LabSkeleton() {
-  return (
-      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-56" />
-          <Skeleton className="h-5 w-80" />
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => (
-              <Skeleton key={i} className="h-32 rounded-xl" />
-          ))}
-        </div>
-        <Skeleton className="h-64 rounded-xl" />
-        <Skeleton className="h-48 rounded-xl" />
-      </div>
   )
 }
