@@ -1,6 +1,7 @@
 import { ShieldAlert } from "lucide-react"
 import Link from "next/link"
 import type { ReactNode } from "react"
+import AdminNav from "@/components/admin/admin-nav"
 import LoginLink from "@/components/auth/login-link"
 import { Button } from "@/components/ui/button"
 import { getAdminAccess } from "@/lib/auth/admin"
@@ -17,7 +18,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   if (access.status !== "ok") return <AccessDenied signedIn={access.status === "denied"} />
 
-  return <>{children}</>
+  return (
+      <>
+        <AdminNav />
+        {children}
+      </>
+  )
 }
 
 /** 로그인한 사람에게는 로그인 버튼을 보이지 않는다. 등급이 모자란 것이지 세션 문제가 아니다. */
