@@ -40,6 +40,14 @@ export async function POST(request: NextRequest) {
 
     if (!target?.email) return fail("그 회원의 이메일을 찾을 수 없습니다.", 400)
 
+    // 돌아오지 않고 다시 들어가면 앞 기록이 열린 채 남는다. 쪽지는 하나뿐이라
+    // 그 기록은 닫을 방법이 없으므로, 새로 들어갈 때 함께 닫아 준다.
+    await supabase
+        .from(LOG_TABLE)
+        .update({ ended_at: new Date().toISOString() })
+        .eq("admin_id", admin.id)
+        .is("ended_at", null)
+
     // 누가 누구로 들어갔는지 먼저 남긴다. 들어간 뒤에 남기면 중간에 끊겼을 때 흔적이 없다.
     const { data: log, error: logError } = await supabase
         .from(LOG_TABLE)
@@ -85,7 +93,8 @@ export async function DELETE(request: NextRequest) {
 
     await supabase.from(LOG_TABLE).update({ ended_at: new Date().toISOString() }).eq("id", ticket.logId)
 
-    const url = await createSignInLink(request, admin.user.email)
+    // 돌아오면 하던 일을 잇도록 회원 관리 화면으로 보낸다.
+    const url = await createSignInLink(request, admin.user.email, "/admin/members")
 
     const response = NextResponse.json({ success: true, url })
     response.cookies.set(IMPERSONATION_COOKIE, "", { ...cookieOptions(request), maxAge: 0 })
@@ -97,14 +106,19 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
-/** 그 계정으로 로그인되는 한 번짜리 주소 */
-const createSignInLink = async (request: NextRequest, email: string): Promise<string> => {
+/**
+ * 그 계정으로 로그인되는 한 번짜리 주소
+ *
+ * 돌아올 곳은 Supabase 의 허용 목록에 있어야 한다. 없으면 프로젝트에 설정된
+ * 기본 주소로 바뀌어, 로컬에서 눌러도 배포된 사이트로 넘어간다.
+ */
+const createSignInLink = async (request: NextRequest, email: string, next = "/"): Promise<string> => {
   const origin = new URL(request.url).origin
 
   const { data, error } = await getAdminClient().auth.admin.generateLink({
     type: "magiclink",
     email,
-    options: { redirectTo: origin },
+    options: { redirectTo: `${origin}${next}` },
   })
 
   if (error) throw error
