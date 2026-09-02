@@ -25,6 +25,20 @@
 --   그 데이터베이스의 주인은 supabase_admin 이라 우리 역할로는 만질 수 없다
 --   (42501). 새 데이터베이스를 만들 때만 쓰이는 원본이라 서비스와 무관하고,
 --   경고가 남더라도 Supabase 쪽에서 정리할 몫이다.
+--
+-- 실제로 세어 본 결과 (2026-09-02)
+--   해당하는 인덱스는 60개였고, 그중 우리 것은 public 스키마의 4개뿐이었다.
+--   나머지는 auth 32 · storage 14 · realtime 9 · vault 1 로 모두 Supabase 소유라
+--   우리 역할로는 다시 만들 수 없다.
+--
+--     public.number_picks   : number_picks_combo_idx, number_picks_source_idx
+--     public.pick_insights  : pick_insights_model_version_idx
+--     public.profiles       : profiles_email_key
+--
+--   네 인덱스가 다루는 값은 모두 아스키다. 조합 키('8-13-22-24-40-42'), 출처
+--   ('machine'·'manual'·'ai'), 모델 판, 이메일 주소. 잔버전이 오를 때 아스키의
+--   순서는 바뀌지 않으므로 실제로 어긋났을 가능성은 사실상 없다. 그래도 표가
+--   작아 다시 만드는 값이 거의 들지 않으니 정리해 둔다.
 
 
 -- ── 1. 무엇이 영향을 받는지 본다 ────────────────────────────────────────────
@@ -52,51 +66,31 @@ where c.relkind = 'i'
 order by 1, 2, 3;
 
 
--- ── 2. 인덱스를 다시 만들고 버전 표시를 찍는다 ─────────────────────────────
+-- ── 2. 우리 표의 인덱스를 다시 만든다 ─────────────────────────────────────
 --
---    표 단위 REINDEX 는 트랜잭션 안에서도 돈다. auth·storage 처럼 주인이 다른
---    스키마는 권한이 없어 실패하는데, 건너뛰고 이어 간다. 그쪽은 Supabase 가
---    관리하는 영역이다.
+--    표 단위 REINDEX 는 트랜잭션 안에서도 돈다. 표가 작아 곧 끝난다.
+reindex table public.number_picks;
+reindex table public.pick_insights;
+reindex table public.profiles;
+
+
+-- ── 3. 그다음에 버전 표시를 새로 찍는다 ────────────────────────────────────
 --
---    편집기가 notice 를 보여 주지 않을 수 있다. 오류 없이 끝났다면 된 것이다.
+--    순서를 바꾸면 경고만 사라지고 인덱스는 예전 순서 그대로 남는다.
+--
+--    권한이 없으면 건너뛴다. 그냥 두면 이 한 줄 때문에 앞에서 다시 만든 인덱스
+--    까지 되돌아간다. 편집기가 보낸 것을 통째로 한 트랜잭션으로 감싸기 때문이다.
+--    묶음 안에서 잡은 오류는 그 묶음만 되돌리므로 앞의 것은 남는다.
+--
+--    다만 auth·storage 인덱스는 우리가 다시 만들지 못했으므로, 표시만 새로
+--    찍으면 그쪽은 어긋난 채 표시만 새것이 된다. 그 스키마를 Supabase 가
+--    정리한 뒤에 찍는 편이 옳다. 경고를 당장 지우고 싶을 때만 쓴다.
 do $$
-    declare
-        target  record;
-        done    int := 0;
-        skipped int := 0;
     begin
-        for target in
-            select distinct n.nspname as schema_name, t.relname as table_name
-            from pg_class c
-                     join pg_index i on i.indexrelid = c.oid
-                     join pg_class t on t.oid = i.indrelid
-                     join pg_namespace n on n.oid = c.relnamespace
-                     cross join lateral unnest(i.indcollation::oid[]) as coll
-                     join pg_collation co on co.oid = coll
-            where c.relkind = 'i'
-              and n.nspname not in ('pg_catalog', 'information_schema')
-              and co.collname not in ('C', 'POSIX')
-            order by 1, 2
-            loop
-                begin
-                    execute format('reindex table %I.%I', target.schema_name, target.table_name);
-                    done := done + 1;
-                exception
-                    when insufficient_privilege or undefined_table then
-                        skipped := skipped + 1;
-                end;
-            end loop;
-
-        raise notice '인덱스 : 다시 만듦 %건, 건너뜀 %건', done, skipped;
-
-        -- 다시 만든 뒤에야 버전 표시를 찍는다. 순서를 바꾸면 경고만 사라지고
-        -- 인덱스는 예전 순서 그대로 남는다.
-        begin
-            execute format('alter database %I refresh collation version', current_database());
-            raise notice '버전 표시 : 새로 찍음';
-        exception
-            when insufficient_privilege then
-                raise notice '버전 표시 : 권한이 없어 건너뜀. Supabase 쪽에서 정리할 몫이다.';
-        end;
+        execute format('alter database %I refresh collation version', current_database());
+        raise notice '버전 표시 : 새로 찍음';
+    exception
+        when insufficient_privilege then
+            raise notice '버전 표시 : 권한이 없어 건너뜀. Supabase 쪽에서 정리할 몫이다.';
     end
 $$;
