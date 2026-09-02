@@ -11,7 +11,6 @@ export interface UserData {
     avatarUrl: string | null
     role: 'user' | 'admin'
     level: number
-    phoneNumber?: string
 }
 
 /**
@@ -39,7 +38,7 @@ export function useHeaderData(isLoggedIn: boolean, initialData?: UserData | null
 
             const { data: profile } = await supabase
                 .from("profiles")
-                .select("nickname, role, level, avatar_url, phone_number")
+                .select("nickname, role, level, avatar_url")
                 .eq("id", user.id)
                 .single()
 
@@ -52,7 +51,6 @@ export function useHeaderData(isLoggedIn: boolean, initialData?: UserData | null
                 avatarUrl: profile?.avatar_url || user.user_metadata?.avatar_url || null,
                 role: profile?.role || 'user',
                 level: profile?.level || 0,
-                phoneNumber: profile?.phone_number || "",
             })
         }
 

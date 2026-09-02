@@ -1,7 +1,10 @@
+import { cookies } from "next/headers"
 import type { ReactNode } from "react"
+import ImpersonationBanner from "@/components/admin/impersonation-banner"
 import Footer from "@/components/layout/footer"
 import Header from "@/components/layout/header"
 import type { UserData } from "@/hooks/use-header-data"
+import { IMPERSONATION_COOKIE, readTicket } from "@/lib/auth/impersonation"
 import { isSessionRetired } from "@/lib/auth/session"
 import { createServerSupabase } from "@/lib/supabase/server"
 
@@ -19,12 +22,15 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
   const retired = await isSessionRetired()
   const { data: { user } } = retired ? { data: { user: null } } : await supabase.auth.getUser()
 
+  // 관리자가 회원 계정으로 보고 있다면 맨 위에 알린다.
+  const ticket = readTicket((await cookies()).get(IMPERSONATION_COOKIE)?.value)
+
   let userData: UserData | null = null
   let unreadCount = 0
 
   if (user) {
     const [{ data: profile }, { count }] = await Promise.all([
-      supabase.from("profiles").select("nickname, role, level, avatar_url, phone_number").eq("id", user.id).single(),
+      supabase.from("profiles").select("nickname, role, level, avatar_url").eq("id", user.id).single(),
       supabase
           .from("notifications")
           .select("*", { count: "exact", head: true })
@@ -39,13 +45,13 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
       avatarUrl: profile?.avatar_url ?? user.user_metadata?.avatar_url ?? null,
       role: profile?.role ?? "user",
       level: profile?.level ?? 0,
-      phoneNumber: profile?.phone_number ?? "",
     }
     unreadCount = count ?? 0
   }
 
   return (
       <>
+        {ticket && <ImpersonationBanner targetName={ticket.targetName} />}
         <Header initialUser={userData} initialUnreadCount={unreadCount} />
         <main className="bg-canvas flex-1">{children}</main>
         <Footer />

@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
 import { resolveUserId } from "@/lib/auth/api-user"
+import { toLocale, LOCALES } from "@/lib/i18n/locales"
+import { decryptPhone, encryptPhone } from "@/lib/profile/phone"
 import { getAdminClient } from "@/lib/supabase/admin"
 
 const TABLE = "profiles"
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = getAdminClient()
     const [{ data: profile, error }, { data: auth }] = await Promise.all([
-      supabase.from(TABLE).select("nickname, phone_number, avatar_url, banner_url, role, level, created_at").eq("id", userId).single(),
+      supabase.from(TABLE).select("nickname, phone_number, avatar_url, banner_url, role, level, language, created_at").eq("id", userId).single(),
       supabase.auth.admin.getUserById(userId),
     ])
 
@@ -29,6 +31,7 @@ export async function GET(request: NextRequest) {
     return ok({
       profile: {
         ...profile,
+        phone_number: decryptPhone(profile?.phone_number ?? null),
         id: userId,
         email: auth?.user?.email ?? "",
         joinedAt: auth?.user?.created_at ?? profile?.created_at ?? null,
@@ -54,10 +57,21 @@ export async function PATCH(request: NextRequest) {
     const updates: Record<string, string | null> = {}
 
     for (const field of EDITABLE_FIELDS) {
-      if (field in body) {
-        const value = body[field]
-        updates[field] = typeof value === "string" && value.trim() !== "" ? value.trim() : null
-      }
+      if (!(field in body)) continue
+
+      const value = body[field]
+      const trimmed = typeof value === "string" && value.trim() !== "" ? value.trim() : null
+
+      // 연락처는 표에 그대로 담지 않는다.
+      updates[field] = field === "phone_number" ? encryptPhone(trimmed) : trimmed
+    }
+
+    // 언어는 정해진 값만 받는다. 모르는 값이 들어오면 화면이 빈 문구로 그려진다.
+    if ("language" in body) {
+      const language = toLocale(typeof body.language === "string" ? body.language : null)
+      if (!LOCALES.includes(language)) return fail("지원하지 않는 언어입니다.", 400)
+
+      updates.language = language
     }
 
     if (Object.keys(updates).length === 0) return fail("변경할 내용이 없습니다.", 400)

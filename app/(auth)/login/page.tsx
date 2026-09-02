@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button"
 import { isValidEmail, useAuthForm } from "@/hooks/use-auth-form"
 import { useNextPath } from "@/hooks/use-next-path"
 import { useToast } from "@/hooks/use-toast"
+import { describeAuthError } from "@/lib/auth/error-messages"
+import { writeLocaleCookie } from "@/lib/i18n/client"
+import { toLocale } from "@/lib/i18n/locales"
 import { registerHref } from "@/lib/auth/redirect"
 import { getRememberLogin, setRememberLogin } from "@/lib/auth/session-persistence"
 import { supabase } from "@/lib/supabase/client"
@@ -61,13 +64,13 @@ export default function LoginPage() {
       })
 
       if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          // 어느 쪽이 틀렸는지 알리지 않되 두 입력 모두 강조한다.
-          setErrors({ email: "이메일 또는 비밀번호가 일치하지 않습니다.", password: " " })
-          return
-        }
-        throw error
+        // 어느 쪽이 틀렸는지 알리지 않되 두 입력 모두 강조한다.
+        setErrors({ email: describeAuthError(error, "로그인하지 못했습니다."), password: " " })
+        return
       }
+
+      // 계정에 담긴 언어를 이 브라우저에도 옮겨, 다음 화면부터 그 말로 보이게 한다.
+      await applyAccountLocale()
 
       router.push(nextPath)
       router.refresh()
@@ -75,10 +78,22 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "로그인 실패",
-        description: error instanceof Error ? error.message : "오류가 발생했습니다.",
+        description: describeAuthError(error, "오류가 발생했습니다."),
       })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  /** 로그인한 계정이 골라 둔 언어를 이 브라우저에 적어 둔다. */
+  const applyAccountLocale = async () => {
+    try {
+      const response = await fetch("/api/profile")
+      const data = await response.json()
+
+      if (data.success && data.profile?.language) writeLocaleCookie(toLocale(data.profile.language))
+    } catch {
+      // 언어를 못 읽어도 로그인 자체는 끝났다. 지금 쿠키에 있는 언어로 이어 간다.
     }
   }
 
@@ -90,15 +105,21 @@ export default function LoginPage() {
 
     setIsSubmitting(true)
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
+      // 서버가 대신 보낸다. 브라우저에서 보내면 링크에 딸린 코드를 풀 검증값이
+      // 이 브라우저에만 남아, 메일을 다른 기기에서 열면 열리지 않는다.
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: values.email }),
       })
-      if (error) throw error
+      const data = await response.json()
 
-      toast({ title: "이메일 전송 완료", description: "비밀번호 재설정 링크를 확인해주세요." })
+      if (!data.success) throw new Error(data.message)
+
+      toast({ title: "메일을 보냈습니다", description: data.message })
       setView("login")
     } catch (error) {
-      setErrors({ email: error instanceof Error ? error.message : "메일 전송에 실패했습니다." })
+      setErrors({ email: describeAuthError(error, "메일 전송에 실패했습니다.") })
     } finally {
       setIsSubmitting(false)
     }

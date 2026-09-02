@@ -1,10 +1,11 @@
 import type { NextRequest } from "next/server"
-import { getAdminClient } from "@/lib/supabase/admin"
+import { resolveUserId } from "@/lib/auth/api-user"
 import { isSessionRetired } from "@/lib/auth/session"
+import { getAdminClient } from "@/lib/supabase/admin"
+import { ADMIN_LEVEL } from "@/lib/auth/levels"
 import { createServerSupabase } from "@/lib/supabase/server"
 
-/** 관리자 기능을 쓸 수 있는 최소 등급 */
-export const ADMIN_LEVEL = 2
+export { ADMIN_LEVEL } from "@/lib/auth/levels"
 
 interface AdminUser {
   id: string
@@ -56,19 +57,6 @@ export const requireAdmin = async (request: NextRequest): Promise<{ id: string }
   if (!profile || (profile.level ?? 0) < ADMIN_LEVEL) return null
 
   return { id: userId }
-}
-
-const resolveUserId = async (request: NextRequest): Promise<string | null> => {
-  const header = request.headers.get("Authorization")
-
-  if (header?.startsWith("Bearer ")) {
-    const { data: { user } } = await getAdminClient().auth.getUser(header.slice("Bearer ".length))
-    if (user) return user.id
-  }
-
-  const supabase = await createServerSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user?.id ?? null
 }
 
 /**

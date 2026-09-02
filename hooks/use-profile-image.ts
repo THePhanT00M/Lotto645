@@ -12,6 +12,9 @@ const ENDPOINTS = {
   banner: { path: "/api/profile/banner", field: "bannerUrl", label: "배너" },
 } as const
 
+/** 관리자가 남의 사진을 다룰 때 쓰는 경로 */
+const ADMIN_AVATAR_PATH = "/api/admin/members/avatar"
+
 const FILE_EXTENSIONS: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
@@ -23,23 +26,30 @@ const FILE_EXTENSIONS: Record<string, string> = {
  *
  * 아바타와 배너는 담기는 곳만 다르고 흐름이 같아 한곳에 둔다.
  */
-export function useProfileImage(kind: ProfileImageKind, onChange: (url: string | null) => void) {
+export function useProfileImage(
+    kind: ProfileImageKind,
+    onChange: (url: string | null) => void,
+    /** 관리자가 다른 회원의 사진을 다룰 때만 넘긴다. 없으면 자기 것이다. */
+    targetUserId?: string,
+) {
   const { toast } = useToast()
   const [isSaving, setIsSaving] = useState(false)
-  const { path, field, label } = ENDPOINTS[kind]
+  const { field, label } = ENDPOINTS[kind]
+  const path = targetUserId ? ADMIN_AVATAR_PATH : ENDPOINTS[kind].path
 
-  const send = async (init: RequestInit, done: string) => {
+  const send = async (init: RequestInit, done: string, query = "") => {
     setIsSaving(true)
 
     try {
-      const response = await authorizedFetch(path, init)
+      const response = await authorizedFetch(`${path}${query}`, init)
       const data = await response.json()
 
       if (!data.success) throw new Error(data.message)
 
       const next: string | null = data[field] ?? null
       onChange(next)
-      if (kind === "avatar") emitAvatarChanged(next)
+      // 헤더가 들고 있는 것은 내 사진뿐이라, 남의 것을 바꿀 때는 알리지 않는다.
+      if (kind === "avatar" && !targetUserId) emitAvatarChanged(next)
 
       toast({ title: done })
     } catch (error) {
@@ -57,11 +67,13 @@ export function useProfileImage(kind: ProfileImageKind, onChange: (url: string |
   const upload = (image: Blob) => {
     const body = new FormData()
     body.append("file", image, `${kind}.${FILE_EXTENSIONS[image.type] ?? "jpg"}`)
+    if (targetUserId) body.append("userId", targetUserId)
 
     return send({ method: "POST", body }, `${label}을 바꿨습니다.`)
   }
 
-  const remove = () => send({ method: "DELETE" }, `${label}을 지웠습니다.`)
+  const remove = () =>
+      send({ method: "DELETE" }, `${label}을 지웠습니다.`, targetUserId ? `?userId=${targetUserId}` : "")
 
   return { isSaving, upload, remove }
 }

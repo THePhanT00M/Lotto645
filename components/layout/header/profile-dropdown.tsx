@@ -3,7 +3,9 @@
 import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import type { UserData } from "@/hooks/use-header-data"
+import { profileColor } from "@/lib/profile/colors"
 import { cn } from "@/lib/utils"
 
 interface ProfileDropdownProps {
@@ -20,6 +22,7 @@ interface ProfileDropdownProps {
 
 /** 프로필 버튼과 계정 메뉴. 바깥을 누르면 닫힌다. */
 export default function ProfileDropdown({ userData, onLogout, onNavigate }: ProfileDropdownProps) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -49,12 +52,15 @@ export default function ProfileDropdown({ userData, onLogout, onNavigate }: Prof
           {userData?.avatarUrl ? (
               <img src={userData.avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
           ) : (
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-[#1e1e1e]">
-                <User className="text-ink-muted h-4 w-4" />
+              <span
+                  className="flex h-8 w-8 items-center justify-center rounded-full"
+                  style={{ backgroundColor: profileColor(userData?.id) }}
+              >
+                <User className="h-4 w-4 text-white/90" />
               </span>
           )}
 
-          <span className="text-ink font-medium">{userData?.name ?? "사용자"}</span>
+          <span className="text-ink font-medium">{userData?.name ?? t.nav.profile}</span>
           <ChevronDown className={cn("text-ink-muted h-4 w-4 transition-transform", isOpen && "rotate-180")} />
         </button>
 
@@ -66,9 +72,9 @@ export default function ProfileDropdown({ userData, onLogout, onNavigate }: Prof
               </div>
 
               <div className="py-1">
-                {ACCOUNT_MENU.map(({ href, label, icon }) => (
+                {ACCOUNT_MENU.map(({ href, key, icon }) => (
                     <MenuItem key={href} icon={icon} href={href} onClick={close}>
-                      {label}
+                      {t.nav[key]}
                     </MenuItem>
                 ))}
 
@@ -83,7 +89,7 @@ export default function ProfileDropdown({ userData, onLogout, onNavigate }: Prof
                       close()
                     }}
                 >
-                  로그아웃
+                  {t.nav.logout}
                 </MenuItem>
               </div>
             </div>
@@ -92,11 +98,11 @@ export default function ProfileDropdown({ userData, onLogout, onNavigate }: Prof
   )
 }
 
-/** 계정 화면으로 가는 항목들 */
+/** 계정 화면으로 가는 항목들. 이름은 화면에서 그때의 언어로 붙인다. */
 const ACCOUNT_MENU = [
-  { href: "/account/profile", label: "프로필", icon: User },
-  { href: "/account/notifications", label: "알림", icon: Bell },
-  { href: "/account/settings", label: "설정", icon: Settings },
+  { href: "/account/profile", key: "profile", icon: User },
+  { href: "/account/notifications", key: "notifications", icon: Bell },
+  { href: "/account/settings", key: "settings", icon: Settings },
 ] as const
 
 interface MenuItemProps {
