@@ -2,6 +2,9 @@
 
 import { Loader2, Save, User } from "lucide-react"
 import { useEffect, useState } from "react"
+import AvatarPicker from "@/components/account/avatar-picker"
+import BannerPicker from "@/components/account/banner-picker"
+import { Notice } from "@/components/common/notice"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { authorizedFetch } from "@/lib/auth/client"
+import { cn } from "@/lib/utils"
 
 interface Profile {
   id: string
@@ -16,6 +20,7 @@ interface Profile {
   nickname: string | null
   phone_number: string | null
   avatar_url: string | null
+  banner_url: string | null
   role: string
   level: number
   joinedAt: string | null
@@ -32,6 +37,9 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [nickname, setNickname] = useState("")
   const [phone, setPhone] = useState("")
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -43,11 +51,19 @@ export default function ProfilePage() {
         const response = await authorizedFetch("/api/profile")
         const data = await response.json()
 
-        if (cancelled || !data.success) return
+        if (cancelled) return
+
+        // 실패를 조용히 넘기면 빈 프로필이 그려져, 정보가 사라진 것처럼 보인다.
+        if (!data.success) {
+          setLoadError(data.message ?? "잠시 후 다시 시도해주세요.")
+          return
+        }
 
         setProfile(data.profile)
         setNickname(data.profile.nickname ?? "")
         setPhone(data.profile.phone_number ?? "")
+        setAvatarUrl(data.profile.avatar_url ?? null)
+        setBannerUrl(data.profile.banner_url ?? null)
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -96,49 +112,64 @@ export default function ProfilePage() {
           <p className="text-ink-muted mt-1 text-sm">계정에 표시되는 정보를 확인하고 수정합니다.</p>
         </div>
 
-        <Panel className="space-y-5">
-          <div className="flex items-center gap-4">
-            {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="h-16 w-16 rounded-full object-cover" />
-            ) : (
-                <div className="bg-surface-2 flex h-16 w-16 items-center justify-center rounded-full">
-                  <User className="text-ink-muted h-7 w-7" />
+        {loadError && (
+            <Notice title="프로필을 불러오지 못했습니다" tone="danger">
+              <p className="opacity-90">{loadError}</p>
+            </Notice>
+        )}
+
+        {/* 배너와 겹친 아바타로 이 화면이 '나'를 다루는 곳임을 먼저 보여 준다. */}
+        <Panel className="overflow-hidden p-0">
+          <BannerPicker url={bannerUrl} onChange={setBannerUrl} />
+
+          <div className="px-5 pb-5">
+            <div className="-mt-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex min-w-0 items-end gap-4">
+                <AvatarPicker url={avatarUrl} onChange={setAvatarUrl} />
+
+                {/* 아바타 아래 삭제 버튼 자리만큼 띄워, 이름이 사진 옆에 오게 한다. */}
+                <div className="min-w-0 pb-7">
+                  <div className="text-ink truncate text-xl font-bold">{nickname || "이름 없음"}</div>
+                  <div className="text-ink-muted truncate text-sm">{profile?.email}</div>
                 </div>
-            )}
+              </div>
 
-            <div className="min-w-0">
-              <div className="text-ink truncate text-lg font-semibold">{nickname || "이름 없음"}</div>
-              <div className="text-ink-muted truncate text-sm">{profile?.email}</div>
+              <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:pb-7">
+                <Badge>Lv.{profile?.level ?? 0}</Badge>
+                {profile?.role === "admin" && <Badge tone="accent">관리자</Badge>}
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="닉네임" htmlFor="nickname">
-              <Input
-                  id="nickname"
-                  value={nickname}
-                  onChange={(event) => setNickname(event.target.value)}
-                  placeholder="표시할 이름"
-                  className="bg-surface border-line"
-              />
-            </Field>
+            <div className="border-line mt-5 space-y-5 border-t pt-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label="닉네임" htmlFor="nickname">
+                  <Input
+                      id="nickname"
+                      value={nickname}
+                      onChange={(event) => setNickname(event.target.value)}
+                      placeholder="표시할 이름"
+                      className="bg-surface border-line"
+                  />
+                </Field>
 
-            <Field label="연락처" htmlFor="phone">
-              <Input
-                  id="phone"
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value.replace(/[^0-9-]/g, ""))}
-                  placeholder="010-0000-0000"
-                  className="bg-surface border-line"
-              />
-            </Field>
-          </div>
+                <Field label="연락처" htmlFor="phone">
+                  <Input
+                      id="phone"
+                      value={phone}
+                      onChange={(event) => setPhone(event.target.value.replace(/[^0-9-]/g, ""))}
+                      placeholder="010-0000-0000"
+                      className="bg-surface border-line"
+                  />
+                </Field>
+              </div>
 
-          <div className="flex justify-end">
-            <Button onClick={save} disabled={isSaving} className="bg-blue-600 text-white hover:bg-blue-700">
-              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              저장
-            </Button>
+              <div className="flex justify-end">
+                <Button onClick={save} disabled={isSaving} className="bg-blue-600 text-white hover:bg-blue-700">
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  저장
+                </Button>
+              </div>
+            </div>
           </div>
         </Panel>
 
@@ -154,6 +185,22 @@ export default function ProfilePage() {
           </dl>
         </Panel>
       </div>
+  )
+}
+
+/** 등급·역할처럼 짧게 붙이는 표시 */
+function Badge({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "accent" }) {
+  return (
+      <span
+          className={cn(
+              "rounded-md border px-2 py-0.5 text-xs font-semibold",
+              tone === "accent"
+                  ? "text-accent bg-accent-soft border-accent-line"
+                  : "text-ink-muted bg-surface border-line",
+          )}
+      >
+        {children}
+      </span>
   )
 }
 
@@ -180,20 +227,38 @@ function Row({ label, value }: { label: string; value: string }) {
 function ProfileSkeleton() {
   return (
       <div className="space-y-6">
-        <Skeleton className="h-9 w-40" />
-        <Panel className="space-y-5">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-16 w-16 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-48" />
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-64 max-w-full" />
+        </div>
+
+        <Panel className="overflow-hidden p-0">
+          <Skeleton className="aspect-[5/1] w-full rounded-none" />
+
+          <div className="px-5 pb-5">
+            <div className="-mt-10 flex items-end gap-4">
+              <div className="flex flex-col items-center gap-1">
+                <Skeleton className="ring-panel h-20 w-20 rounded-full ring-4" />
+                <div className="h-6" />
+              </div>
+              <div className="space-y-2 pb-7">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </div>
+            </div>
+
+            <div className="border-line mt-5 space-y-5 border-t pt-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Skeleton className="h-16" />
+                <Skeleton className="h-16" />
+              </div>
+              <div className="flex justify-end">
+                <Skeleton className="h-10 w-20 rounded-md" />
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Skeleton className="h-16" />
-            <Skeleton className="h-16" />
-          </div>
         </Panel>
+
         <Skeleton className="h-32 rounded-xl" />
       </div>
   )
