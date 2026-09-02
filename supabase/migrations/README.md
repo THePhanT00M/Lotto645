@@ -62,3 +62,11 @@ Supabase 대시보드의 SQL Editor에서 실행한다.
 |---|---|
 | `20260902_profile_language.sql` | `profiles.language` 컬럼. 기본은 `ko` 이고 ko·en·zh·ja 만 받는다. |
 | `20260902_contact_messages.sql` | 문의를 담는 `contact_messages` 표. 정책을 두지 않아 서버만 읽고 쓴다. |
+
+## 그 밖의 정리용 SQL
+
+스키마를 바꾸지 않고 한 번만 돌리는 것은 `supabase/maintenance/` 에 둔다.
+
+| 파일 | 언제 |
+|---|---|
+| `collation-version-mismatch.sql` | 로그에 `collation version mismatch` 경고가 보일 때 |
