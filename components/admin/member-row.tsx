@@ -1,10 +1,13 @@
 "use client"
 
-import { ImageUp, Loader2, ShieldCheck, Trash2, User } from "lucide-react"
+import { ImageUp, Loader2, LogIn, ShieldCheck, Trash2, User } from "lucide-react"
+import { useState } from "react"
 import ImageCropDialog from "@/components/account/image-crop-dialog"
 import { Button } from "@/components/ui/button"
 import { useImageFile } from "@/hooks/use-image-file"
 import { useProfileImage } from "@/hooks/use-profile-image"
+import { useToast } from "@/hooks/use-toast"
+import { authorizedFetch } from "@/lib/auth/client"
 import type { Member } from "@/hooks/use-admin-members"
 import { ADMIN_LEVEL } from "@/lib/auth/levels"
 import { profileColor } from "@/lib/profile/colors"
@@ -25,7 +28,9 @@ interface MemberRowProps {
 
 /** 회원 한 명. 등급과 프로필 사진을 이 자리에서 바꾼다. */
 export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvatar }: MemberRowProps) {
+  const { toast } = useToast()
   const { file, clear, open, input } = useImageFile()
+  const [isEntering, setIsEntering] = useState(false)
   const { isSaving, upload, remove } = useProfileImage(
       "avatar",
       (url) => onChangeAvatar(member.id, url),
@@ -35,6 +40,31 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
   const apply = async (image: Blob) => {
     await upload(image)
     clear()
+  }
+
+  /** 이 회원 계정으로 화면을 본다. 받은 주소로 옮겨 가면 그 계정으로 로그인된다. */
+  const enter = async () => {
+    setIsEntering(true)
+
+    try {
+      const response = await authorizedFetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: member.id }),
+      })
+      const data = await response.json()
+
+      if (!data.success) throw new Error(data.message)
+
+      window.location.href = data.url
+    } catch (error) {
+      setIsEntering(false)
+      toast({
+        variant: "destructive",
+        title: "계정 전환에 실패했습니다",
+        description: error instanceof Error ? error.message : "잠시 후 다시 시도해주세요.",
+      })
+    }
   }
 
   return (
@@ -84,6 +114,18 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
               ))}
             </select>
           </label>
+
+          <Button
+              variant="outline"
+              size="custom"
+              onClick={() => void enter()}
+              disabled={isSelf || isEntering}
+              title={isSelf ? "이미 자기 계정으로 보고 있습니다." : "이 회원 화면을 그대로 확인합니다."}
+              className="bg-surface border-line h-8 px-2 text-xs"
+          >
+            {isEntering ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <LogIn className="mr-1 h-3.5 w-3.5" />}
+            이 계정으로
+          </Button>
 
           <Button
               variant="outline"

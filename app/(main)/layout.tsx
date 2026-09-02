@@ -1,7 +1,10 @@
+import { cookies } from "next/headers"
 import type { ReactNode } from "react"
+import ImpersonationBanner from "@/components/admin/impersonation-banner"
 import Footer from "@/components/layout/footer"
 import Header from "@/components/layout/header"
 import type { UserData } from "@/hooks/use-header-data"
+import { IMPERSONATION_COOKIE, readTicket } from "@/lib/auth/impersonation"
 import { isSessionRetired } from "@/lib/auth/session"
 import { createServerSupabase } from "@/lib/supabase/server"
 
@@ -18,6 +21,9 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
   // 로그인하지 않은 것으로 다룬다. 실제 정리는 브라우저 쪽에서 이어서 한다.
   const retired = await isSessionRetired()
   const { data: { user } } = retired ? { data: { user: null } } : await supabase.auth.getUser()
+
+  // 관리자가 회원 계정으로 보고 있다면 맨 위에 알린다.
+  const ticket = readTicket((await cookies()).get(IMPERSONATION_COOKIE)?.value)
 
   let userData: UserData | null = null
   let unreadCount = 0
@@ -45,6 +51,7 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
 
   return (
       <>
+        {ticket && <ImpersonationBanner targetName={ticket.targetName} />}
         <Header initialUser={userData} initialUnreadCount={unreadCount} />
         <main className="bg-canvas flex-1">{children}</main>
         <Footer />
