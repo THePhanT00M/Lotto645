@@ -185,9 +185,9 @@ export default function RegisterPage() {
           <SocialLogin label={t.auth.register.social} onSelect={signUpWithProvider} />
 
           <p className="text-ink-muted text-center text-sm">
-            이미 계정이 있으신가요?
+            {t.auth.register.haveAccount}
             <Link href={loginHref(nextPath)} className="ml-1 font-medium text-blue-600 dark:text-blue-400">
-              로그인
+              {t.auth.register.login}
             </Link>
           </p>
         </form>
