@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
+import { resolveUserId } from "@/lib/auth/api-user"
 import { getAdminClient } from "@/lib/supabase/admin"
-import { createServerSupabase } from "@/lib/supabase/server"
 
 const TABLE = "profiles"
 
@@ -70,17 +70,4 @@ export async function PATCH(request: NextRequest) {
     console.error("프로필 수정 실패:", errorMessage(error))
     return fail(errorMessage(error))
   }
-}
-
-const resolveUserId = async (request: NextRequest): Promise<string | null> => {
-  const header = request.headers.get("Authorization")
-
-  if (header?.startsWith("Bearer ")) {
-    const { data: { user } } = await getAdminClient().auth.getUser(header.slice("Bearer ".length))
-    if (user) return user.id
-  }
-
-  const supabase = await createServerSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user?.id ?? null
 }

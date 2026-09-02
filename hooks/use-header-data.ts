@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { onAvatarChanged } from "@/lib/auth/profile-events"
 import { supabase } from "@/lib/supabase/client"
 
 export interface UserData {
@@ -61,6 +62,11 @@ export function useHeaderData(isLoggedIn: boolean, initialData?: UserData | null
             cancelled = true
         }
     }, [isLoggedIn, userData])
+
+    // 프로필 화면에서 사진을 바꾸면 다시 조회하지 않고 그 값만 갈아 끼운다.
+    useEffect(() => onAvatarChanged((avatarUrl) => {
+        setUserData((previous) => (previous ? { ...previous, avatarUrl } : previous))
+    }), [])
 
     return { userData }
 }
