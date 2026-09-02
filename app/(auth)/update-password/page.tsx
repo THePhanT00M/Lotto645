@@ -8,8 +8,9 @@ import AuthField from "@/components/auth/auth-field"
 import AuthShell from "@/components/auth/auth-shell"
 import { Button } from "@/components/ui/button"
 import { useAuthForm } from "@/hooks/use-auth-form"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { useToast } from "@/hooks/use-toast"
-import { describeAuthError } from "@/lib/auth/error-messages"
+import { authErrorKey } from "@/lib/auth/error-messages"
 import { supabase } from "@/lib/supabase/client"
 
 /** Supabase 가 요구하는 최소 길이 */
@@ -30,6 +31,7 @@ type Stage = "checking" | "ready" | "expired"
 export default function UpdatePasswordPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [stage, setStage] = useState<Stage>("checking")
   // 어느 계정의 비밀번호를 바꾸는지 보여 준다. 링크가 만료된 채 이미 로그인해
   // 있으면 엉뚱한 계정을 바꿀 수 있어, 눈으로 먼저 확인하게 한다.
@@ -85,10 +87,10 @@ export default function UpdatePasswordPage() {
   const save = async () => {
     const validation: Record<string, string> = {}
     if (values.password.length < MIN_PASSWORD_LENGTH) {
-      validation.password = `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`
+      validation.password = t.auth.validation.passwordLength(MIN_PASSWORD_LENGTH)
     }
     if (values.password !== values.confirmPassword) {
-      validation.confirmPassword = "비밀번호가 일치하지 않습니다."
+      validation.confirmPassword = t.auth.validation.passwordMismatch
     }
 
     if (Object.keys(validation).length > 0) {
@@ -102,11 +104,11 @@ export default function UpdatePasswordPage() {
       const { error } = await supabase.auth.updateUser({ password: values.password })
       if (error) throw error
 
-      toast({ title: "비밀번호를 바꿨습니다.", description: "새 비밀번호로 이용해 주세요." })
+      toast({ title: t.auth.updatePassword.done, description: t.auth.updatePassword.doneDescription })
       router.push("/account/profile")
       router.refresh()
     } catch (error) {
-      setErrors({ password: describeAuthError(error, "비밀번호를 바꾸지 못했습니다."), confirmPassword: " " })
+      setErrors({ password: t.auth.errors[authErrorKey(error)], confirmPassword: " " })
     } finally {
       setIsSubmitting(false)
     }
@@ -114,7 +116,7 @@ export default function UpdatePasswordPage() {
 
   if (stage === "checking") {
     return (
-        <AuthShell description="링크를 확인하는 중입니다.">
+        <AuthShell description={t.auth.updatePassword.checking}>
           <div className="flex justify-center py-4">
             <Loader2 className="text-ink-muted h-6 w-6 animate-spin" />
           </div>
@@ -124,19 +126,17 @@ export default function UpdatePasswordPage() {
 
   if (stage === "expired") {
     return (
-        <AuthShell description="링크가 만료되었거나 이미 사용된 링크입니다.">
+        <AuthShell description={t.auth.updatePassword.expired}>
           <div className="space-y-4 text-center">
             <p className="text-ink-muted text-sm leading-relaxed">
-              재설정 링크는 한 번만 쓸 수 있고 일정 시간이 지나면 만료됩니다.
-              <br />
-              로그인 화면에서 다시 요청해 주세요.
+              {t.auth.updatePassword.expiredDescription}
             </p>
 
             <Button
                 asChild
                 className="h-11 w-full rounded-full bg-blue-600 text-[15px] font-medium text-white hover:bg-blue-700"
             >
-              <Link href="/login">로그인으로 가기</Link>
+              <Link href="/login">{t.auth.updatePassword.goToLogin}</Link>
             </Button>
           </div>
         </AuthShell>
@@ -148,10 +148,10 @@ export default function UpdatePasswordPage() {
           description={
             account ? (
                 <>
-                  <span className="text-ink font-medium">{account}</span> 계정의 비밀번호를 바꿉니다.
+                  {t.auth.updatePassword.forAccount(account)}
                 </>
             ) : (
-                "새로 쓸 비밀번호를 입력해 주세요."
+                t.auth.updatePassword.description
             )
           }
       >
@@ -166,8 +166,8 @@ export default function UpdatePasswordPage() {
             <AuthField
                 id="password"
                 type="password"
-                label="새 비밀번호"
-                placeholder={`${MIN_PASSWORD_LENGTH}자 이상`}
+                label={t.auth.updatePassword.newPassword}
+                placeholder={t.auth.updatePassword.newPasswordPlaceholder(MIN_PASSWORD_LENGTH)}
                 value={values.password}
                 onChange={handleChange}
                 disabled={isSubmitting}
@@ -177,8 +177,8 @@ export default function UpdatePasswordPage() {
             <AuthField
                 id="confirmPassword"
                 type="password"
-                label="새 비밀번호 확인"
-                placeholder="한 번 더 입력"
+                label={t.auth.updatePassword.confirm}
+                placeholder={t.auth.updatePassword.confirmPlaceholder}
                 value={values.confirmPassword}
                 onChange={handleChange}
                 disabled={isSubmitting}
@@ -192,7 +192,7 @@ export default function UpdatePasswordPage() {
               className="h-11 w-full rounded-full bg-blue-600 text-[15px] font-medium text-white transition-colors hover:bg-blue-700"
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-            비밀번호 바꾸기
+            {t.auth.updatePassword.submit}
           </Button>
         </form>
       </AuthShell>

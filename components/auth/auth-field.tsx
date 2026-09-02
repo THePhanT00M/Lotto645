@@ -5,6 +5,7 @@ import { useState, type ChangeEvent, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { cn } from "@/lib/utils"
 
 interface AuthFieldProps {
@@ -32,6 +33,7 @@ export default function AuthField({
                                     error,
                                     action,
                                   }: AuthFieldProps) {
+  const { t } = useTranslation()
   const [isRevealed, setIsRevealed] = useState(false)
   const isPassword = type === "password"
 
@@ -65,7 +67,7 @@ export default function AuthField({
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsRevealed((prev) => !prev)}
-                  aria-label={isRevealed ? "비밀번호 숨기기" : "비밀번호 표시"}
+                  aria-label={isRevealed ? t.auth.hidePassword : t.auth.showPassword}
                   className="text-ink-muted absolute top-1 right-1 h-10 w-10 px-0 hover:bg-transparent"
               >
                 {isRevealed ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}

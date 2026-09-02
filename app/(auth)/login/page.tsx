@@ -10,8 +10,9 @@ import SocialLogin, { type SocialProvider } from "@/components/auth/social-login
 import { Button } from "@/components/ui/button"
 import { isValidEmail, useAuthForm } from "@/hooks/use-auth-form"
 import { useNextPath } from "@/hooks/use-next-path"
+import { useTranslation } from "@/components/i18n/locale-provider"
 import { useToast } from "@/hooks/use-toast"
-import { describeAuthError } from "@/lib/auth/error-messages"
+import { authErrorKey } from "@/lib/auth/error-messages"
 import { writeLocaleCookie } from "@/lib/i18n/client"
 import { DEFAULT_LOCALE, toLocale } from "@/lib/i18n/locales"
 import { registerHref } from "@/lib/auth/redirect"
@@ -32,6 +33,7 @@ type View = "login" | "forgot"
 export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useTranslation()
   const [view, setView] = useState<View>("login")
   const [rememberLogin, setRemember] = useState(true)
   const nextPath = useNextPath()
@@ -44,9 +46,9 @@ export default function LoginPage() {
 
   const login = async () => {
     const validation: Record<string, string> = {}
-    if (!values.email.trim()) validation.email = "이메일을 입력해주세요."
-    else if (!isValidEmail(values.email)) validation.email = "올바른 이메일 형식이 아닙니다."
-    if (!values.password) validation.password = "비밀번호를 입력해주세요."
+    if (!values.email.trim()) validation.email = t.auth.validation.email
+    else if (!isValidEmail(values.email)) validation.email = t.auth.validation.emailFormat
+    if (!values.password) validation.password = t.auth.validation.password
 
     if (Object.keys(validation).length > 0) {
       setErrors(validation)
@@ -65,7 +67,7 @@ export default function LoginPage() {
 
       if (error) {
         // 어느 쪽이 틀렸는지 알리지 않되 두 입력 모두 강조한다.
-        setErrors({ email: describeAuthError(error, "로그인하지 못했습니다."), password: " " })
+        setErrors({ email: t.auth.errors[authErrorKey(error)], password: " " })
         return
       }
 
@@ -77,8 +79,8 @@ export default function LoginPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "로그인 실패",
-        description: describeAuthError(error, "오류가 발생했습니다."),
+        title: t.auth.login.failed,
+        description: t.auth.errors[authErrorKey(error)],
       })
     } finally {
       setIsSubmitting(false)
@@ -118,7 +120,7 @@ export default function LoginPage() {
 
   const sendResetMail = async () => {
     if (!values.email.trim()) {
-      setErrors({ email: "이메일을 입력해주세요." })
+      setErrors({ email: t.auth.validation.email })
       return
     }
 
@@ -135,10 +137,10 @@ export default function LoginPage() {
 
       if (!data.success) throw new Error(data.message)
 
-      toast({ title: "메일을 보냈습니다", description: data.message })
+      toast({ title: t.auth.login.mailSent, description: data.message })
       setView("login")
     } catch (error) {
-      setErrors({ email: describeAuthError(error, "메일 전송에 실패했습니다.") })
+      setErrors({ email: t.auth.errors[authErrorKey(error)] })
     } finally {
       setIsSubmitting(false)
     }
@@ -156,7 +158,7 @@ export default function LoginPage() {
     })
 
     if (error) {
-      toast({ variant: "destructive", title: "로그인 실패", description: error.message })
+      toast({ variant: "destructive", title: t.auth.login.failed, description: error.message })
     }
   }
 
@@ -171,8 +173,8 @@ export default function LoginPage() {
       <AuthShell
           description={
             isLogin
-                ? "번호 생성 및 추천 서비스를 이용하려면 로그인하세요."
-                : "가입하신 이메일을 입력하시면 비밀번호 재설정 링크를 보내드립니다."
+                ? t.auth.login.description
+                : t.auth.login.forgotDescription
           }
       >
         <form
@@ -186,8 +188,8 @@ export default function LoginPage() {
             <AuthField
                 id="email"
                 type="email"
-                label="이메일"
-                placeholder="example@email.com"
+                label={t.auth.login.email}
+                placeholder={t.auth.login.emailPlaceholder}
                 value={values.email}
                 onChange={handleChange}
                 disabled={isSubmitting}
@@ -198,8 +200,8 @@ export default function LoginPage() {
                 <AuthField
                     id="password"
                     type="password"
-                    label="비밀번호"
-                    placeholder="비밀번호 입력"
+                    label={t.auth.login.password}
+                    placeholder={t.auth.login.passwordPlaceholder}
                     value={values.password}
                     onChange={handleChange}
                     disabled={isSubmitting}
@@ -211,7 +213,7 @@ export default function LoginPage() {
                           onClick={() => switchView("forgot")}
                           className="h-auto p-0 text-sm font-medium text-blue-600 dark:text-blue-400"
                       >
-                        비밀번호 찾기
+                        {t.auth.login.forgot}
                       </Button>
                     }
                 />
@@ -226,7 +228,7 @@ export default function LoginPage() {
                     onChange={(event) => setRemember(event.target.checked)}
                     className="border-line h-4 w-4 rounded accent-blue-600"
                 />
-                자동 로그인
+                {t.auth.login.keepSignedIn}
               </label>
           )}
 
@@ -238,20 +240,20 @@ export default function LoginPage() {
             {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
             ) : isLogin ? (
-                "로그인"
+                t.auth.login.submit
             ) : (
-                "재설정 링크 보내기"
+                t.auth.login.sendResetLink
             )}
           </Button>
 
-          {isLogin && <SocialLogin label="간편 로그인" onSelect={signInWithProvider} />}
+          {isLogin && <SocialLogin label={t.auth.login.social} onSelect={signInWithProvider} />}
 
           <div className="text-center">
             {isLogin ? (
                 <p className="text-ink-muted text-sm">
-                  아직 계정이 없으신가요?
+                  {t.auth.login.noAccount}
                   <Link href={registerHref(nextPath)} className="ml-1 font-medium text-blue-600 dark:text-blue-400">
-                    회원가입
+                    {t.auth.login.signUp}
                   </Link>
                 </p>
             ) : (
@@ -261,7 +263,7 @@ export default function LoginPage() {
                     onClick={() => switchView("login")}
                     className="h-auto p-0 font-medium text-blue-600 dark:text-blue-400"
                 >
-                  로그인으로 돌아가기
+                  {t.auth.login.backToLogin}
                 </Button>
             )}
           </div>
