@@ -28,8 +28,8 @@ export default function ImpersonationBanner({ targetName }: ImpersonationBannerP
 
       if (!data.success) throw new Error(data.message)
 
-      // 받은 주소로 옮겨 가면 관리자 계정으로 다시 로그인된다.
-      window.location.href = data.url
+      // 세션은 서버에서 이미 바뀌었다. 들고 있던 화면을 통째로 다시 불러온다.
+      window.location.href = "/admin/members"
     } catch (error) {
       setIsLeaving(false)
       toast({

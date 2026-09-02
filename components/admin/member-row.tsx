@@ -83,7 +83,8 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
 
       if (!data.success) throw new Error(data.message)
 
-      window.location.href = data.url
+      // 세션은 서버에서 이미 바뀌었다. 첫 화면부터 그 회원으로 다시 본다.
+      window.location.href = "/"
     } catch (error) {
       setIsEntering(false)
       toast({
