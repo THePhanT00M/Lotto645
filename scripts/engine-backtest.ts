@@ -1,3 +1,4 @@
+import { EXPECTED_MATCHED, WIN_PROBABILITY } from "@/lib/lotto/baseline"
 import { buildEngine } from "@/lib/lotto/engine"
 import { matchDraw } from "@/lib/lotto/rank"
 import { ALL_NUMBERS, PICK_COUNT } from "@/lib/lotto/constants"
@@ -41,7 +42,7 @@ const main = async () => {
 
   console.log(`학습: 1~${TRAIN_UNTIL}회 (${train.length}건)`)
   console.log(`평가: ${TRAIN_UNTIL + 1}~${all.at(-1)!.drawNo}회 (${test.length}건)`)
-  console.log(`\n이론 기대값: 평균 적중 ${(PICK_COUNT * PICK_COUNT / 45).toFixed(4)}개, 3개 이상 1.7650%`)
+  console.log(`\n이론 기대값: 평균 적중 ${EXPECTED_MATCHED.toFixed(4)}개, 3개 이상 ${(WIN_PROBABILITY * 100).toFixed(4)}%`)
 
   const t0 = performance.now()
   const engine = buildEngine(train)

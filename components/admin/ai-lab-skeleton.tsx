@@ -1,13 +1,35 @@
+import DrawBreakdown from "@/components/admin/draw-breakdown"
 import { useTranslation } from "@/components/i18n/locale-provider"
 import { Panel } from "@/components/common/panel"
 import { LINE, SkeletonLine, SkeletonLines } from "@/components/common/skeleton-text"
 import { Skeleton } from "@/components/ui/skeleton"
+import type { DrawRow } from "@/hooks/use-pick-insights"
+import type { RandomComparison } from "@/lib/lotto/baseline"
 import { PICK_COUNT } from "@/lib/lotto/constants"
 import { FEATURE_KEYS } from "@/lib/lotto/features"
 import { cn } from "@/lib/utils"
 
 /** 자리표시로 보여줄 기록 개수. 첫 화면에 들어오는 만큼만 잡는다. */
 const RECORD_PLACEHOLDERS = 5
+
+/** 회차별 성적표의 자리표시 값. 글자는 가려지므로 자릿수만 실제와 같으면 된다. */
+const placeholderComparison = (count: number): RandomComparison => ({
+  count,
+  mean: 0.8,
+  winCount: 1,
+  expectedWins: 1.1,
+  low: 0.671,
+  high: 0.929,
+  verdict: "within",
+})
+
+/** 줄 수는 지금 쌓인 양(2개 회차 + 합계)에 맞춘다. */
+const PLACEHOLDER_DRAWS: DrawRow[] = [
+  { drawNo: 1241, ai: placeholderComparison(63), control: placeholderComparison(4) },
+  { drawNo: 1240, ai: placeholderComparison(79), control: placeholderComparison(33) },
+]
+
+const PLACEHOLDER_OVERALL = { ai: placeholderComparison(142), control: placeholderComparison(37) }
 
 /**
  * AI 추천 데이터 화면 자리표시
@@ -50,6 +72,11 @@ export default function AiLabSkeleton() {
                 <SkeletonLine className="mt-1" width="w-24" />
               </Panel>
           ))}
+        </div>
+
+        {/* 표는 실제 컴포넌트를 자리표시 값으로 그리고 글자만 가린다. */}
+        <div className="is-sk" aria-hidden inert>
+          <DrawBreakdown rows={PLACEHOLDER_DRAWS} overall={PLACEHOLDER_OVERALL} />
         </div>
 
         {/* 채점된 기록이 하나도 없으면 실제로는 빠지는 블록이지만, 쌓인 데이터가 있는 쪽이 보통이다. */}

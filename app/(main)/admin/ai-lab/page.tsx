@@ -3,6 +3,7 @@
 import { Database, Download, FlaskConical, RefreshCw, Target, Trophy } from "lucide-react"
 import { useTranslation } from "@/components/i18n/locale-provider"
 import AiLabSkeleton from "@/components/admin/ai-lab-skeleton"
+import DrawBreakdown from "@/components/admin/draw-breakdown"
 import RecordCard from "@/components/admin/record-card"
 import { StatTile } from "@/components/admin/stat-tiles"
 import { EmptyState } from "@/components/common/empty-state"
@@ -22,6 +23,7 @@ import { toCsv, usePickInsights, type MatchBucket } from "@/hooks/use-pick-insig
 export default function AiLabPage() {
   const { t } = useTranslation()
   const { records, summary, isLoading, error, reload } = usePickInsights()
+  const { overall } = summary
 
   const download = () => {
     const blob = new Blob([toCsv(records)], { type: "text/csv;charset=utf-8;" })
@@ -73,16 +75,29 @@ export default function AiLabPage() {
               label={t.admin.aiLab.wins}
               value={summary.winCount.toLocaleString()}
               valueClass="text-green-600 dark:text-green-500"
-              hint={summary.scored > 0 ? `${((summary.winCount / summary.scored) * 100).toFixed(2)}%` : t.admin.aiLab.awaitingScore}
+              hint={
+                overall.ai
+                    ? t.admin.aiLab.winRate(
+                        ((overall.ai.winCount / overall.ai.count) * 100).toFixed(2),
+                        ((overall.ai.expectedWins / overall.ai.count) * 100).toFixed(2),
+                    )
+                    : t.admin.aiLab.awaitingScore
+              }
           />
           <StatTile
               icon={FlaskConical}
               label={t.admin.aiLab.averageMatched}
               value={summary.averageMatched.toFixed(3)}
               valueClass="text-blue-600 dark:text-blue-400"
-              hint={t.admin.aiLab.expected(summary.expectedMatched.toFixed(3))}
+              hint={
+                overall.ai
+                    ? t.admin.aiLab.expectedVerdict(summary.expectedMatched.toFixed(3), t.admin.aiLab.verdict[overall.ai.verdict])
+                    : t.admin.aiLab.expected(summary.expectedMatched.toFixed(3))
+              }
           />
         </div>
+
+        {summary.draws.length > 0 && <DrawBreakdown rows={summary.draws} overall={overall} />}
 
         {summary.scored > 0 && <MatchDistribution buckets={summary.buckets} />}
 

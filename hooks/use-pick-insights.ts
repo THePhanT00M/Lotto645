@@ -2,6 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { authorizedFetch } from "@/lib/auth/client"
+import {
+  compareWithRandom,
+  EXPECTED_MATCHED,
+  matchProbability,
+  tallyByDraw,
+  type DrawTally,
+  type RandomComparison,
+} from "@/lib/lotto/baseline"
 import { PICK_COUNT } from "@/lib/lotto/constants"
 import { FEATURE_KEYS, type PatternFeatures } from "@/lib/lotto/features"
 import type { Rank } from "@/lib/lotto/rank"
@@ -44,6 +52,14 @@ export interface MatchBucket {
   expected: number
 }
 
+/** 회차 하나의 AI 추천과 대조군 성적 */
+export interface DrawRow {
+  drawNo: number
+  ai: RandomComparison | null
+  /** 같은 회차의 직접 선택·추첨기 기록. 없으면 null. */
+  control: RandomComparison | null
+}
+
 export interface InsightSummary {
   total: number
   scored: number
@@ -56,23 +72,16 @@ export interface InsightSummary {
   buckets: MatchBucket[]
   /** 특징별 평균값 */
   featureAverages: { key: string; value: number }[]
+  /** 채점된 회차 전체를 무작위 기준과 견준 결과 */
+  overall: { ai: RandomComparison | null; control: RandomComparison | null }
+  /** 회차별 성적. 최근 회차가 먼저 온다. */
+  draws: DrawRow[]
 }
-
-/** 조합론: nCk */
-const choose = (n: number, k: number): number => {
-  if (k < 0 || k > n) return 0
-  let result = 1
-  for (let i = 0; i < k; i++) result = (result * (n - i)) / (i + 1)
-  return result
-}
-
-/** 무작위 조합이 당첨 번호와 k개 맞을 확률 (초기하분포) */
-const expectedRatio = (k: number): number =>
-    (choose(PICK_COUNT, k) * choose(45 - PICK_COUNT, PICK_COUNT - k)) / choose(45, PICK_COUNT)
 
 /** 수집된 AI 추천 근거를 불러와 집계한다. */
 export function usePickInsights(limit = 500) {
   const [records, setRecords] = useState<PickInsight[]>([])
+  const [controls, setControls] = useState<DrawTally[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -85,7 +94,8 @@ export function usePickInsights(limit = 500) {
       const data = await response.json()
 
       if (!data.success) throw new Error(data.message ?? "기록을 불러오지 못했습니다.")
-      setRecords(data.records ?? [])
+      setRecords(Array.isArray(data.records) ? data.records : [])
+      setControls(Array.isArray(data.controls) ? data.controls : [])
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "알 수 없는 오류가 발생했습니다.")
     } finally {
@@ -107,7 +117,7 @@ export function usePickInsights(limit = 500) {
         matchCount,
         count,
         ratio: scoredRecords.length === 0 ? 0 : count / scoredRecords.length,
-        expected: expectedRatio(matchCount),
+        expected: matchProbability(matchCount),
       }
     })
 
@@ -119,17 +129,34 @@ export function usePickInsights(limit = 500) {
               : records.reduce((sum, record) => sum + (record.features?.[key] ?? 0), 0) / records.length,
     }))
 
+    const aiTallies = tallyByDraw(scoredRecords).sort((a, b) => b.drawNo - a.drawNo)
+    const controlByDraw = new Map(controls.map((tally) => [tally.drawNo, tally]))
+    const pairedControls = aiTallies
+        .map((tally) => controlByDraw.get(tally.drawNo))
+        .filter((tally): tally is DrawTally => tally !== undefined)
+
+    const draws = aiTallies.map((tally) => {
+      const control = controlByDraw.get(tally.drawNo)
+      return {
+        drawNo: tally.drawNo,
+        ai: compareWithRandom([tally]),
+        control: control ? compareWithRandom([control]) : null,
+      }
+    })
+
     return {
       total: records.length,
       scored: scoredRecords.length,
       drawCount: new Set(records.map((record) => record.draw_no)).size,
       averageMatched: scoredRecords.length === 0 ? 0 : matchedTotal / scoredRecords.length,
-      expectedMatched: (PICK_COUNT * PICK_COUNT) / 45,
+      expectedMatched: EXPECTED_MATCHED,
       winCount: scoredRecords.filter((record) => record.prize_rank !== null).length,
       buckets,
       featureAverages,
+      overall: { ai: compareWithRandom(aiTallies), control: compareWithRandom(pairedControls) },
+      draws,
     }
-  }, [records])
+  }, [records, controls])
 
   return { records, summary, isLoading, error, reload: load }
 }
