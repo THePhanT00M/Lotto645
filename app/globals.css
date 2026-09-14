@@ -20,6 +20,17 @@
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
+  /*
+   * 스켈레톤 위를 지나가는 빛.
+   * 그라데이션을 폭의 두 배로 깔아 두고, 가운데의 밝은 띠가 왼쪽 밖에서 오른쪽 밖까지 지나가게 민다.
+   */
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -100% 0; }
+  }
+
   @keyframes accordion-down {
     from { height: 0; }
     to { height: var(--radix-accordion-content-height); }
