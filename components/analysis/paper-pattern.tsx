@@ -55,6 +55,8 @@ export default function PaperPattern({ numbers, compare, className }: PaperPatte
           className={className}
           role="img"
           aria-label={t.analysis.slipLabel([...numbers].sort((a, b) => a - b).join(", "))}
+          // 칸이 곧 골격이라, 스켈레톤에서는 칸만 남기고 번호·선·공을 가린다. (app/globals.css)
+          data-sk-graphic
       >
         {ALL_NUMBERS.map((number) => {
           const { col, row } = toGridPoint(number)

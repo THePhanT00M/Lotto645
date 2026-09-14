@@ -196,8 +196,21 @@ body.auth-page {
  *
  * 자리표시는 실제 컴포넌트를 자리표시 값으로 그린 뒤 .is-sk 로 감싸 글자만 가린다.
  * 글자 마디를 <sk-t> 로 감싸 두면 여기서 글자 폭만큼의 막대로 바뀐다.
- * 박스 크기는 컴포넌트가 정하므로 이곳에는 가리는 규칙만 둔다. 색은 ui/skeleton 과 같다.
+ * 박스 크기는 컴포넌트가 정하므로 이곳에는 가리는 규칙만 둔다.
+ *
+ * 막대는 바탕보다 조금 짙은 반투명 색으로 칠한다. 고정 회색(gray-100)으로 칠하면
+ * 밝은 화면의 카드 안쪽(#f2f2f2)과 명도가 같아 막대가 사라진다.
  */
+:root {
+  --sk-bar: rgb(0 0 0 / 0.08);
+  --sk-tone: rgb(0 0 0 / 0.07);
+  --sk-shine: rgb(0 0 0 / 0.06);
+}
+.dark {
+  --sk-bar: rgb(255 255 255 / 0.09);
+  --sk-tone: rgb(255 255 255 / 0.08);
+  --sk-shine: rgb(255 255 255 / 0.1);
+}
 
 /* <sk-t> 밖에 남는 글자(말줄임표, 목록 기호 등)도 드러나지 않게 한다. */
 .is-sk,
@@ -208,11 +221,18 @@ body.auth-page {
 .is-sk svg {
   visibility: hidden;
 }
+/* 용지처럼 칸이 곧 골격인 그림은 칸만 남기고 번호·선·공을 가린다. */
+.is-sk svg[data-sk-graphic] {
+  visibility: visible;
+}
+.is-sk svg[data-sk-graphic] :is(text, polyline, circle) {
+  visibility: hidden;
+}
 .is-sk sk-t {
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-md);
-  background-color: var(--color-gray-100);
+  background-color: var(--sk-bar);
   color: transparent;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
@@ -221,20 +241,14 @@ body.auth-page {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(to right, transparent, rgb(0 0 0 / 0.07), transparent);
+  background-image: linear-gradient(to right, transparent, var(--sk-shine), transparent);
   background-size: 200% 100%;
   background-repeat: no-repeat;
   animation: var(--animate-shimmer);
 }
-.dark .is-sk sk-t {
-  background-color: rgb(26 26 26);
-}
-.dark .is-sk sk-t::before {
-  background-image: linear-gradient(to right, transparent, rgb(255 255 255 / 0.1), transparent);
-}
 /* 색이 있는 배지·공·버튼은 모양만 두고 회색으로 누그러뜨린다. 공은 색을 인라인으로 넣어 !important 가 필요하다. */
 .is-sk [data-sk-tone] {
-  background-color: var(--color-surface-2) !important;
+  background-color: var(--sk-tone) !important;
   background-image: none;
   border-color: var(--color-line);
 }
