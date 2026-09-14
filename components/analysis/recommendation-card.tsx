@@ -104,6 +104,22 @@ function RecommendationBody({ recommendation, stats }: { recommendation: Recomme
           <div className="space-y-3">
             {popularityPercentile !== null && <CrowdBar percentile={popularityPercentile} />}
 
+            {/* 이 조합에만 해당하는 것을 위에, 모든 추천에 똑같이 붙는 모델 검증과 참고 수치를 아래에 둔다. */}
+            <div className="bg-surface-2 rounded-lg p-3">
+              <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
+                <ShieldCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <sk-t>{copy.pastDistance}</sk-t>
+              </h4>
+              <p className="text-ink-muted text-xs leading-relaxed">
+                <sk-t>
+                  {closestPastDraw
+                      ? copy.overlap(closestPastDraw.drawNo, closestPastDraw.overlap, stats.maxPastOverlap)
+                      : copy.noOverlap}
+                  {closestPastDraw && avoidedCount > 0 && <> {copy.avoided(avoidedCount)}</>}
+                </sk-t>
+              </p>
+            </div>
+
             {validation && validation.quietDraws > 0 && (
                 <div className="bg-surface-2 rounded-lg p-3">
                   <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
@@ -122,21 +138,6 @@ function RecommendationBody({ recommendation, stats }: { recommendation: Recomme
                   </p>
                 </div>
             )}
-
-            <div className="bg-surface-2 rounded-lg p-3">
-              <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
-                <ShieldCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <sk-t>{copy.pastDistance}</sk-t>
-              </h4>
-              <p className="text-ink-muted text-xs leading-relaxed">
-                <sk-t>
-                  {closestPastDraw
-                      ? copy.overlap(closestPastDraw.drawNo, closestPastDraw.overlap, stats.maxPastOverlap)
-                      : copy.noOverlap}
-                  {closestPastDraw && avoidedCount > 0 && <> {copy.avoided(avoidedCount)}</>}
-                </sk-t>
-              </p>
-            </div>
 
             <div className="bg-surface-2 rounded-lg p-3">
               <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
