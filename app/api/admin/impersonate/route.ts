@@ -8,6 +8,7 @@ import {
   readTicket,
   sealTicket,
 } from "@/lib/auth/impersonation"
+import { hasSealKey } from "@/lib/crypto/seal"
 import { getAdminClient } from "@/lib/supabase/admin"
 import { createServerSupabase } from "@/lib/supabase/server"
 
@@ -36,6 +37,13 @@ export async function POST(request: NextRequest) {
 
     if (!target?.email) return fail("그 회원의 이메일을 찾을 수 없습니다.", 400)
 
+    // 쪽지를 감쌀 열쇠가 없으면 들어가도 돌아올 수 없다. 기록을 남기기 전에 끊어,
+    // 들어가지 못한 시도가 들어간 것처럼 남지 않게 한다.
+    if (!hasSealKey()) {
+      console.error("회원 계정 전환 불가: PROFILE_ENCRYPTION_KEY 가 없거나 32바이트가 아닙니다.")
+      return fail("처리하지 못했습니다. 잠시 후 다시 시도해주세요.", 500)
+    }
+
     // 돌아오지 않고 다시 들어가면 앞 기록이 열린 채 남는다. 쪽지는 하나뿐이라
     // 그 기록은 닫을 방법이 없으므로, 새로 들어갈 때 함께 닫아 준다.
     await supabase.from(LOG_TABLE).update({ ended_at: new Date().toISOString() })
@@ -51,15 +59,22 @@ export async function POST(request: NextRequest) {
 
     // 쪽지를 먼저 넣는다. 세션이 바뀐 뒤에는 관리자 권한으로 아무것도 할 수 없다.
     const store = await cookies()
-    store.set(IMPERSONATION_COOKIE, sealTicket({
-      adminId: admin.id,
-      targetId,
-      targetName: target.nickname ?? target.email,
-      logId: log.id,
-      issuedAt: Math.floor(Date.now() / 1000),
-    }), cookieOptions(request))
+    try {
+      store.set(IMPERSONATION_COOKIE, sealTicket({
+        adminId: admin.id,
+        targetId,
+        targetName: target.nickname ?? target.email,
+        logId: log.id,
+        issuedAt: Math.floor(Date.now() / 1000),
+      }), cookieOptions(request))
 
-    await signInAs(target.email)
+      await signInAs(target.email)
+    } catch (error) {
+      // 세션이 바뀌지 않았으므로 기록을 실패로 닫고, 쓸모없어진 쪽지도 지운다.
+      store.set(IMPERSONATION_COOKIE, "", { ...cookieOptions(request), maxAge: 0 })
+      await markFailed(supabase, log.id)
+      throw error
+    }
 
     return ok({ targetName: target.nickname ?? target.email })
   } catch (error) {
@@ -97,6 +112,14 @@ export async function DELETE(request: NextRequest) {
     console.error("관리자 계정 복귀 실패:", errorMessage(error))
     return fail(errorMessage(error))
   }
+}
+
+/** 들어가지 못한 시도를 닫는다. 여기서 실패해도 원래 오류를 가리지 않도록 서버 기록에만 남긴다. */
+const markFailed = async (supabase: ReturnType<typeof getAdminClient>, logId: number): Promise<void> => {
+  const now = new Date().toISOString()
+  const { error } = await supabase.from(LOG_TABLE).update({ ended_at: now, failed_at: now }).eq("id", logId)
+
+  if (error) console.error("회원 계정 전환 실패를 기록하지 못했습니다:", error.message)
 }
 
 /**
