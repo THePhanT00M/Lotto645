@@ -63,6 +63,17 @@ Supabase 대시보드의 SQL Editor에서 실행한다.
 | `20260902_profile_language.sql` | `profiles.language` 컬럼. 기본은 `ko` 이고 ko·en·zh·ja 만 받는다. |
 | `20260902_contact_messages.sql` | 문의를 담는 `contact_messages` 표. 정책을 두지 않아 서버만 읽고 쓴다. |
 
+## 회차별 당첨자 수와 AI 추천 인기 예측 (2026-09-14)
+
+`20260914_draw_prizes.sql` 을 실행한 뒤, 터미널에서 `pnpm draw-prizes:backfill` 로 지난 회차를 채운다.
+
+- `draw_prizes` 표를 만든다. 회차별 1~5등 당첨자 수·1인당 당첨금·판매액을 담고 누구나 읽을 수 있다.
+  AI 추천이 사람들이 몰리는 조합을 배우는 데 쓴다. 새 회차는 회차 갱신 때 함께 들어간다.
+- `pick_insights` 에 `popularity`·`popularity_percentile` 컬럼을 더하고,
+  `score`·`network_score`·`typicality` 를 비워 둘 수 있게 한다.
+
+표가 비어 있으면 AI 추천은 인기 예측 없이 과거 회차 회피만 한다.
+
 ## 그 밖의 정리용 SQL
 
 스키마를 바꾸지 않고 한 번만 돌리는 것은 `supabase/maintenance/` 에 둔다.

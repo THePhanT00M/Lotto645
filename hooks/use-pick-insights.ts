@@ -20,20 +20,33 @@ export interface PickInsight {
   created_at: string
   draw_no: number
   numbers: number[]
-  score: number
-  network_score: number
-  typicality: number
+  /** 추천 당시의 최종 점수. 버전마다 뜻이 다르다 (model_version). */
+  score: number | null
+  /** 신경망 판별 점수 (geo-mlp-1) */
+  network_score: number | null
+  /** 분포 적합도 (geo-mlp-1) */
+  typicality: number | null
+  /** 예측 인기, 로그 비율 (crowd-ridge-1) */
+  popularity: number | null
+  /** 무작위 조합 가운데 덜 몰리는 비율 (crowd-ridge-1) */
+  popularity_percentile: number | null
   features: PatternFeatures
   /** 추천 당시의 모델 메타데이터 */
   model: {
     drawCount?: number
     featureCount?: number
+    maxPastOverlap?: number
     ensembleSize?: number
     accuracy?: number
     trainAccuracy?: number
     brierBefore?: number
     brierAfter?: number
-    maxPastOverlap?: number
+    trainedDraws?: number
+    maxPercentile?: number
+    validationDraws?: number | null
+    validationCorrelation?: number | null
+    quietShare?: number | null
+    allShare?: number | null
   } | null
   model_version: string | null
   max_past_overlap: number | null
@@ -171,6 +184,9 @@ export const toCsv = (records: readonly PickInsight[]): string => {
     "score",
     "network_score",
     "typicality",
+    "popularity",
+    "popularity_percentile",
+    "model_version",
     "max_past_overlap",
     "matched_count",
     "prize_rank",
@@ -183,9 +199,12 @@ export const toCsv = (records: readonly PickInsight[]): string => {
         record.created_at,
         record.draw_no,
         `"${record.numbers.join(" ")}"`,
-        record.score,
-        record.network_score,
-        record.typicality,
+        record.score ?? "",
+        record.network_score ?? "",
+        record.typicality ?? "",
+        record.popularity ?? "",
+        record.popularity_percentile ?? "",
+        record.model_version ?? "",
         record.max_past_overlap ?? "",
         record.matched_count ?? "",
         record.prize_rank ?? "",

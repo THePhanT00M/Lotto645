@@ -12,11 +12,13 @@ const PAGE_SIZE = 1000
 /** 조인 결과의 모양. 타입 생성기를 쓰지 않아 여기서 형태를 밝혀 둔다. */
 interface InsightRow {
   pick_id: number
-  score: number
-  network_score: number
-  typicality: number
+  score: number | null
+  network_score: number | null
+  typicality: number | null
+  popularity: number | null
+  popularity_percentile: number | null
   features: Record<string, number>
-  model: Record<string, number>
+  model: Record<string, number | null>
   model_version: string
   max_past_overlap: number | null
   pick: {
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await getAdminClient()
         .from(TABLE)
         .select(
-            "pick_id, score, network_score, typicality, features, model, model_version, max_past_overlap," +
+            "pick_id, score, network_score, typicality, popularity, popularity_percentile, features, model, model_version, max_past_overlap," +
             " pick:number_picks!inner(id, created_at, draw_no, numbers, matched_count, bonus_matched, prize_rank, scored_at)",
         )
         .order("pick_id", { ascending: false })
@@ -69,6 +71,8 @@ export async function GET(request: NextRequest) {
         score: row.score,
         network_score: row.network_score,
         typicality: row.typicality,
+        popularity: row.popularity,
+        popularity_percentile: row.popularity_percentile,
         features: row.features,
         model: row.model,
         model_version: row.model_version,

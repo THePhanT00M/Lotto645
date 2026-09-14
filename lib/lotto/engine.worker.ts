@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 
 import { buildEngine, type AvoidInfo, type EngineStats, type Recommendation, type RecommendationEngine } from "./engine"
+import type { DrawPrize } from "./prizes"
 import type { WinningLottoNumbers } from "./types"
 
 /**
@@ -11,7 +12,7 @@ import type { WinningLottoNumbers } from "./types"
  */
 
 export type WorkerRequest =
-    | { type: "train"; draws: WinningLottoNumbers[] }
+    | { type: "train"; draws: WinningLottoNumbers[]; prizes: DrawPrize[] }
     | { type: "recommend"; avoid?: AvoidInfo }
 
 export type WorkerResponse =
@@ -26,7 +27,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     const request = event.data
 
     if (request.type === "train") {
-      engine = buildEngine(request.draws)
+      engine = buildEngine(request.draws, request.prizes)
       post({ type: "ready", stats: engine.stats })
       return
     }

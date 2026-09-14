@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { findMultiples } from "@/lib/lotto/analytics"
 import { fetchAvoidInfo, recordPick } from "@/lib/lotto/pick-log"
 import type { EngineStats, Recommendation } from "@/lib/lotto/engine"
+import { useDrawPrizes } from "@/hooks/use-draw-prizes"
 import { useRecommendationEngine } from "@/hooks/use-recommendation-engine"
 import { useWinningDraws } from "@/hooks/use-winning-draws"
 
@@ -33,6 +34,7 @@ interface AnalysisPanelProps {
 export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
   const { t } = useTranslation()
   const { draws, latestDrawNo, isLoading } = useWinningDraws()
+  const { prizes, isLoading: isPrizesLoading } = useDrawPrizes()
 
   const [target, setTarget] = useState<AnalysisTarget>("user")
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
@@ -40,7 +42,7 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
   const [isGenerating, setIsGenerating] = useState(false)
 
   // 학습은 워커에서 한 번만 하고, 이후 추천은 그 엔진을 다시 쓴다.
-  const engine = useRecommendationEngine(draws)
+  const engine = useRecommendationEngine(draws, prizes)
 
   const aiNumbers = recommendation?.numbers ?? []
   const analyzed = target === "ai" && aiNumbers.length > 0 ? aiNumbers : numbers
@@ -110,9 +112,10 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
                             </ToggleButton>
                         ))}
 
+                    {/* 학습은 첫 추천 때 한 번만 하므로, 당첨자 수가 도착하기 전에는 누를 수 없게 한다. */}
                     <Button
                         onClick={handleRecommend}
-                        disabled={isGenerating}
+                        disabled={isGenerating || isPrizesLoading}
                         className="flex-1 bg-blue-600 text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 sm:flex-none"
                     >
                       <Sparkles className={`mr-2 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />

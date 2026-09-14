@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { buildEngine, type AvoidInfo, type EngineStats, type Recommendation } from "@/lib/lotto/engine"
 import type { WorkerRequest, WorkerResponse } from "@/lib/lotto/engine.worker"
+import type { DrawPrize } from "@/lib/lotto/prizes"
 import type { WinningLottoNumbers } from "@/lib/lotto/types"
 
 /**
@@ -12,7 +13,7 @@ import type { WinningLottoNumbers } from "@/lib/lotto/types"
  * 워커를 만들 수 없는 환경에서는 같은 엔진을 메인 스레드에서 실행해
  * 기능이 사라지지 않게 한다.
  */
-export function useRecommendationEngine(draws: readonly WinningLottoNumbers[]) {
+export function useRecommendationEngine(draws: readonly WinningLottoNumbers[], prizes: readonly DrawPrize[]) {
   const workerRef = useRef<Worker | null>(null)
   const pendingRef = useRef<((result: { recommendation: Recommendation; stats: EngineStats }) => void) | null>(null)
   const rejectRef = useRef<((error: Error) => void) | null>(null)
@@ -80,7 +81,7 @@ export function useRecommendationEngine(draws: readonly WinningLottoNumbers[]) {
         const worker = ensureWorker()
 
         if (!worker) {
-          fallbackRef.current ??= buildEngine(draws)
+          fallbackRef.current ??= buildEngine(draws, prizes)
           const engine = fallbackRef.current
           setIsTrained(true)
           return { recommendation: engine.recommend(avoid), stats: engine.stats }
@@ -88,7 +89,7 @@ export function useRecommendationEngine(draws: readonly WinningLottoNumbers[]) {
 
         if (!trainSentRef.current) {
           trainSentRef.current = true
-          post(worker, { type: "train", draws: [...draws] })
+          post(worker, { type: "train", draws: [...draws], prizes: [...prizes] })
         }
 
         return new Promise((resolve, reject) => {
@@ -97,7 +98,7 @@ export function useRecommendationEngine(draws: readonly WinningLottoNumbers[]) {
           post(worker, { type: "recommend", avoid })
         })
       },
-      [draws, ensureWorker],
+      [draws, prizes, ensureWorker],
   )
 
   return { recommend, isTrained }

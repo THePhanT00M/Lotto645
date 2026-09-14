@@ -50,7 +50,13 @@ export default function RecordCard({ record }: RecordCardProps) {
           </div>
 
           <div className="text-ink-muted flex flex-wrap items-center gap-3 pl-7 text-xs sm:pl-0">
-            <span><sk-t>{t.admin.record.score(`${(record.score * 100).toFixed(1)}%`)}</sk-t></span>
+            <span>
+              <sk-t>
+                {record.popularity_percentile !== null
+                    ? t.admin.record.crowd(formatPercent(record.popularity_percentile))
+                    : t.admin.record.score(formatPercent(record.score))}
+              </sk-t>
+            </span>
             <span><sk-t>{t.admin.record.overlap(t.admin.record.count(record.max_past_overlap ?? 0))}</sk-t></span>
             {record.scored_at ? (
                 <span data-sk-tone className={cn("rounded-md border px-2 py-0.5 font-semibold", rankStyle(record.prize_rank))}>
@@ -86,9 +92,21 @@ export default function RecordCard({ record }: RecordCardProps) {
                 <div className="bg-surface-2 rounded-lg p-3">
                   <h4 className="text-ink mb-2 text-sm font-semibold">{t.admin.record.scores}</h4>
                   <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                    <Row label={t.admin.record.finalScore} value={`${(record.score * 100).toFixed(1)}%`} />
-                    <Row label={t.admin.record.networkScore} value={`${(record.network_score * 100).toFixed(1)}%`} />
-                    <Row label={t.admin.record.typicality} value={`${(record.typicality * 100).toFixed(1)}%`} />
+                    <Row label={t.admin.record.finalScore} value={formatPercent(record.score)} />
+                    {record.popularity_percentile !== null ? (
+                        <>
+                          <Row label={t.admin.record.crowdPercentile} value={formatPercent(record.popularity_percentile)} />
+                          <Row
+                              label={t.admin.record.crowdMultiplier}
+                              value={record.popularity !== null ? `${Math.exp(record.popularity).toFixed(2)}×` : "-"}
+                          />
+                        </>
+                    ) : (
+                        <>
+                          <Row label={t.admin.record.networkScore} value={formatPercent(record.network_score)} />
+                          <Row label={t.admin.record.typicality} value={formatPercent(record.typicality)} />
+                        </>
+                    )}
                     <Row label={t.admin.record.maxOverlap} value={t.admin.record.count(record.max_past_overlap ?? 0)} />
                   </dl>
                 </div>
@@ -97,20 +115,39 @@ export default function RecordCard({ record }: RecordCardProps) {
                     <div className="bg-surface-2 rounded-lg p-3">
                       <h4 className="text-ink mb-2 text-sm font-semibold">{t.admin.record.model}</h4>
                       <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                        <Row label={t.admin.record.trainedDraws} value={t.admin.record.draws(record.model.drawCount?.toLocaleString() ?? "-")} />
-                        <Row label={t.admin.record.ensemble} value={t.admin.record.count(record.model.ensembleSize ?? 0)} />
                         <Row
-                            label={t.admin.record.accuracy}
-                            value={record.model.accuracy != null ? `${(record.model.accuracy * 100).toFixed(1)}%` : "-"}
+                            label={t.admin.record.trainedDraws}
+                            value={t.admin.record.draws((record.model.trainedDraws ?? record.model.drawCount)?.toLocaleString() ?? "-")}
                         />
-                        <Row
-                            label={t.admin.record.brier}
-                            value={
-                              record.model.brierAfter != null
-                                  ? `${record.model.brierBefore?.toFixed(3) ?? "-"} → ${record.model.brierAfter.toFixed(3)}`
-                                  : "-"
-                            }
-                        />
+                        {record.model.validationCorrelation != null ? (
+                            <>
+                              <Row label={t.admin.record.validationR} value={record.model.validationCorrelation.toFixed(3)} />
+                              <Row
+                                  label={t.admin.record.quietShare}
+                                  value={
+                                    record.model.quietShare != null && record.model.allShare != null
+                                        ? `${record.model.quietShare.toFixed(2)} / ${record.model.allShare.toFixed(2)}`
+                                        : "-"
+                                  }
+                              />
+                            </>
+                        ) : (
+                            <>
+                              <Row label={t.admin.record.ensemble} value={t.admin.record.count(record.model.ensembleSize ?? 0)} />
+                              <Row
+                                  label={t.admin.record.accuracy}
+                                  value={record.model.accuracy != null ? `${(record.model.accuracy * 100).toFixed(1)}%` : "-"}
+                              />
+                              <Row
+                                  label={t.admin.record.brier}
+                                  value={
+                                    record.model.brierAfter != null
+                                        ? `${record.model.brierBefore?.toFixed(3) ?? "-"} → ${record.model.brierAfter.toFixed(3)}`
+                                        : "-"
+                                  }
+                              />
+                            </>
+                        )}
                       </dl>
                     </div>
                 )}
@@ -138,6 +175,8 @@ function Row({ label, value }: { label: string; value: string }) {
       </>
   )
 }
+
+const formatPercent = (value: number | null): string => (value === null ? "-" : `${(value * 100).toFixed(1)}%`)
 
 const formatFeature = (value: number | undefined): string => {
   if (value === undefined) return "-"

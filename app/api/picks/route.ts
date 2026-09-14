@@ -9,14 +9,15 @@ const TABLE = "number_picks"
 const INSIGHT_TABLE = "pick_insights"
 
 /** 알고리즘이 바뀌면 올린다. 버전별 성적을 나눠 보기 위한 값이다. */
-const MODEL_VERSION = "geo-mlp-1"
+const MODEL_VERSION = "crowd-ridge-1"
 
 interface InsightBody {
-  score: number
-  networkScore: number
-  typicality: number
+  /** 1 - 인기 백분위. 높을수록 덜 몰리는 조합이다. */
+  score: number | null
+  popularity: number | null
+  popularityPercentile: number | null
   features: Record<string, number>
-  model: Record<string, number>
+  model: Record<string, number | null>
   maxPastOverlap: number | null
 }
 
@@ -153,8 +154,8 @@ const saveInsight = async (pickId: number, insight: InsightBody) => {
   const { error } = await getAdminClient().from(INSIGHT_TABLE).insert({
     pick_id: pickId,
     score: insight.score,
-    network_score: insight.networkScore,
-    typicality: insight.typicality,
+    popularity: insight.popularity,
+    popularity_percentile: insight.popularityPercentile,
     features: insight.features,
     model: insight.model,
     model_version: MODEL_VERSION,

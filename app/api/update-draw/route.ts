@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache"
 import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
 import { hasCronSecret, requireAdmin } from "@/lib/auth/admin"
+import { prizeFromApi, toPrizeRow, type DrawPrize, type LottoApiItem } from "@/lib/lotto/prizes"
 import { matchDraw } from "@/lib/lotto/rank"
 import { getAdminClient } from "@/lib/supabase/admin"
 
@@ -19,27 +20,15 @@ const REVALIDATE_PATHS = ["/", "/winning-numbers", "/history"]
 
 interface LottoApiResponse {
   data?: {
-    list?: {
-      /** 회차 */
-      ltEpsd: number
-      /** 추첨일 (YYYYMMDD) */
-      ltRflYmd: string
-      tm1WnNo: number
-      tm2WnNo: number
-      tm3WnNo: number
-      tm4WnNo: number
-      tm5WnNo: number
-      tm6WnNo: number
-      bnsWnNo: number
-    }[]
+    list?: LottoApiItem[]
   }
 }
 
 /**
  * GET /api/update-draw
  *
- * 동행복권에서 다음 회차 결과를 가져와 DB에 넣는다. 아직 추첨 전이면
- * 목록이 비어 오므로 404로 알리고, 이미 저장된 회차는 409로 구분한다.
+ * 동행복권에서 다음 회차 결과를 가져와 당첨 번호와 등수별 당첨자 수를 DB에 넣는다.
+ * 아직 추첨 전이면 목록이 비어 오므로 404로 알리고, 이미 저장된 회차는 409로 구분한다.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -90,6 +79,7 @@ export async function GET(request: NextRequest) {
     }
 
     const scored = await scorePendingRecommendations(supabase, record)
+    const prizeSaved = await savePrize(supabase, prizeFromApi(item))
 
     REVALIDATE_PATHS.forEach((path) => revalidatePath(path))
 
@@ -97,11 +87,28 @@ export async function GET(request: NextRequest) {
       message: `${record.drawNo}회 당첨 번호가 성공적으로 DB에 삽입되었습니다.`,
       data: record,
       scoredPicks: scored,
+      prizeSaved,
     })
   } catch (error) {
     console.error("Update Draw API Error:", errorMessage(error))
     return fail(errorMessage(error))
   }
+}
+
+/**
+ * 등수별 당첨자 수와 판매액을 남긴다. AI 추천이 사람들이 몰리는 조합을 배우는 데 쓴다.
+ *
+ * 실패가 당첨 번호 삽입 성공을 가리지 않도록 따로 감싼다.
+ */
+const savePrize = async (supabase: ReturnType<typeof getAdminClient>, prize: DrawPrize): Promise<boolean> => {
+  const { error } = await supabase.from("draw_prizes").upsert(toPrizeRow(prize), { onConflict: "draw_no" })
+
+  if (error) {
+    console.error("당첨자 수 저장 실패:", error.message)
+    return false
+  }
+
+  return true
 }
 
 /** "YYYYMMDD" → "YYYY-MM-DD" */

@@ -60,6 +60,8 @@ const RECORDS: PickInsight[] = Array.from({ length: RECENT_LIMIT }, (_, index) =
   score: 0.8,
   network_score: 0.8,
   typicality: 0.8,
+  popularity: null,
+  popularity_percentile: null,
   features: extractFeatures(PLACEHOLDER_NUMBERS),
   model: null,
   model_version: null,
