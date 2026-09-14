@@ -3,6 +3,7 @@ import { useTranslation } from "@/components/i18n/locale-provider"
 import type { DrawRow, InsightSummary, PickInsight } from "@/hooks/use-pick-insights"
 import { EXPECTED_MATCHED, matchProbability, WIN_PROBABILITY, type RandomComparison } from "@/lib/lotto/baseline"
 import { extractFeatures, FEATURE_KEYS } from "@/lib/lotto/features"
+import { SIGNAL_KEYS, type SignalTrack } from "@/lib/lotto/prospective"
 
 /*
  * 자리표시 값
@@ -72,6 +73,19 @@ const RECORDS: PickInsight[] = Array.from({ length: RECENT_LIMIT }, (_, index) =
   scored_at: "2026-01-01T00:00:00Z",
 }))
 
+/** 사전 등록 신호는 아직 채점한 회차가 없는 모양 그대로 둔다. */
+const SIGNALS: SignalTrack[] = SIGNAL_KEYS.map((key) => ({
+  key,
+  draws: 0,
+  mean: null,
+  low: null,
+  high: null,
+  checkpoint: 0,
+  verdict: "pending",
+  latest: null,
+  next: { drawNo: 1242, numbers: PLACEHOLDER_NUMBERS },
+}))
+
 /**
  * AI 추천 데이터 화면 자리표시
  *
@@ -84,7 +98,7 @@ export default function AiLabSkeleton() {
   return (
       <div role="status" aria-label={t.admin.aiLab.loading} aria-busy>
         <div className="is-sk" aria-hidden inert>
-          <AiLabView records={RECORDS} summary={SUMMARY} />
+          <AiLabView records={RECORDS} summary={SUMMARY} signals={SIGNALS} />
         </div>
       </div>
   )
