@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase/client"
 import { fromPrizeRow, type DrawPrize, type DrawPrizeRow } from "./prizes"
-import type { LottoResult, WinningLottoNumbers } from "./types"
+import type { DrawSource, LottoResult, WinningLottoNumbers } from "./types"
 
 const WINNING_TABLE = "winning_numbers"
 const PRIZE_TABLE = "draw_prizes"
@@ -107,5 +107,8 @@ export const toLottoResult = (row: {
   timestamp: new Date(row.created_at).getTime(),
   memo: row.memo ?? undefined,
   isAiRecommended: row.source === "ai",
+  pickSource: isDrawSource(row.source) ? row.source : undefined,
   drawNo: row.draw_no ?? undefined,
 })
+
+const isDrawSource = (value: unknown): value is DrawSource => value === "machine" || value === "manual" || value === "ai"

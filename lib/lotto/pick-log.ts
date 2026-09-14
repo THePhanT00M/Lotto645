@@ -27,7 +27,7 @@ export const recordPick = async ({ numbers, source, drawNo, insight }: RecordPic
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session) {
-    saveLottoResult(numbers, { isAiRecommended: source === "ai", drawNo })
+    saveLottoResult(numbers, { isAiRecommended: source === "ai", source, drawNo })
   }
 
   try {
@@ -120,6 +120,27 @@ export const deleteServerRecords = async (target: DeleteTarget): Promise<number>
   }
 
   return payload.removed ?? 0
+}
+
+/** 서버에 저장된 내 기록의 메모를 바꾼다. 빈 문자열이면 메모를 지운다. */
+export const updateServerMemo = async (id: string, memo: string): Promise<void> => {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error("로그인이 필요합니다.")
+
+  const response = await fetch(getApiUrl(ENDPOINT), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ id: Number(id), memo }),
+  })
+
+  const payload = await response.json().catch(() => null)
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(payload?.message ?? "메모를 저장하지 못했습니다.")
+  }
 }
 
 /** 이번 회차에 이미 내보낸 추천 정보 */

@@ -6,6 +6,8 @@ export interface LottoResult {
   memo?: string
   /** AI 추천으로 생성된 번호인지 여부 */
   isAiRecommended?: boolean
+  /** 번호를 만든 경로. 경로를 남기기 전의 로컬 기록에는 없다. */
+  pickSource?: DrawSource
   /** 이 번호가 겨냥한 회차 (구 기록에는 없을 수 있음) */
   drawNo?: number
 }

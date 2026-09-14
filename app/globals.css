@@ -252,6 +252,13 @@ body.auth-page {
   background-image: none;
   border-color: var(--color-line);
 }
+/* 입력칸·선택 상자는 값과 안내 글을 가리고 바탕을 막대 색으로 칠한다. */
+.is-sk :is(input, select, textarea) {
+  background-color: var(--sk-bar);
+}
+.is-sk ::placeholder {
+  color: transparent;
+}
 @media (prefers-reduced-motion: reduce) {
   .is-sk sk-t::before {
     animation: none;
