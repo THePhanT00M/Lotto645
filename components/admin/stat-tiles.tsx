@@ -15,10 +15,10 @@ export function StatTile({ icon: Icon, label, value, valueClass = "text-ink", hi
       <Panel>
         <div className="text-ink-muted flex items-center gap-2 text-sm font-medium">
           <Icon className="h-4 w-4" />
-          {label}
+          <sk-t>{label}</sk-t>
         </div>
-        <div className={`mt-3 text-3xl font-bold ${valueClass}`}>{value}</div>
-        {hint && <p className="text-ink-muted mt-1 text-xs">{hint}</p>}
+        <div className={`mt-3 text-3xl font-bold ${valueClass}`}><sk-t>{value}</sk-t></div>
+        {hint && <p className="text-ink-muted mt-1 text-xs"><sk-t>{hint}</sk-t></p>}
       </Panel>
   )
 }

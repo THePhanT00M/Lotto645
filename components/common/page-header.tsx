@@ -16,9 +16,9 @@ export function PageHeader({ icon: Icon, title, description, actions }: PageHead
         <div className="flex flex-col space-y-2">
           <h1 className="text-ink flex items-center gap-2 text-2xl font-bold">
             <Icon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            {title}
+            <sk-t>{title}</sk-t>
           </h1>
-          {description && <p className="text-ink-muted text-sm">{description}</p>}
+          {description && <p className="text-ink-muted text-sm"><sk-t>{description}</sk-t></p>}
         </div>
         {actions}
       </div>

@@ -39,8 +39,8 @@ export default function RecordCard({ record }: RecordCardProps) {
         >
           <div className="flex items-center gap-3">
             <ChevronDown className={cn("text-ink-muted h-4 w-4 shrink-0 transition-transform", isOpen && "rotate-180")} />
-            <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-1 text-xs font-semibold">
-              {t.lotto.drawNo(record.draw_no)}
+            <span data-sk-tone className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-1 text-xs font-semibold">
+              <sk-t>{t.lotto.drawNo(record.draw_no)}</sk-t>
             </span>
             <div className="flex flex-wrap gap-1">
               {record.numbers.map((number) => (
@@ -50,15 +50,17 @@ export default function RecordCard({ record }: RecordCardProps) {
           </div>
 
           <div className="text-ink-muted flex flex-wrap items-center gap-3 pl-7 text-xs sm:pl-0">
-            <span>{t.admin.record.score(`${(record.score * 100).toFixed(1)}%`)}</span>
-            <span>{t.admin.record.overlap(t.admin.record.count(record.max_past_overlap ?? 0))}</span>
+            <span><sk-t>{t.admin.record.score(`${(record.score * 100).toFixed(1)}%`)}</sk-t></span>
+            <span><sk-t>{t.admin.record.overlap(t.admin.record.count(record.max_past_overlap ?? 0))}</sk-t></span>
             {record.scored_at ? (
-                <span className={cn("rounded-md border px-2 py-0.5 font-semibold", rankStyle(record.prize_rank))}>
-                  {t.admin.record.matchedCount(record.matched_count ?? 0)} · {record.prize_rank === null ? t.lotto.miss : t.lotto.rank(record.prize_rank)}
+                <span data-sk-tone className={cn("rounded-md border px-2 py-0.5 font-semibold", rankStyle(record.prize_rank))}>
+                  <sk-t>
+                    {t.admin.record.matchedCount(record.matched_count ?? 0)} · {record.prize_rank === null ? t.lotto.miss : t.lotto.rank(record.prize_rank)}
+                  </sk-t>
                 </span>
             ) : (
-                <span className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-0.5">
-                  {t.admin.record.awaiting}
+                <span data-sk-tone className="text-accent bg-accent-soft border-accent-line rounded-md border px-2 py-0.5">
+                  <sk-t>{t.admin.record.awaiting}</sk-t>
                 </span>
             )}
           </div>

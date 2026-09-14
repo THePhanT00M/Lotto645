@@ -43,7 +43,7 @@ interface BallProps extends VariantProps<typeof ball> {
 export function Ball({ number, size, className, onClick, disabled, selected, badge }: BallProps) {
   const content = (
       <>
-        {number}
+        <sk-t>{number}</sk-t>
         {badge}
       </>
   )
@@ -56,16 +56,17 @@ export function Ball({ number, size, className, onClick, disabled, selected, bad
   )
   const style = { backgroundColor: getBallColor(number) }
 
+  // data-sk-tone: 스켈레톤 안에서는 구간 색 대신 회색으로 그린다.
   if (!onClick) {
     return (
-        <div className={classes} style={style}>
+        <div className={classes} style={style} data-sk-tone>
           {content}
         </div>
     )
   }
 
   return (
-      <button type="button" className={classes} style={style} onClick={onClick} disabled={disabled} aria-pressed={selected}>
+      <button type="button" className={classes} style={style} onClick={onClick} disabled={disabled} aria-pressed={selected} data-sk-tone>
         {content}
       </button>
   )

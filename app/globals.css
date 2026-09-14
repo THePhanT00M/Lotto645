@@ -198,6 +198,16 @@ body.auth-page {
  * 글자 마디를 <sk-t> 로 감싸 두면 여기서 글자 폭만큼의 막대로 바뀐다.
  * 박스 크기는 컴포넌트가 정하므로 이곳에는 가리는 규칙만 둔다. 색은 ui/skeleton 과 같다.
  */
+
+/* <sk-t> 밖에 남는 글자(말줄임표, 목록 기호 등)도 드러나지 않게 한다. */
+.is-sk,
+.is-sk * {
+  color: transparent;
+}
+/* 아이콘은 자리만 남긴다. */
+.is-sk svg {
+  visibility: hidden;
+}
 .is-sk sk-t {
   position: relative;
   overflow: hidden;
@@ -222,9 +232,10 @@ body.auth-page {
 .dark .is-sk sk-t::before {
   background-image: linear-gradient(to right, transparent, rgb(255 255 255 / 0.1), transparent);
 }
-/* 색이 있는 배지는 모양만 두고 회색으로 누그러뜨린다. */
+/* 색이 있는 배지·공·버튼은 모양만 두고 회색으로 누그러뜨린다. 공은 색을 인라인으로 넣어 !important 가 필요하다. */
 .is-sk [data-sk-tone] {
-  background-color: var(--color-surface-2);
+  background-color: var(--color-surface-2) !important;
+  background-image: none;
   border-color: var(--color-line);
 }
 @media (prefers-reduced-motion: reduce) {

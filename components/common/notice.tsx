@@ -22,7 +22,7 @@ export function Notice({ title, tone = "info", children }: NoticeProps) {
       <div className={cn("flex items-start gap-3 rounded-lg border p-4 text-sm", TONE_STYLES[tone])}>
         <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0" />
         <div className="space-y-1">
-          <p className="text-ink font-semibold">{title}</p>
+          <p className="text-ink font-semibold"><sk-t>{title}</sk-t></p>
           {children}
         </div>
       </div>
