@@ -7,7 +7,7 @@ import type { RandomComparison, Verdict } from "@/lib/lotto/baseline"
 import { cn } from "@/lib/utils"
 
 /** 판정별 배지 색. 차이가 없으면 눈에 띄지 않게 둔다. */
-const VERDICT_TONE: Record<Verdict, string> = {
+export const VERDICT_TONE: Record<Verdict, string> = {
   within: "bg-surface-2 border-line text-ink-muted",
   above: "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-400",
   below: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400",

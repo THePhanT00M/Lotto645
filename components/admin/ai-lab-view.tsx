@@ -3,6 +3,7 @@
 import { Database, Download, FlaskConical, RefreshCw, Target, Trophy } from "lucide-react"
 import { useTranslation } from "@/components/i18n/locale-provider"
 import DrawBreakdown from "@/components/admin/draw-breakdown"
+import ProspectiveSignals from "@/components/admin/prospective-signals"
 import RecordCard from "@/components/admin/record-card"
 import { StatTile } from "@/components/admin/stat-tiles"
 import { EmptyState } from "@/components/common/empty-state"
@@ -11,6 +12,7 @@ import { PageHeader } from "@/components/common/page-header"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
 import type { InsightSummary, MatchBucket, PickInsight } from "@/hooks/use-pick-insights"
+import type { SignalTrack } from "@/lib/lotto/prospective"
 
 /** 최근 기록에 보여 주는 개수 */
 export const RECENT_LIMIT = 30
@@ -18,6 +20,8 @@ export const RECENT_LIMIT = 30
 interface AiLabViewProps {
   records: readonly PickInsight[]
   summary: InsightSummary
+  /** 사전 등록 신호의 성적. 당첨 이력을 불러오지 못하면 빈 배열이다. */
+  signals: readonly SignalTrack[]
   error?: string | null
   onReload?: () => void
   onDownload?: () => void
@@ -29,7 +33,7 @@ interface AiLabViewProps {
  * 스켈레톤도 이 함수를 자리표시 값으로 부른다(ai-lab-skeleton). 화면을 고치면
  * 자리표시가 저절로 따라오도록, 글자는 모두 <sk-t> 로 감싼다.
  */
-export default function AiLabView({ records, summary, error = null, onReload, onDownload }: AiLabViewProps) {
+export default function AiLabView({ records, summary, signals, error = null, onReload, onDownload }: AiLabViewProps) {
   const { t } = useTranslation()
   const { overall } = summary
 
@@ -98,6 +102,8 @@ export default function AiLabView({ records, summary, error = null, onReload, on
         </div>
 
         {summary.draws.length > 0 && <DrawBreakdown rows={summary.draws} overall={overall} />}
+
+        {signals.length > 0 && <ProspectiveSignals tracks={signals} />}
 
         {summary.scored > 0 && <MatchDistribution buckets={summary.buckets} />}
 
