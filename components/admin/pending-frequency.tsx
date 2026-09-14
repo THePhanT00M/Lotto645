@@ -26,15 +26,15 @@ export default function PendingFrequency({ title, description, entries, iconClas
         <div className="border-line border-b p-5">
           <h3 className="text-ink flex items-center gap-2 text-lg font-bold">
             <Hash className={`h-5 w-5 ${iconClass}`} />
-            {title}
+            <sk-t>{title}</sk-t>
           </h3>
-          <p className="text-ink-muted mt-1 text-sm">{description}</p>
+          <p className="text-ink-muted mt-1 text-sm"><sk-t>{description}</sk-t></p>
         </div>
 
         <ScrollArea className="h-[300px] w-full p-4">
           <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6">
             {entries.length === 0 ? (
-                <p className="text-ink-muted col-span-full py-4 text-center text-sm">{t.admin.stats.noData}</p>
+                <p className="text-ink-muted col-span-full py-4 text-center text-sm"><sk-t>{t.admin.stats.noData}</sk-t></p>
             ) : (
                 entries.map(({ number, count }) => (
                     <div
@@ -42,7 +42,7 @@ export default function PendingFrequency({ title, description, entries, iconClas
                         className="bg-surface border-line flex flex-col items-center gap-1 rounded-lg border p-2 shadow-sm"
                     >
                       <Ball number={number} size="sm" className="shadow-sm" />
-                      <span className="text-ink-muted text-xs font-medium">{t.admin.stats.times(count)}</span>
+                      <span className="text-ink-muted text-xs font-medium"><sk-t>{t.admin.stats.times(count)}</sk-t></span>
                     </div>
                 ))
             )}

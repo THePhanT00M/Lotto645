@@ -1,53 +1,47 @@
-import { Panel } from "@/components/common/panel"
-import { LINE, SkeletonLine } from "@/components/common/skeleton-text"
-import { Skeleton } from "@/components/ui/skeleton"
+import ProfileView, { type Profile } from "@/components/account/profile-view"
+import { useTranslation } from "@/components/i18n/locale-provider"
 
-/** 프로필을 불러오는 동안 실제 화면과 같은 골격으로 자리를 잡아 둔다. */
+/** 자리표시 프로필. 흔한 길이의 닉네임과 메일로 채우고, 사진·배너는 기본 모양으로 둔다. */
+const PLACEHOLDER: Profile = {
+  id: "placeholder",
+  email: "member@example.com",
+  nickname: "닉네임",
+  phone_number: null,
+  avatar_url: null,
+  banner_url: null,
+  role: "user",
+  level: 1,
+  joinedAt: "2026-09-01T00:00:00Z",
+}
+
+const noop = () => {}
+
+/**
+ * 프로필 자리표시
+ *
+ * 막대를 따로 그리지 않고 실제 화면(ProfileView)을 자리표시 값으로 그린 뒤 .is-sk 로 글자만 가린다.
+ */
 export default function ProfileSkeleton() {
+  const { t } = useTranslation()
+
   return (
-      <div className="space-y-6">
-        <div>
-          <div className="flex h-8 items-center gap-2">
-            <Skeleton className="h-6 w-6 rounded-md" />
-            <Skeleton className="h-6 w-20" />
-          </div>
-          <SkeletonLine className="mt-1" width="w-64 max-w-full" line={LINE.sm} bar="h-3.5" />
+      <div role="status" aria-label={t.profile.title} aria-busy>
+        <div className="is-sk" aria-hidden inert>
+          <ProfileView
+              profile={PLACEHOLDER}
+              nickname={PLACEHOLDER.nickname ?? ""}
+              phone=""
+              avatarUrl={null}
+              bannerUrl={null}
+              loadError={null}
+              isSaving={false}
+              onNicknameChange={noop}
+              onPhoneChange={noop}
+              onAvatarChange={noop}
+              onBannerChange={noop}
+              onSave={noop}
+          />
         </div>
-
-        <Panel className="overflow-hidden p-0">
-          <Skeleton className="aspect-[5/1] w-full rounded-none" />
-
-          <div className="px-5 pb-5">
-            <div className="-mt-10 flex items-end justify-between gap-3">
-              <Skeleton className="ring-panel h-20 w-20 shrink-0 rounded-full ring-4" />
-              <div className="flex items-center gap-1.5 pb-1">
-                <Skeleton className="h-[22px] w-12 rounded-md" />
-                <Skeleton className="h-[22px] w-14 rounded-md" />
-              </div>
-            </div>
-
-            <div className="mt-3">
-              <SkeletonLine width="w-24" line={LINE.xl} bar="h-5" />
-              <SkeletonLine width="w-52 max-w-full" line={LINE.sm} bar="h-3.5" />
-              <SkeletonLine className="mt-1" width="w-28" />
-            </div>
-
-            <div className="border-line mt-5 space-y-5 border-t pt-5">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {["nickname", "phone"].map((field) => (
-                    <div key={field} className="space-y-1.5">
-                      <SkeletonLine width="w-12" line={LINE.sm} bar="h-3.5" />
-                      <Skeleton className="h-10 w-full rounded-md" />
-                    </div>
-                ))}
-              </div>
-
-              <div className="flex justify-end">
-                <Skeleton className="h-10 w-20 rounded-md" />
-              </div>
-            </div>
-          </div>
-        </Panel>
       </div>
   )
 }

@@ -46,7 +46,7 @@ export default function BannerPicker({ url, seed, onChange }: BannerPickerProps)
         {url ? (
             <img src={url} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-            <div className="absolute inset-0" style={{ backgroundImage: profileGradient(seed) }} />
+            <div data-sk-tone className="absolute inset-0" style={{ backgroundImage: profileGradient(seed) }} />
         )}
 
         <button

@@ -38,7 +38,7 @@ export function SectionHeading({ icon: Icon, title, children }: SectionHeadingPr
       <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div className="flex items-center gap-2">
           <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          <h2 className="text-ink text-lg font-bold">{title}</h2>
+          <h2 className="text-ink text-lg font-bold"><sk-t>{title}</sk-t></h2>
         </div>
         {children}
       </div>

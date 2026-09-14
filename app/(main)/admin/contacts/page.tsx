@@ -1,17 +1,16 @@
 "use client"
 
-import { CheckCircle2, Circle, Loader2, Mail, RefreshCw } from "lucide-react"
+import { CheckCircle2, Circle, Mail, RefreshCw } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "@/components/i18n/locale-provider"
 import { EmptyState } from "@/components/common/empty-state"
 import { Notice } from "@/components/common/notice"
 import { PageHeader } from "@/components/common/page-header"
 import { Panel } from "@/components/common/panel"
-import { LINE, SkeletonLine } from "@/components/common/skeleton-text"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { authorizedFetch } from "@/lib/auth/client"
+import { formatDateTime } from "@/lib/datetime"
 import { cn } from "@/lib/utils"
 
 interface ContactMessage {
@@ -86,6 +85,26 @@ export default function AdminContactsPage() {
 
   if (isLoading) return <ContactsSkeleton />
 
+  return (
+      <ContactsView
+          messages={messages}
+          error={error}
+          onReload={() => void load()}
+          onToggle={(message) => void toggle(message)}
+      />
+  )
+}
+
+interface ContactsViewProps {
+  messages: ContactMessage[]
+  error: string | null
+  onReload: () => void
+  onToggle: (message: ContactMessage) => void
+}
+
+/** 화면 본문. 스켈레톤도 이 함수를 자리표시 값으로 부르므로 글자는 <sk-t> 로 감싼다. */
+function ContactsView({ messages, error, onReload, onToggle }: ContactsViewProps) {
+  const { t } = useTranslation()
   const pending = messages.filter((message) => !message.answered_at).length
 
   return (
@@ -95,9 +114,9 @@ export default function AdminContactsPage() {
             title={t.admin.contacts.title}
             description={t.admin.contacts.summary(messages.length, pending)}
             actions={
-              <Button variant="outline" onClick={() => void load()} className="bg-surface border-line">
+              <Button variant="outline" onClick={onReload} className="bg-surface border-line">
                 <RefreshCw className="mr-2 h-4 w-4" />
-                {t.common.refresh}
+                <sk-t>{t.common.refresh}</sk-t>
               </Button>
             }
         />
@@ -118,19 +137,21 @@ export default function AdminContactsPage() {
                   <Panel key={message.id} className={cn("space-y-3", message.answered_at && "opacity-60")}>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
-                        <h3 className="text-ink truncate font-semibold">{message.subject}</h3>
+                        <h3 className="text-ink truncate font-semibold"><sk-t>{message.subject}</sk-t></h3>
                         <p className="text-ink-muted mt-0.5 truncate text-xs">
-                          {message.email}
-                          {!message.user_id && ` · ${t.admin.contacts.guest}`}
-                          {" · "}
-                          {new Date(message.created_at).toLocaleString()}
+                          <sk-t>
+                            {message.email}
+                            {!message.user_id && ` · ${t.admin.contacts.guest}`}
+                            {" · "}
+                            {formatDateTime(message.created_at)}
+                          </sk-t>
                         </p>
                       </div>
 
                       <Button
                           variant="ghost"
                           size="custom"
-                          onClick={() => void toggle(message)}
+                          onClick={() => onToggle(message)}
                           className={cn(
                               "h-8 shrink-0 px-2 text-xs",
                               message.answered_at ? "text-green-600 dark:text-green-500" : "text-ink-muted",
@@ -141,12 +162,12 @@ export default function AdminContactsPage() {
                         ) : (
                             <Circle className="mr-1 h-3.5 w-3.5" />
                         )}
-                        {message.answered_at ? t.admin.contacts.answered : t.admin.contacts.pending}
+                        <sk-t>{message.answered_at ? t.admin.contacts.answered : t.admin.contacts.pending}</sk-t>
                       </Button>
                     </div>
 
                     <p className="text-ink-muted bg-surface-2 rounded-lg p-3 text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.message}
+                      <sk-t>{message.message}</sk-t>
                     </p>
                   </Panel>
               ))}
@@ -156,34 +177,20 @@ export default function AdminContactsPage() {
   )
 }
 
-/** 목록을 불러오는 동안 실제 화면과 같은 골격으로 자리를 잡아 둔다. */
-function ContactsSkeleton() {
-  return (
-      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="flex flex-col space-y-2">
-            <div className="flex h-8 items-center gap-2">
-              <Skeleton className="h-6 w-6 rounded-md" />
-              <Skeleton className="h-6 w-24" />
-            </div>
-            <SkeletonLine width="w-44" line={LINE.sm} bar="h-3.5" />
-          </div>
-          <Skeleton className="h-10 w-28 rounded-md" />
-        </div>
+const noop = () => {}
 
-        <div className="space-y-2">
-          {Array.from({ length: 3 }, (_, index) => (
-              <Panel key={index} className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <SkeletonLine width="w-40 max-w-full" line={LINE.sm} bar="h-3.5" />
-                    <SkeletonLine width="w-56 max-w-full" />
-                  </div>
-                  <Skeleton className="h-8 w-20 shrink-0 rounded-md" />
-                </div>
-                <Skeleton className="h-16 w-full rounded-lg" />
-              </Panel>
-          ))}
+/**
+ * 목록을 불러오는 동안 실제 화면(ContactsView)을 자리표시 값으로 그리고 글자만 가린다.
+ *
+ * 문의는 드물어 받은 문의가 없는 화면이 가장 흔하므로, 빈 목록을 자리표시로 둔다.
+ */
+function ContactsSkeleton() {
+  const { t } = useTranslation()
+
+  return (
+      <div role="status" aria-label={t.admin.contacts.title} aria-busy>
+        <div className="is-sk" aria-hidden inert>
+          <ContactsView messages={[]} error={null} onReload={noop} onToggle={noop} />
         </div>
       </div>
   )

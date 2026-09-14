@@ -8,11 +8,9 @@ import { EmptyState } from "@/components/common/empty-state"
 import { Notice } from "@/components/common/notice"
 import { PageHeader } from "@/components/common/page-header"
 import { Panel } from "@/components/common/panel"
-import { LINE, SkeletonLine } from "@/components/common/skeleton-text"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useAdminMembers } from "@/hooks/use-admin-members"
+import { useAdminMembers, type Member } from "@/hooks/use-admin-members"
 import { useHeaderData } from "@/hooks/use-header-data"
 import { ADMIN_LEVEL } from "@/lib/auth/levels"
 
@@ -25,7 +23,6 @@ import { ADMIN_LEVEL } from "@/lib/auth/levels"
 export default function AdminMembersPage() {
   const { members, isLoading, error, reload, changeLevel, patch } = useAdminMembers()
   const { userData } = useHeaderData(true)
-  const { t } = useTranslation()
   const [keyword, setKeyword] = useState("")
 
   const found = useMemo(() => {
@@ -41,6 +38,48 @@ export default function AdminMembersPage() {
 
   if (isLoading) return <MembersSkeleton />
 
+  return (
+      <MembersView
+          members={members}
+          found={found}
+          keyword={keyword}
+          error={error}
+          selfId={userData?.id ?? null}
+          onKeywordChange={setKeyword}
+          onReload={() => void reload()}
+          onChangeLevel={(userId, level) => void changeLevel(userId, level)}
+          onChangeAvatar={(userId, avatarUrl) => patch(userId, { avatar_url: avatarUrl })}
+      />
+  )
+}
+
+interface MembersViewProps {
+  members: Member[]
+  /** 검색어로 거른 회원 */
+  found: Member[]
+  keyword: string
+  error: string | null
+  /** 지금 로그인한 관리자. 자기 등급은 바꿀 수 없다. */
+  selfId: string | null
+  onKeywordChange: (keyword: string) => void
+  onReload: () => void
+  onChangeLevel: (userId: string, level: number) => void
+  onChangeAvatar: (userId: string, avatarUrl: string | null) => void
+}
+
+/** 화면 본문. 스켈레톤도 이 함수를 자리표시 값으로 부르므로 글자는 <sk-t> 로 감싼다. */
+function MembersView({
+  members,
+  found,
+  keyword,
+  error,
+  selfId,
+  onKeywordChange,
+  onReload,
+  onChangeLevel,
+  onChangeAvatar,
+}: MembersViewProps) {
+  const { t } = useTranslation()
   const adminCount = members.filter((member) => member.level >= ADMIN_LEVEL).length
 
   return (
@@ -50,9 +89,9 @@ export default function AdminMembersPage() {
             title={t.admin.members.title}
             description={t.admin.members.summary(members.length, adminCount)}
             actions={
-              <Button variant="outline" onClick={() => void reload()} className="bg-surface border-line">
+              <Button variant="outline" onClick={onReload} className="bg-surface border-line">
                 <RefreshCw className="mr-2 h-4 w-4" />
-                {t.common.refresh}
+                <sk-t>{t.common.refresh}</sk-t>
               </Button>
             }
         />
@@ -68,7 +107,7 @@ export default function AdminMembersPage() {
             <Search className="text-ink-muted pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
                 value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
+                onChange={(event) => onKeywordChange(event.target.value)}
                 placeholder={t.admin.members.search}
                 className="bg-surface border-line pl-9"
             />
@@ -82,9 +121,9 @@ export default function AdminMembersPage() {
                     <MemberRow
                         key={member.id}
                         member={member}
-                        isSelf={member.id === userData?.id}
-                        onChangeLevel={(userId, level) => void changeLevel(userId, level)}
-                        onChangeAvatar={(userId, avatarUrl) => patch(userId, { avatar_url: avatarUrl })}
+                        isSelf={member.id === selfId}
+                        onChangeLevel={onChangeLevel}
+                        onChangeAvatar={onChangeAvatar}
                     />
                 ))}
               </div>
@@ -93,50 +132,49 @@ export default function AdminMembersPage() {
 
         <Notice title={t.admin.members.guideTitle}>
           <ul className="text-ink-muted mt-1 list-inside list-disc space-y-1 opacity-90">
-            <li>{t.admin.members.guideAdminLevel(ADMIN_LEVEL)}</li>
-            <li>{t.admin.members.guideRole}</li>
-            <li>{t.admin.members.guideSelf}</li>
+            <li><sk-t>{t.admin.members.guideAdminLevel(ADMIN_LEVEL)}</sk-t></li>
+            <li><sk-t>{t.admin.members.guideRole}</sk-t></li>
+            <li><sk-t>{t.admin.members.guideSelf}</sk-t></li>
           </ul>
         </Notice>
       </div>
   )
 }
 
-/** 목록을 불러오는 동안 실제 화면과 같은 골격으로 자리를 잡아 둔다. */
+/** 자리표시 회원. 지금 가입한 회원 수(5명)만큼 흔한 길이의 글로 채운다. */
+const PLACEHOLDER_MEMBERS: Member[] = Array.from({ length: 5 }, (_, index) => ({
+  id: `placeholder-${index}`,
+  email: "member@example.com",
+  nickname: "닉네임",
+  avatar_url: null,
+  banner_url: null,
+  role: "user",
+  level: 1,
+  phone_number: null,
+  created_at: "2026-09-01T00:00:00Z",
+}))
+
+const noop = () => {}
+
+/** 목록을 불러오는 동안 실제 화면(MembersView)을 자리표시 값으로 그리고 글자만 가린다. */
 function MembersSkeleton() {
+  const { t } = useTranslation()
+
   return (
-      <div className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="flex flex-col space-y-2">
-            <div className="flex h-8 items-center gap-2">
-              <Skeleton className="h-6 w-6 rounded-md" />
-              <Skeleton className="h-6 w-28" />
-            </div>
-            <SkeletonLine width="w-48" line={LINE.sm} bar="h-3.5" />
-          </div>
-          <Skeleton className="h-10 w-28 rounded-md" />
+      <div role="status" aria-label={t.admin.members.title} aria-busy>
+        <div className="is-sk" aria-hidden inert>
+          <MembersView
+              members={PLACEHOLDER_MEMBERS}
+              found={PLACEHOLDER_MEMBERS}
+              keyword=""
+              error={null}
+              selfId={null}
+              onKeywordChange={noop}
+              onReload={noop}
+              onChangeLevel={noop}
+              onChangeAvatar={noop}
+          />
         </div>
-
-        <Panel className="space-y-4">
-          <Skeleton className="h-10 w-full rounded-md" />
-
-          <div className="space-y-2">
-            {Array.from({ length: 4 }, (_, index) => (
-                <div key={index} className="bg-surface border-line rounded-lg border p-3">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
-                    <div className="min-w-0 flex-1">
-                      <SkeletonLine width="w-24" line={LINE.sm} bar="h-3.5" />
-                      <SkeletonLine width="w-40 max-w-full" />
-                      <SkeletonLine width="w-52 max-w-full" />
-                    </div>
-                    <Skeleton className="h-8 w-16 shrink-0 rounded-md" />
-                    <Skeleton className="h-8 w-20 shrink-0 rounded-md" />
-                  </div>
-                </div>
-            ))}
-          </div>
-        </Panel>
       </div>
   )
 }

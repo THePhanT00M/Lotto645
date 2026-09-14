@@ -16,16 +16,22 @@ export default function RankDistribution({ summary, drawNo }: RankDistributionPr
   return (
       <Panel className="space-y-5">
         <div>
-          <h3 className="text-ink text-xl font-bold">{t.admin.stats.rankDistribution}</h3>
-          <p className="text-ink-muted mt-1 text-sm">{t.admin.stats.rankHint(drawNo ?? 0)}</p>
+          <h3 className="text-ink text-xl font-bold"><sk-t>{t.admin.stats.rankDistribution}</sk-t></h3>
+          <p className="text-ink-muted mt-1 text-sm"><sk-t>{t.admin.stats.rankHint(drawNo ?? 0)}</sk-t></p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
           {summary.rankCounts.map(({ rank, count, percentage }) => (
-              <div key={rank === null ? t.lotto.miss : t.lotto.rank(rank)} className={`rounded-lg border p-4 ${rankStyle(rank)}`}>
-                <div className="mb-2 text-sm font-medium opacity-80">{rank === null ? t.lotto.miss : t.lotto.rank(rank)}</div>
-                <div className="text-2xl font-bold">{count}</div>
-                <div className="mt-1 text-xs opacity-70">{percentage.toFixed(2)}%</div>
+              <div
+                  key={rank === null ? t.lotto.miss : t.lotto.rank(rank)}
+                  data-sk-tone
+                  className={`rounded-lg border p-4 ${rankStyle(rank)}`}
+              >
+                <div className="mb-2 text-sm font-medium opacity-80">
+                  <sk-t>{rank === null ? t.lotto.miss : t.lotto.rank(rank)}</sk-t>
+                </div>
+                <div className="text-2xl font-bold"><sk-t>{count}</sk-t></div>
+                <div className="mt-1 text-xs opacity-70"><sk-t>{percentage.toFixed(2)}%</sk-t></div>
               </div>
           ))}
         </div>

@@ -8,27 +8,13 @@ import { useTranslation } from "@/components/i18n/locale-provider"
 import { Ball } from "@/components/lotto/ball"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { formatDateTime } from "@/lib/datetime"
 import { sourceOf, type AnalyzedEntry } from "@/lib/lotto/history-summary"
 import type { DrawSource, WinningLottoNumbers } from "@/lib/lotto/types"
 import { cn } from "@/lib/utils"
 
 /** 메모 최대 길이. 서버(app/api/picks)도 같은 길이로 자른다. */
 const MAX_MEMO_LENGTH = 100
-
-/**
- * 저장 시각 (예: 2026-09-14 11:38)
- *
- * 스켈레톤은 서버에서 먼저 그려지므로, 브라우저 언어나 시간대에 따라 글이 달라지면
- * 하이드레이션이 어긋난다. 시간대와 형식을 고정해 어디서 그려도 같은 글이 나오게 한다.
- */
-const SAVED_AT = new Intl.DateTimeFormat("sv-SE", {
-  timeZone: "Asia/Seoul",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-})
 
 const STORAGE_TONE = {
   user: "border-blue-100 bg-blue-50 text-blue-700 dark:border-blue-800/50 dark:bg-blue-900/40 dark:text-blue-300",
@@ -90,7 +76,7 @@ export default function HistoryItem({
               {entry.source === "user" ? t.history.mine : t.history.local}
             </Tag>
             {source && <Tag className={SOURCE_TONE[source]}>{t.history.source[source]}</Tag>}
-            <span className="text-ink-muted text-xs tabular-nums"><sk-t>{SAVED_AT.format(entry.timestamp)}</sk-t></span>
+            <span className="text-ink-muted text-xs tabular-nums"><sk-t>{formatDateTime(entry.timestamp)}</sk-t></span>
           </div>
 
           <div className="flex items-center gap-2">

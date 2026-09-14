@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { authorizedFetch } from "@/lib/auth/client"
 import type { Member } from "@/hooks/use-admin-members"
 import { ADMIN_LEVEL } from "@/lib/auth/levels"
+import { formatDate } from "@/lib/datetime"
 import { profileColor } from "@/lib/profile/colors"
 
 /** 프로필 화면과 같은 크기로 저장해, 나중에 크게 써도 흐려지지 않는다. */
@@ -105,6 +106,7 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
                 <img src={member.avatar_url} alt="" className="h-full w-full object-cover" />
             ) : (
                 <span
+                    data-sk-tone
                     className="flex h-full w-full items-center justify-center"
                     style={{ backgroundColor: profileColor(member.id) }}
                 >
@@ -115,21 +117,23 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
 
           <div className="min-w-0">
             <div className="text-ink flex items-center gap-1.5 truncate font-semibold">
-              {member.nickname || t.admin.members.noName}
+              <sk-t>{member.nickname || t.admin.members.noName}</sk-t>
               {member.level >= ADMIN_LEVEL && (
                   <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
               )}
             </div>
-            <div className="text-ink-muted truncate text-xs">{member.email ?? "-"}</div>
+            <div className="text-ink-muted truncate text-xs"><sk-t>{member.email ?? "-"}</sk-t></div>
             <div className="text-ink-muted truncate text-xs">
-              {member.phone_number || t.admin.members.noPhone} · {t.admin.members.joinedAt(new Date(member.created_at).toLocaleDateString())}
+              <sk-t>
+                {member.phone_number || t.admin.members.noPhone} · {t.admin.members.joinedAt(formatDate(member.created_at))}
+              </sk-t>
             </div>
           </div>
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2 pl-13 sm:pl-0">
           <label className="text-ink-muted flex items-center gap-1.5 text-xs">
-            {t.admin.members.level}
+            <sk-t>{t.admin.members.level}</sk-t>
             <select
                 value={member.level}
                 disabled={isSelf}
@@ -158,7 +162,7 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
             ) : (
                 <KeyRound className="mr-1 h-3.5 w-3.5" />
             )}
-            {t.admin.members.resetPassword}
+            <sk-t>{t.admin.members.resetPassword}</sk-t>
           </Button>
 
           <Button
@@ -170,7 +174,7 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
               className="bg-surface border-line h-8 px-2 text-xs"
           >
             {isEntering ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <LogIn className="mr-1 h-3.5 w-3.5" />}
-            {t.admin.members.impersonate}
+            <sk-t>{t.admin.members.impersonate}</sk-t>
           </Button>
 
           <Button
@@ -181,7 +185,7 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
               className="bg-surface border-line h-8 px-2 text-xs"
           >
             {isSaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <ImageUp className="mr-1 h-3.5 w-3.5" />}
-            {t.admin.members.changePhoto}
+            <sk-t>{t.admin.members.changePhoto}</sk-t>
           </Button>
 
           {member.avatar_url && (
@@ -193,7 +197,7 @@ export default function MemberRow({ member, isSelf, onChangeLevel, onChangeAvata
                   className="text-ink-muted hover:text-danger h-8 px-2 text-xs"
               >
                 <Trash2 className="mr-1 h-3.5 w-3.5" />
-                {t.admin.members.resetPhoto}
+                <sk-t>{t.admin.members.resetPhoto}</sk-t>
               </Button>
           )}
         </div>

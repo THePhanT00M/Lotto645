@@ -40,7 +40,7 @@ export default function DrawNavigator({ latestDrawNo, currentDrawNo, onJump }: D
       <div className="space-y-4">
         <Panel>
           <h3 className="text-ink mb-3 flex items-center gap-2 font-semibold">
-            <Search className="h-4 w-4" /> {t.winning.searchDraw}
+            <Search className="h-4 w-4" /> <sk-t>{t.winning.searchDraw}</sk-t>
           </h3>
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -55,23 +55,24 @@ export default function DrawNavigator({ latestDrawNo, currentDrawNo, onJump }: D
               />
               <Hash className="text-ink-muted absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             </div>
-            <Button onClick={search} className="h-10 bg-blue-600 text-white hover:bg-blue-700">
-              {t.common.search}
+            <Button data-sk-tone onClick={search} className="h-10 bg-blue-600 text-white hover:bg-blue-700">
+              <sk-t>{t.common.search}</sk-t>
             </Button>
           </div>
         </Panel>
 
         <Panel>
           <h3 className="text-ink mb-3 flex items-center gap-2 font-semibold">
-            <ListFilter className="h-4 w-4" /> {t.winning.quickJump}
+            <ListFilter className="h-4 w-4" /> <sk-t>{t.winning.quickJump}</sk-t>
           </h3>
           <div className="grid grid-cols-3 gap-2">
             <button
                 type="button"
                 onClick={() => onJump(latestDrawNo)}
+                data-sk-tone={currentDrawNo === latestDrawNo || undefined}
                 className={cn(RANGE_BUTTON_CLASS, "col-span-3 font-bold", currentDrawNo === latestDrawNo && ACTIVE_CLASS)}
             >
-              {t.winning.latest(latestDrawNo)}
+              <sk-t>{t.winning.latest(latestDrawNo)}</sk-t>
             </button>
 
             {ranges.map((range) => (
@@ -79,9 +80,10 @@ export default function DrawNavigator({ latestDrawNo, currentDrawNo, onJump }: D
                     key={range.start}
                     type="button"
                     onClick={() => onJump(range.start)}
+                    data-sk-tone={isActive(range) || undefined}
                     className={cn(RANGE_BUTTON_CLASS, "font-medium", isActive(range) && ACTIVE_CLASS)}
                 >
-                  {range.start}-{range.end}
+                  <sk-t>{range.start}-{range.end}</sk-t>
                 </button>
             ))}
           </div>

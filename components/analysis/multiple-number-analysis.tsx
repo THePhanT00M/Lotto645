@@ -45,7 +45,7 @@ export default function MultipleNumberAnalysis({ multiples }: MultipleNumberAnal
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center sm:gap-0">
           <div className="flex items-center">
             <BarChart3 className="mr-2 h-5 w-5 text-blue-600" />
-            <h3 className="text-ink font-bold">{t.analysis.patternTitle}</h3>
+            <h3 className="text-ink font-bold"><sk-t>{t.analysis.patternTitle}</sk-t></h3>
           </div>
 
           <div className="border-line flex self-end overflow-hidden rounded-md border sm:self-auto">
@@ -54,6 +54,7 @@ export default function MultipleNumberAnalysis({ multiples }: MultipleNumberAnal
                     key={each}
                     type="button"
                     onClick={() => changeSize(each)}
+                    data-sk-tone={size === each || undefined}
                     className={cn(
                         "px-2 py-1 text-xs transition-colors",
                         size === each
@@ -61,14 +62,14 @@ export default function MultipleNumberAnalysis({ multiples }: MultipleNumberAnal
                             : "bg-surface text-ink-muted",
                     )}
                 >
-                  {t.common.multiple(each)}
+                  <sk-t>{t.common.multiple(each)}</sk-t>
                 </button>
             ))}
           </div>
         </div>
 
         <p className="text-ink-muted mt-2 text-sm leading-relaxed">
-          {t.analysis.comboHint}
+          <sk-t>{t.analysis.comboHint}</sk-t>
         </p>
 
         <div className="mt-4 grid max-h-[500px] grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2 md:grid-cols-3">
@@ -94,8 +95,8 @@ export default function MultipleNumberAnalysis({ multiples }: MultipleNumberAnal
         <div className="border-accent-line bg-accent-soft mt-3 grid grid-cols-2 gap-2 rounded-md border p-3 text-center text-sm md:grid-cols-4">
           {hitCounts.map(({ size: each, count }) => (
               <div key={each}>
-                <div className="font-medium text-blue-700 dark:text-blue-400">{t.common.multiple(each)}</div>
-                <div className="text-ink-muted">{t.analysis.comboHit(count)}</div>
+                <div className="font-medium text-blue-700 dark:text-blue-400"><sk-t>{t.common.multiple(each)}</sk-t></div>
+                <div className="text-ink-muted"><sk-t>{t.analysis.comboHit(count)}</sk-t></div>
               </div>
           ))}
         </div>
@@ -110,6 +111,7 @@ function MultipleCard({ item }: { item: MultipleNumber }) {
 
   return (
       <div
+          data-sk-tone={hasHit || undefined}
           className={cn(
               "flex flex-col rounded-lg border p-3",
               hasHit
@@ -129,7 +131,7 @@ function MultipleCard({ item }: { item: MultipleNumber }) {
                 hasHit ? "text-blue-600 dark:text-blue-400" : "text-ink-muted",
             )}
         >
-          {hasHit ? t.analysis.together(item.count) : t.analysis.neverTogether}
+          <sk-t>{hasHit ? t.analysis.together(item.count) : t.analysis.neverTogether}</sk-t>
         </div>
 
         {hasHit && (
@@ -139,8 +141,8 @@ function MultipleCard({ item }: { item: MultipleNumber }) {
                       key={appearance.drawNo}
                       className="border-line flex items-center justify-between border-b py-0.5 last:border-0"
                   >
-                    <span>{t.analysis.appearedDraw(appearance.drawNo)}</span>
-                    <span>{appearance.date}</span>
+                    <span><sk-t>{t.analysis.appearedDraw(appearance.drawNo)}</sk-t></span>
+                    <span><sk-t>{appearance.date}</sk-t></span>
                   </div>
               ))}
             </div>
@@ -166,7 +168,7 @@ function Pagination({ page, totalPages, pageSize, totalItems, onPageChange, onPa
   return (
       <div className="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
         <div className="text-ink-muted text-xs">
-          {t.analysis.showing(first, last, totalItems)}
+          <sk-t>{t.analysis.showing(first, last, totalItems)}</sk-t>
         </div>
 
         <div className="flex items-center">
@@ -178,7 +180,7 @@ function Pagination({ page, totalPages, pageSize, totalItems, onPageChange, onPa
           </PageButton>
 
           <span className="text-ink min-w-[60px] px-2 text-center text-sm">
-            {page + 1} / {totalPages}
+            <sk-t>{page + 1} / {totalPages}</sk-t>
           </span>
 
           <PageButton onClick={() => onPageChange(page + 1)} disabled={page >= totalPages - 1} label={t.analysis.nextPage}>
@@ -190,7 +192,7 @@ function Pagination({ page, totalPages, pageSize, totalItems, onPageChange, onPa
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="text-ink-muted text-xs">{t.analysis.perPage}</span>
+          <span className="text-ink-muted text-xs"><sk-t>{t.analysis.perPage}</sk-t></span>
           <select
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
