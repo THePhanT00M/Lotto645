@@ -27,10 +27,12 @@ export default function DrawHighlight({ draw, latestDrawNo, onNavigate }: DrawHi
             <NavButton direction="prev" disabled={draw.drawNo <= 1} onClick={() => onNavigate(draw.drawNo - 1)} />
 
             <div className="flex flex-col items-center justify-center">
-              <span className="text-ink mb-2 text-3xl leading-none font-bold tracking-tight">{t.winning.drawNoShort(draw.drawNo)}</span>
+              <span className="text-ink mb-2 text-3xl leading-none font-bold tracking-tight">
+                <sk-t>{t.winning.drawNoShort(draw.drawNo)}</sk-t>
+              </span>
               <div className="text-ink-muted bg-surface border-line flex items-center rounded-full border px-3 py-1 text-sm">
                 <Calendar className="mr-1.5 h-3.5 w-3.5" />
-                {draw.date}
+                <sk-t>{draw.date}</sk-t>
               </div>
             </div>
 
@@ -73,7 +75,7 @@ function NavButton({
           className="bg-surface border-line text-ink h-10 px-3 hover:bg-gray-100 dark:hover:bg-[#333]"
       >
         {isPrev && <ChevronLeft className="h-4 w-4 sm:mr-2" />}
-        <span className="hidden sm:inline">{isPrev ? t.winning.previousDraw : t.winning.nextDraw}</span>
+        <span className="hidden sm:inline"><sk-t>{isPrev ? t.winning.previousDraw : t.winning.nextDraw}</sk-t></span>
         {!isPrev && <ChevronRight className="h-4 w-4 sm:ml-2" />}
       </Button>
   )

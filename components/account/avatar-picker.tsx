@@ -47,6 +47,7 @@ export default function AvatarPicker({ url, seed, onChange }: AvatarPickerProps)
               <img src={url} alt="" className="h-full w-full object-cover" />
           ) : (
               <span
+                  data-sk-tone
                   className="flex h-full w-full items-center justify-center"
                   style={{ backgroundColor: profileColor(seed) }}
               >

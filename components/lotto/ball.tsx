@@ -43,7 +43,7 @@ interface BallProps extends VariantProps<typeof ball> {
 export function Ball({ number, size, className, onClick, disabled, selected, badge }: BallProps) {
   const content = (
       <>
-        <sk-t>{number}</sk-t>
+        <sk-t data-sk-digits>{number}</sk-t>
         {badge}
       </>
   )

@@ -10,7 +10,7 @@ export function EmptyState({ icon: Icon, message }: EmptyStateProps) {
   return (
       <div className="bg-panel border-line flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
         <Icon className="mb-4 h-12 w-12 text-gray-300 dark:text-[#3f3f3f]" />
-        <p className="text-ink-muted text-lg font-medium">{message}</p>
+        <p className="text-ink-muted text-lg font-medium"><sk-t>{message}</sk-t></p>
       </div>
   )
 }

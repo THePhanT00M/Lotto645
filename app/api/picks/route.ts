@@ -8,6 +8,9 @@ import { getAdminClient } from "@/lib/supabase/admin"
 const TABLE = "number_picks"
 const INSIGHT_TABLE = "pick_insights"
 
+/** 내 기록으로 돌려주는 최대 건수. 기록 화면이 성적을 전체로 셀 수 있게 Supabase 응답 상한만큼 둔다. */
+const MAX_PICKS = 1000
+
 /** 알고리즘이 바뀌면 올린다. 버전별 성적을 나눠 보기 위한 값이다. */
 const MODEL_VERSION = "crowd-ridge-1"
 
@@ -92,17 +95,54 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await getAdminClient()
         .from(TABLE)
-        .select("id, numbers, created_at, source, draw_no, matched_count, bonus_matched, prize_rank, scored_at")
+        .select("id, numbers, created_at, source, draw_no, memo, matched_count, bonus_matched, prize_rank, scored_at")
         .eq("user_id", userId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
-        .limit(200)
+        .limit(MAX_PICKS)
 
     if (error) throw error
 
     return ok({ picks: data ?? [] })
   } catch (error) {
     console.error("내 기록 조회 실패:", errorMessage(error))
+    return fail(errorMessage(error))
+  }
+}
+
+/** 메모 최대 길이 */
+const MAX_MEMO_LENGTH = 100
+
+/**
+ * PATCH /api/picks
+ *
+ * 본인 기록의 메모를 바꾼다. 빈 문자열이면 메모를 지운다.
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const userId = await resolveUserId(request)
+    if (!userId) return fail("인증 필요", 401)
+
+    const body = await request.json().catch(() => ({}))
+    const id = Number(body?.id)
+    if (!Number.isInteger(id) || id <= 0) return fail("대상 기록을 찾을 수 없습니다.", 400)
+
+    const memo = typeof body?.memo === "string" ? body.memo.trim().slice(0, MAX_MEMO_LENGTH) : ""
+
+    // 본인 것이고 지우지 않은 기록만 바꾼다.
+    const { data, error } = await getAdminClient()
+        .from(TABLE)
+        .update({ memo: memo || null })
+        .eq("id", id)
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .select("id")
+
+    if (error) throw error
+    if (!Array.isArray(data) || data.length === 0) return fail("대상 기록을 찾을 수 없습니다.", 404)
+
+    return ok({ memo: memo || null })
+  } catch (error) {
     return fail(errorMessage(error))
   }
 }

@@ -31,19 +31,20 @@ export function RankBadge({ status, showComparedDraw = false, className }: RankB
   const { t } = useTranslation()
   const base = "rounded-md border px-3 py-1 text-sm font-semibold"
 
+  // data-sk-tone: 스켈레톤 안에서는 등수 색 대신 회색으로 그린다.
   if (status.kind === "pending") {
-    return <div className={cn(base, PENDING_STYLE, className)}>{t.lotto.pending}</div>
+    return <div data-sk-tone className={cn(base, PENDING_STYLE, className)}><sk-t>{t.lotto.pending}</sk-t></div>
   }
 
   if (status.kind === "missing") {
-    return <div className={cn(base, MISS_STYLE, className)}>{t.lotto.noData}</div>
+    return <div data-sk-tone className={cn(base, MISS_STYLE, className)}><sk-t>{t.lotto.noData}</sk-t></div>
   }
 
   const label = status.match.rank === null ? t.lotto.miss : t.lotto.rank(status.match.rank)
 
   return (
-      <div className={cn(base, rankStyle(status.match.rank), className)}>
-        {showComparedDraw ? `${t.lotto.drawNo(status.drawNo)} · ${label}` : label}
+      <div data-sk-tone className={cn(base, rankStyle(status.match.rank), className)}>
+        <sk-t>{showComparedDraw ? `${t.lotto.drawNo(status.drawNo)} · ${label}` : label}</sk-t>
       </div>
   )
 }

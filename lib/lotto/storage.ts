@@ -1,4 +1,4 @@
-import type { LottoResult } from "./types"
+import type { DrawSource, LottoResult } from "./types"
 
 const STORAGE_KEY = "lotto_history"
 
@@ -28,6 +28,8 @@ export const getLottoHistory = (): LottoResult[] => {
 
 interface SaveOptions {
   isAiRecommended?: boolean
+  /** 번호를 만든 경로 */
+  source?: DrawSource
   /** 이 번호가 겨냥한 회차 */
   drawNo?: number
 }
@@ -40,7 +42,7 @@ interface SaveOptions {
  */
 export const saveLottoResult = (
     numbers: number[],
-    { isAiRecommended = false, drawNo }: SaveOptions = {},
+    { isAiRecommended = false, source, drawNo }: SaveOptions = {},
 ): boolean => {
   if (!isBrowser()) return false
 
@@ -57,6 +59,7 @@ export const saveLottoResult = (
     numbers: [...numbers],
     timestamp: now,
     isAiRecommended,
+    pickSource: source,
     drawNo,
   }
 
@@ -72,6 +75,16 @@ export const deleteLottoResult = (id: string): boolean => {
   if (remaining.length === history.length) return false
 
   return write(remaining)
+}
+
+/** 기록 한 건의 메모를 바꾼다. 빈 문자열이면 메모를 지운다. 대상이 없으면 false. */
+export const updateLottoMemo = (id: string, memo: string): boolean => {
+  if (!isBrowser()) return false
+
+  const history = getLottoHistory()
+  if (!history.some((item) => item.id === id)) return false
+
+  return write(history.map((item) => (item.id === id ? { ...item, memo: memo || undefined } : item)))
 }
 
 /** 저장된 기록을 모두 지운다. */
