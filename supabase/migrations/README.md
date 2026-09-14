@@ -74,6 +74,14 @@ Supabase 대시보드의 SQL Editor에서 실행한다.
 
 표가 비어 있으면 AI 추천은 인기 예측 없이 과거 회차 회피만 한다.
 
+## 회원 계정 전환 실패 표시 (2026-09-14)
+
+`20260914_admin_impersonations_failed.sql` 을 실행한다.
+
+`admin_impersonations.failed_at` 컬럼을 더한다. 회원 계정으로 들어가다 막힌 시도는
+이 값이 채워지고 `ended_at` 도 같은 시각으로 닫힌다. 컬럼이 없으면 실패한 시도를
+닫지 못하고 서버 기록에 오류만 남는다. 전환 자체는 컬럼과 상관없이 동작한다.
+
 ## 그 밖의 정리용 SQL
 
 스키마를 바꾸지 않고 한 번만 돌리는 것은 `supabase/maintenance/` 에 둔다.

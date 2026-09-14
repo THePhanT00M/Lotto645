@@ -28,6 +28,9 @@ const readKey = (): Buffer | null => {
   return key.length === KEY_BYTES ? key : null
 }
 
+/** 감쌀 열쇠가 준비됐는지. 되돌리기 어려운 일을 하기 전에 먼저 확인할 때 쓴다. */
+export const hasSealKey = (): boolean => readKey() !== null
+
 /** 그 꼬리표로 감싼 값인지 */
 export const isSealed = (value: string, label: string): boolean => value.startsWith(`${label}.`)
 
