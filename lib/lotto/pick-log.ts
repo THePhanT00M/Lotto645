@@ -1,6 +1,6 @@
 import { getApiUrl } from "@/lib/api-config"
 import { supabase } from "@/lib/supabase/client"
-import type { EngineStats, Recommendation } from "./engine"
+import type { CoverRecommendation, EngineStats, Recommendation } from "./engine"
 import { toLottoResult } from "./queries"
 import { saveLottoResult } from "./storage"
 import type { DrawSource, LottoResult } from "./types"
@@ -63,6 +63,26 @@ export const recordPick = async ({ numbers, source, drawNo, insight }: RecordPic
     })
   } catch (error) {
     console.error(`번호 기록 저장 실패 (${source}):`, error)
+  }
+}
+
+/**
+ * 3개 보장 묶음을 남긴다. 번호 배치만 보내고 181장은 서버가 다시 만든다.
+ * 내 기록에는 넣지 않고 관리자 성적 집계에만 쓴다. 실패해도 화면 동작을 막지 않는다.
+ */
+export const recordCover = async ({ labels, meanPercentile, quietTickets }: CoverRecommendation): Promise<void> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const headers: HeadersInit = { "Content-Type": "application/json" }
+    if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`
+
+    await fetch(getApiUrl(`${ENDPOINT}/cover`), {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ labels, meanPercentile, quietTickets }),
+    })
+  } catch (error) {
+    console.error("묶음 기록 저장 실패:", error)
   }
 }
 

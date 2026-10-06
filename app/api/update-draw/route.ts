@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache"
 import type { NextRequest } from "next/server"
 import { errorMessage, fail, ok } from "@/lib/api-response"
 import { hasCronSecret, requireAdmin } from "@/lib/auth/admin"
+import { scorePendingBundles } from "@/lib/lotto/cover-bundles"
 import { prizeFromApi, toPrizeRow, type DrawPrize, type LottoApiItem } from "@/lib/lotto/prizes"
 import { matchDraw } from "@/lib/lotto/rank"
 import { getAdminClient } from "@/lib/supabase/admin"
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
     }
 
     const scored = await scorePendingRecommendations(supabase, record)
+    const scoredBundles = await scorePendingBundles(new Map([[record.drawNo, record]]))
     const prizeSaved = await savePrize(supabase, prizeFromApi(item))
 
     REVALIDATE_PATHS.forEach((path) => revalidatePath(path))
@@ -87,6 +89,7 @@ export async function GET(request: NextRequest) {
       message: `${record.drawNo}회 당첨 번호가 성공적으로 DB에 삽입되었습니다.`,
       data: record,
       scoredPicks: scored,
+      scoredBundles,
       prizeSaved,
     })
   } catch (error) {

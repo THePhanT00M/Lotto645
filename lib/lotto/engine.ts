@@ -68,6 +68,8 @@ export interface Recommendation {
 
 /** 3개 보장 묶음 181장 */
 export interface CoverRecommendation {
+  /** 자리(0~44)마다 붙인 번호. 서버는 이것만 받아 181장을 다시 만든다. */
+  labels: number[]
   tickets: number[][]
   /** 장마다 예측 인기 백분위의 평균 (0~1). 당첨자 수가 없으면 null. */
   meanPercentile: number | null
@@ -232,7 +234,7 @@ export function buildEngine(
   const recommendCover = (): CoverRecommendation => {
     // 1. 무작위 배치에서 출발. 모두가 같은 묶음을 받으면 그것대로 몰리므로 매번 다르게 시작한다.
     const labels = pickUnique(ALL_NUMBERS, ALL_NUMBERS.length)
-    if (!crowd) return { tickets: labelCover(labels), meanPercentile: null, quietTickets: null }
+    if (!crowd) return { labels, tickets: labelCover(labels), meanPercentile: null, quietTickets: null }
 
     const predictTicket = (index: number) => crowd.model.predict(COVER_LAYOUT[index].map((slot) => labels[slot]))
     const scores = COVER_LAYOUT.map((_, index) => predictTicket(index))
@@ -256,6 +258,7 @@ export function buildEngine(
     // 3. 장마다 백분위로 바꿔 요약
     const percentiles = scores.map((value) => crowd.baseline.percentile(value))
     return {
+      labels,
       tickets: labelCover(labels).sort(compareTickets),
       meanPercentile: percentiles.reduce((sum, value) => sum + value, 0) / percentiles.length,
       quietTickets: percentiles.filter((value) => value <= MAX_PERCENTILE).length,

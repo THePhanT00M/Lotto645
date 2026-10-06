@@ -2,6 +2,7 @@
 
 import { Database, Download, FlaskConical, RefreshCw, Target, Trophy } from "lucide-react"
 import { useTranslation } from "@/components/i18n/locale-provider"
+import CoverBundles from "@/components/admin/cover-bundles"
 import DrawBreakdown from "@/components/admin/draw-breakdown"
 import ProspectiveSignals from "@/components/admin/prospective-signals"
 import RecordCard from "@/components/admin/record-card"
@@ -11,6 +12,7 @@ import { Notice } from "@/components/common/notice"
 import { PageHeader } from "@/components/common/page-header"
 import { Panel } from "@/components/common/panel"
 import { Button } from "@/components/ui/button"
+import type { CoverSummary } from "@/hooks/use-cover-bundles"
 import type { InsightSummary, MatchBucket, PickInsight } from "@/hooks/use-pick-insights"
 import type { SignalTrack } from "@/lib/lotto/prospective"
 
@@ -22,7 +24,11 @@ interface AiLabViewProps {
   summary: InsightSummary
   /** 사전 등록 신호의 성적. 당첨 이력을 불러오지 못하면 빈 배열이다. */
   signals: readonly SignalTrack[]
+  /** 3개 보장 묶음 성적 */
+  cover: CoverSummary
   error?: string | null
+  /** 묶음 기록을 못 불러온 이유. 표를 만들기 전이면 여기에 담긴다. */
+  coverError?: string | null
   onReload?: () => void
   onDownload?: () => void
 }
@@ -33,7 +39,16 @@ interface AiLabViewProps {
  * 스켈레톤도 이 함수를 자리표시 값으로 부른다(ai-lab-skeleton). 화면을 고치면
  * 자리표시가 저절로 따라오도록, 글자는 모두 <sk-t> 로 감싼다.
  */
-export default function AiLabView({ records, summary, signals, error = null, onReload, onDownload }: AiLabViewProps) {
+export default function AiLabView({
+  records,
+  summary,
+  signals,
+  cover,
+  error = null,
+  coverError = null,
+  onReload,
+  onDownload,
+}: AiLabViewProps) {
   const { t } = useTranslation()
   const { overall } = summary
 
@@ -71,6 +86,13 @@ export default function AiLabView({ records, summary, signals, error = null, onR
             </Notice>
         )}
 
+        {coverError && (
+            <Notice title={t.admin.aiLab.cover.loadFailed} tone="warning">
+              <p className="opacity-90">{coverError}</p>
+              <p className="opacity-90">{t.admin.update.migrationHint}</p>
+            </Notice>
+        )}
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatTile icon={Database} label={t.admin.aiLab.collected} value={summary.total.toLocaleString()} hint={t.admin.aiLab.drawCount(summary.drawCount)} />
           <StatTile icon={Target} label={t.admin.aiLab.scored} value={summary.scored.toLocaleString()} hint={t.admin.aiLab.unscored(summary.total - summary.scored)} />
@@ -102,6 +124,8 @@ export default function AiLabView({ records, summary, signals, error = null, onR
         </div>
 
         {summary.draws.length > 0 && <DrawBreakdown rows={summary.draws} overall={overall} />}
+
+        {cover.total > 0 && <CoverBundles summary={cover} />}
 
         {signals.length > 0 && <ProspectiveSignals tracks={signals} />}
 

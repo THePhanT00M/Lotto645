@@ -21,6 +21,7 @@ const COPIED_MS = 2000
 
 /** 생성 중 자리표시. 실제와 같은 181장 구조에 번호만 순서대로 붙인다. */
 const PLACEHOLDER: CoverRecommendation = {
+  labels: [...ALL_NUMBERS],
   tickets: labelCover(ALL_NUMBERS),
   meanPercentile: 0.35,
   quietTickets: 115,

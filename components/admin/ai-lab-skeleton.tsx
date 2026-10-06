@@ -1,5 +1,6 @@
 import AiLabView, { RECENT_LIMIT } from "@/components/admin/ai-lab-view"
 import { useTranslation } from "@/components/i18n/locale-provider"
+import { summarizeBundles, type CoverBundle } from "@/hooks/use-cover-bundles"
 import type { DrawRow, InsightSummary, PickInsight } from "@/hooks/use-pick-insights"
 import { EXPECTED_MATCHED, matchProbability, WIN_PROBABILITY, type RandomComparison } from "@/lib/lotto/baseline"
 import { extractFeatures, FEATURE_KEYS } from "@/lib/lotto/features"
@@ -86,6 +87,23 @@ const SIGNALS: SignalTrack[] = SIGNAL_KEYS.map((key) => ({
   next: { drawNo: 1242, numbers: PLACEHOLDER_NUMBERS },
 }))
 
+/** 묶음은 막 쌓이기 시작해 한 회차, 채점 전인 모양으로 둔다. */
+const COVER = summarizeBundles(
+    [{
+      id: -1,
+      created_at: "2026-01-01T00:00:00Z",
+      draw_no: 1245,
+      mean_percentile: 0.35,
+      quiet_tickets: 115,
+      model_version: "cover-22-23-1",
+      best_matched: null,
+      match_counts: null,
+      rank_counts: null,
+      scored_at: null,
+    } satisfies CoverBundle],
+    [],
+)
+
 /**
  * AI 추천 데이터 화면 자리표시
  *
@@ -98,7 +116,7 @@ export default function AiLabSkeleton() {
   return (
       <div role="status" aria-label={t.admin.aiLab.loading} aria-busy>
         <div className="is-sk" aria-hidden inert>
-          <AiLabView records={RECORDS} summary={SUMMARY} signals={SIGNALS} />
+          <AiLabView records={RECORDS} summary={SUMMARY} signals={SIGNALS} cover={COVER} />
         </div>
       </div>
   )

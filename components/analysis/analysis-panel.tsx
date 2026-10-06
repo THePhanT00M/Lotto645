@@ -9,7 +9,7 @@ import { useTranslation } from "@/components/i18n/locale-provider"
 import { Panel } from "@/components/common/panel"
 import { SectionHeading } from "@/components/common/page-header"
 import { findMultiples } from "@/lib/lotto/analytics"
-import { fetchAvoidInfo, recordPick } from "@/lib/lotto/pick-log"
+import { fetchAvoidInfo, recordCover, recordPick } from "@/lib/lotto/pick-log"
 import type { CoverRecommendation, EngineStats, Recommendation } from "@/lib/lotto/engine"
 import { useDrawPrizes } from "@/hooks/use-draw-prizes"
 import { useRecommendationEngine } from "@/hooks/use-recommendation-engine"
@@ -82,7 +82,9 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
     await new Promise((resolve) => setTimeout(resolve, GENERATE_DELAY_MS))
 
     try {
-      setCover(await engine.recommendCover())
+      const result = await engine.recommendCover()
+      setCover(result)
+      void recordCover(result)
     } catch (error) {
       console.error("3개 보장 묶음을 만들지 못했습니다:", error)
     } finally {
