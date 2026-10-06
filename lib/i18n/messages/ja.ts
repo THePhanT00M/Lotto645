@@ -413,6 +413,8 @@ const ja: Messages = {
   },
 
   analysis: {
+    setSize: "おすすめ枚数",
+    setSizeOption: (count: number) => `${count}枚`,
     noticeReference: (draws: number) => `この分析は過去${draws}回の実際の当選番号に基づいています。統計は参考程度にご覧ください。`,
     noticeRandom: "ロトの番号は毎回無作為に抽選され、過去の統計がこれからの当選確率に影響することはありません。",
     analyzeHint: "引いた番号を分析したり、AI に新しいおすすめを頼めます。",
@@ -441,6 +443,8 @@ const ja: Messages = {
     lastPage: "最後のページ",
     perPage: "表示",
     recommendation: {
+      setHint: (count: number, spread: string, independent: string) => `${count}枚が互いに番号を1つも共有しないように選びました。同じ${count}枚でも、1枚以上が3個以上当たる確率は${spread}%で、重なりを気にしない${count}枚（${independent}%）より高くなります。枚を押すと下の説明がその枚に切り替わります。`,
+      ticket: (index: number) => `${index}枚目`,
       intro: (draws: number, percent: number) => `過去${draws.toLocaleString()}回の等級別当選者数から、多くの人が買う組み合わせの形と番号を学習し、無作為の組み合わせのうち人が集まりにくい${percent}%の中から選びました。すでに出た組み合わせに近すぎる番号は除いています。`,
       introWithoutCrowd: "回次ごとの当選者数を読み込めなかったため、今回はすでに出た組み合わせに近すぎる番号だけを除いて選びました。",
       overlap: (drawNo: number, overlap: number, limit: number) => `最も重なる回は第${drawNo}回で${overlap}個です。すでに出た組み合わせと${limit}個を超えて重ならないよう絞り込んでいます。`,

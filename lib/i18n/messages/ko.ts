@@ -421,6 +421,8 @@ const ko = {
   },
 
   analysis: {
+    setSize: "추천 장수",
+    setSizeOption: (count: number) => `${count}장`,
     noticeReference: (draws: number) => `이 분석은 과거 ${draws}회의 실제 당첨번호를 바탕으로 합니다. 통계는 참고용으로만 봐 주세요.`,
     noticeRandom: "로또 번호는 회차마다 무작위로 뽑히며, 과거의 통계가 앞으로의 당첨 확률에 영향을 주지 않습니다.",
     analyzeHint: "추첨된 번호를 분석하거나 AI의 새로운 추천을 받을 수 있습니다.",
@@ -449,6 +451,8 @@ const ko = {
     lastPage: "마지막 페이지",
     perPage: "표시",
     recommendation: {
+      setHint: (count: number, spread: string, independent: string) => `${count}장이 서로 번호를 하나도 나누지 않게 골랐습니다. 이렇게 하면 같은 ${count}장이라도 한 장 이상 3개 이상 맞을 확률이 ${spread}%로, 겹침을 신경 쓰지 않은 ${count}장(${independent}%)보다 높습니다. 장을 누르면 아래 설명이 그 장으로 바뀝니다.`,
+      ticket: (index: number) => `${index}장`,
       intro: (draws: number, percent: number) => `역대 ${draws.toLocaleString()}회의 등수별 당첨자 수로 사람들이 많이 사는 조합의 모양과 번호를 학습해, 무작위 조합 가운데 덜 몰리는 ${percent}% 안에서 골랐습니다. 이미 나온 조합과 지나치게 닮은 번호는 제외했습니다.`,
       introWithoutCrowd: "회차별 당첨자 수를 불러오지 못해, 이번에는 이미 나온 조합과 지나치게 닮은 번호만 걸러 골랐습니다.",
       overlap: (drawNo: number, overlap: number, limit: number) => `가장 많이 겹치는 회차는 ${drawNo}회에서 ${overlap}개입니다. 이미 나온 조합과 ${limit}개를 넘게 겹치지 않도록 걸러냅니다.`,

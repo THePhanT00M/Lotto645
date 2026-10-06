@@ -32,13 +32,18 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
   const { prizes, isLoading: isPrizesLoading } = useDrawPrizes()
 
   const [target, setTarget] = useState<AnalysisTarget>("user")
-  const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([])
+  const [selected, setSelected] = useState(0)
+  const [setSize, setSetSize] = useState(1)
+  /** 이번 회차에 이미 나간 조합 수. 스켈레톤이 제외 문장 유무까지 실제와 맞추는 데 쓴다. */
+  const [avoidedCount, setAvoidedCount] = useState(0)
   const [stats, setStats] = useState<EngineStats | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
   // 학습은 워커에서 한 번만 하고, 이후 추천은 그 엔진을 다시 쓴다.
   const engine = useRecommendationEngine(draws, prizes)
 
+  const recommendation = recommendations[selected] ?? null
   const aiNumbers = recommendation?.numbers ?? []
   const analyzed = target === "ai" && aiNumbers.length > 0 ? aiNumbers : numbers
   const multiples = useMemo(() => findMultiples(analyzed, draws), [analyzed, draws])
@@ -54,20 +59,24 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
 
     // 이번 회차에 이미 내보낸 조합을 받아 두면 같은 번호를 다시 추천하지 않는다.
     const avoid = await fetchAvoidInfo(targetDrawNo)
+    setAvoidedCount(avoid?.combinations.length ?? 0)
 
     try {
-      const { recommendation: result, stats: engineStats } = await engine.recommend(avoid)
+      const { recommendations: results, stats: engineStats } = await engine.recommend(setSize, avoid)
 
-      setRecommendation(result)
+      setRecommendations(results)
+      setSelected(0)
       setStats(engineStats)
 
-      // 번호와 추천 근거를 한 번에 남긴다. 나중에 이 기록만으로 다시 학습할 수 있다.
-      void recordPick({
-        numbers: result.numbers,
-        source: "ai",
-        drawNo: targetDrawNo,
-        insight: { recommendation: result, stats: engineStats },
-      })
+      // 장마다 번호와 추천 근거를 한 번에 남긴다. 나중에 이 기록만으로 다시 학습할 수 있다.
+      for (const result of results) {
+        void recordPick({
+          numbers: result.numbers,
+          source: "ai",
+          drawNo: targetDrawNo,
+          insight: { recommendation: result, stats: engineStats },
+        })
+      }
     } catch (error) {
       console.error("추천을 만들지 못했습니다:", error)
     } finally {
@@ -85,11 +94,16 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
             <AnalysisBody
                 multiples={multiples}
                 target={target}
-                recommendation={recommendation}
+                recommendations={recommendations}
+                selected={selected}
+                setSize={setSize}
+                avoidedCount={avoidedCount}
                 stats={stats}
                 isGenerating={isGenerating}
                 isRecommendBlocked={isPrizesLoading}
                 onRecommend={() => void handleRecommend()}
+                onSelect={setSelected}
+                onSetSizeChange={setSetSize}
                 onTargetChange={setTarget}
             />
         )}
