@@ -415,6 +415,7 @@ const en: Messages = {
   analysis: {
     setSize: "Number of tickets",
     setSizeOption: (count: number) => `${count}`,
+    setSizeUnit: "Games",
     noticeReference: (draws: number) => `This analysis draws on ${draws} real past results. Please treat the statistics as reference only.`,
     noticeRandom: "Every draw is random, and past statistics have no bearing on the odds of a future one.",
     analyzeHint: "Analyse the numbers you drew, or ask the AI for a fresh recommendation.",
@@ -443,8 +444,11 @@ const en: Messages = {
     lastPage: "Last page",
     perPage: "Show",
     recommendation: {
-      setHint: (count: number, spread: string, independent: string) => `These ${count} tickets share no numbers. That gives a ${spread}% chance that at least one matches 3 or more, versus ${independent}% for ${count} tickets picked without regard to overlap. Tap a ticket to see its details below.`,
-      ticket: (index: number) => `#${index}`,
+      setTitle: (count: number) => `AI picks · ${count} games`,
+      setNote: "No number repeats across games",
+      setOdds: "At least one game with 3+",
+      setOddsBase: (independent: string) => `${independent}% if overlap is ignored`,
+      ticket: (game: string, numbers: string) => `Game ${game}: ${numbers}`,
       intro: (draws: number, percent: number) => `Learned from the prize-winner counts of ${draws.toLocaleString()} past draws which shapes and numbers people buy most, then picked from the ${percent}% of random sets that draw the smallest crowd. Sets too close to ones that already came up are left out.`,
       introWithoutCrowd: "Winner counts could not be loaded, so this pick only filters out sets too close to past draws.",
       overlap: (drawNo: number, overlap: number, limit: number) => `The largest overlap is ${overlap} numbers with draw ${drawNo}. Sets overlapping a past draw by more than ${limit} are filtered out.`,

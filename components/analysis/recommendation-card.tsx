@@ -2,11 +2,11 @@
 
 import { FlaskConical, Ruler, ShieldCheck, Sparkles, Users, Waypoints } from "lucide-react"
 import { useTranslation } from "@/components/i18n/locale-provider"
+import LottoSlip from "@/components/analysis/lotto-slip"
 import PaperPattern from "@/components/analysis/paper-pattern"
 import { BallRow } from "@/components/lotto/ball-row"
 import { independentHitRate, SPREAD_HIT_RATE, type EngineStats, type Recommendation } from "@/lib/lotto/engine"
 import { extractFeatures } from "@/lib/lotto/features"
-import { cn } from "@/lib/utils"
 
 interface RecommendationCardProps {
   /** 서로 번호가 겹치지 않는 추천 장들 */
@@ -125,21 +125,23 @@ function RecommendationBody({ recommendations, selected, stats, onSelect }: Reco
             </div>
         )}
 
-        <div className="mt-4 grid grid-cols-1 items-start gap-4 md:grid-cols-2">
-          <div className="bg-surface-2 rounded-lg p-3">
+        {/* 왼쪽 용지와 오른쪽 설명 묶음이 같은 높이로 늘어나 위아래 끝선이 맞는다. */}
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[18rem_1fr]">
+          <div className="bg-surface-2 flex flex-col rounded-lg p-3">
             <h4 className="text-ink mb-2 flex items-center gap-1.5 text-sm font-semibold">
               <Waypoints className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <sk-t>{copy.shape}</sk-t>
             </h4>
-            <PaperPattern numbers={numbers} compare={nearestDraw?.numbers} className="w-full" />
+            <PaperPattern numbers={numbers} compare={nearestDraw?.numbers} className="mx-auto w-full max-w-72" />
             {nearestDraw && (
-                <p className="text-ink-muted mt-2 text-center text-xs">
+                <p className="text-ink-muted mt-auto pt-2 text-center text-xs">
                   <sk-t>{copy.nearest(nearestDraw.drawNo, nearestDraw.date)}</sk-t>
                 </p>
             )}
           </div>
 
-          <div className="space-y-3">
+          {/* PC 에서는 2열 2줄로 놓고 두 줄이 높이를 똑같이 나눈다. */}
+          <div className="grid grid-cols-1 gap-3 lg:auto-rows-fr lg:grid-cols-2">
             {popularityPercentile !== null && <CrowdBar percentile={popularityPercentile} />}
 
             {/* 이 조합에만 해당하는 것을 위에, 모든 추천에 똑같이 붙는 모델 검증과 참고 수치를 아래에 둔다. */}
@@ -203,7 +205,7 @@ function RecommendationBody({ recommendations, selected, stats, onSelect }: Reco
   )
 }
 
-/** 서로 번호가 겹치지 않는 여러 장. 누르면 아래 설명이 그 장으로 바뀐다. */
+/** 서로 번호가 겹치지 않는 여러 게임. 누르면 아래 설명이 그 게임으로 바뀐다. */
 function TicketPicker({
   recommendations,
   selected,
@@ -220,27 +222,19 @@ function TicketPicker({
 
   return (
       <div className="bg-surface-2 rounded-lg p-3">
-        <p className="text-ink-muted mb-3 text-xs leading-relaxed">
-          <sk-t>{copy.setHint(count, percent(SPREAD_HIT_RATE[count]), percent(independentHitRate(count)))}</sk-t>
-        </p>
-        <ol className="space-y-1.5">
-          {recommendations.map((item, index) => (
-              <li key={item.numbers.join()}>
-                <button
-                    type="button"
-                    aria-pressed={index === selected}
-                    onClick={() => onSelect(index)}
-                    className={cn(
-                        "flex w-full items-center gap-2 rounded-md border px-2 py-1.5 transition-colors sm:gap-3",
-                        index === selected ? "bg-surface border-blue-500" : "border-transparent hover:border-line",
-                    )}
-                >
-                  <span className="text-ink-muted w-8 shrink-0 text-left text-xs"><sk-t>{copy.ticket(index + 1)}</sk-t></span>
-                  <BallRow numbers={item.numbers} size="fluid" className="max-w-64 min-w-0 flex-1 justify-start gap-1.5" />
-                </button>
-              </li>
-          ))}
-        </ol>
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <p className="text-ink text-sm font-semibold">
+            <sk-t>{copy.setTitle(count)}</sk-t>
+            <span className="text-ink-muted ml-2 text-xs font-normal"><sk-t>{copy.setNote}</sk-t></span>
+          </p>
+          <p className="text-ink-muted text-xs">
+            <sk-t>{copy.setOdds}</sk-t>{" "}
+            <strong className="text-ink text-sm font-bold"><sk-t>{percent(SPREAD_HIT_RATE[count])}%</sk-t></strong>
+            <span className="ml-2"><sk-t>{copy.setOddsBase(percent(independentHitRate(count)))}</sk-t></span>
+          </p>
+        </div>
+
+        <LottoSlip recommendations={recommendations} selected={selected} onSelect={onSelect} />
       </div>
   )
 }

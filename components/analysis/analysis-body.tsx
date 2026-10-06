@@ -61,8 +61,9 @@ export default function AnalysisBody({
   return (
       <div className="space-y-6">
         <Surface className="rounded-xl">
-          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-            <div className="flex flex-col gap-2">
+          {/* 버튼이 늘어 제목과 한 줄에 안 들어가면 다음 줄로 내린다. 겹치지 않게 어느 것도 줄이지 않는다. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+            <div className="flex min-w-0 flex-[1_1_16rem] flex-col gap-2">
               <div className="flex items-center gap-2">
                 <MousePointerClick className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 <h3 className="text-ink font-bold"><sk-t>{t.analysis.heading}</sk-t></h3>
@@ -72,9 +73,7 @@ export default function AnalysisBody({
               </p>
             </div>
 
-            <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
-              <SetSizePicker value={setSize} onChange={onSetSizeChange} disabled={isGenerating} />
-
+            <div className="flex w-full flex-col-reverse items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center [&>*]:shrink-0">
               {recommendations.length > 0 &&
                   (target === "ai" ? (
                       <ToggleButton icon={SearchCheck} onClick={() => onTargetChange("user")} disabled={isGenerating}>
@@ -86,16 +85,22 @@ export default function AnalysisBody({
                       </ToggleButton>
                   ))}
 
-              {/* 학습은 첫 추천 때 한 번만 하므로, 당첨자 수가 도착하기 전에는 누를 수 없게 한다. */}
-              <Button
-                  data-sk-tone
-                  onClick={onRecommend}
-                  disabled={isGenerating || isRecommendBlocked}
-                  className="flex-1 bg-blue-600 text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 sm:flex-none"
-              >
-                <Sparkles className={`mr-2 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
-                <sk-t>{isGenerating ? t.analysis.generating : t.analysis.recommend}</sk-t>
-              </Button>
+              {/* 몇 게임을 받을지와 추천 버튼은 한 동작이라 한 상자에 묶는다. */}
+              <div className="border-line bg-surface flex flex-wrap items-center gap-1 rounded-lg border p-1 shadow-sm sm:flex-nowrap">
+                <SetSizePicker value={setSize} onChange={onSetSizeChange} disabled={isGenerating} />
+                <span aria-hidden className="bg-line mx-1 hidden h-6 w-px shrink-0 sm:block" />
+
+                {/* 학습은 첫 추천 때 한 번만 하므로, 당첨자 수가 도착하기 전에는 누를 수 없게 한다. */}
+                <Button
+                    data-sk-tone
+                    onClick={onRecommend}
+                    disabled={isGenerating || isRecommendBlocked}
+                    className="h-9 shrink-0 basis-full bg-blue-600 px-3 text-white hover:bg-blue-700 sm:h-8 sm:basis-auto"
+                >
+                  <Sparkles className={`mr-1.5 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
+                  <sk-t>{isGenerating ? t.analysis.generating : t.analysis.recommend}</sk-t>
+                </Button>
+              </div>
             </div>
           </div>
         </Surface>
@@ -124,22 +129,24 @@ function SetSizePicker({ value, onChange, disabled }: { value: number; onChange:
   const sizes = Array.from({ length: MAX_SET_SIZE }, (_, index) => index + 1)
 
   return (
-      <div role="radiogroup" aria-label={t.analysis.setSize} className="border-line bg-surface flex rounded-md border p-0.5">
+      <div role="radiogroup" aria-label={t.analysis.setSize} className="flex flex-1 items-center gap-0.5">
+        <span className="text-ink-muted pr-1.5 pl-2 text-xs whitespace-nowrap"><sk-t>{t.analysis.setSizeUnit}</sk-t></span>
         {sizes.map((size) => (
             <button
                 key={size}
                 type="button"
                 role="radio"
                 aria-checked={value === size}
+                aria-label={t.analysis.setSizeOption(size)}
                 disabled={disabled}
                 onClick={() => onChange(size)}
                 className={cn(
-                    "flex-1 rounded px-2.5 py-1 text-sm font-medium transition-colors sm:flex-none",
-                    value === size ? "bg-blue-600 text-white" : "text-ink-muted hover:text-ink",
+                    "h-8 min-w-8 flex-1 rounded-md text-sm font-medium tabular-nums transition-colors sm:flex-none",
+                    value === size ? "bg-blue-50 text-blue-700 ring-1 ring-blue-500 ring-inset dark:bg-blue-950 dark:text-blue-300" : "text-ink-muted hover:bg-surface-2 hover:text-ink",
                 )}
                 data-sk-tone={value === size || undefined}
             >
-              <sk-t>{t.analysis.setSizeOption(size)}</sk-t>
+              <sk-t>{size}</sk-t>
             </button>
         ))}
       </div>
@@ -159,10 +166,10 @@ function ToggleButton({
 }) {
   return (
       <Button
-          variant="outline"
+          variant="ghost"
           onClick={onClick}
           disabled={disabled}
-          className="bg-surface text-ink border-line flex-1 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 sm:flex-none dark:hover:border-blue-500 dark:hover:bg-blue-900/30 dark:hover:text-blue-400"
+          className="text-ink-muted h-10 border-transparent bg-transparent shadow-none transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400"
       >
         <Icon className="mr-2 h-4 w-4" />
         <sk-t>{children}</sk-t>
