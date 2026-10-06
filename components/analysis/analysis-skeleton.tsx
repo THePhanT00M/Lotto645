@@ -23,8 +23,11 @@ export function AnalysisSkeleton({ numbers }: { numbers: number[] }) {
               recommendation={null}
               stats={null}
               isGenerating={false}
+              cover={null}
+              isCoverGenerating={false}
               isRecommendBlocked
               onRecommend={noop}
+              onCover={noop}
               onTargetChange={noop}
           />
         </div>

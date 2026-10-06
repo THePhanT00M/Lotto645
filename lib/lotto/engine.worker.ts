@@ -1,6 +1,13 @@
 /// <reference lib="webworker" />
 
-import { buildEngine, type AvoidInfo, type EngineStats, type Recommendation, type RecommendationEngine } from "./engine"
+import {
+  buildEngine,
+  type AvoidInfo,
+  type CoverRecommendation,
+  type EngineStats,
+  type Recommendation,
+  type RecommendationEngine,
+} from "./engine"
 import type { DrawPrize } from "./prizes"
 import type { WinningLottoNumbers } from "./types"
 
@@ -14,10 +21,12 @@ import type { WinningLottoNumbers } from "./types"
 export type WorkerRequest =
     | { type: "train"; draws: WinningLottoNumbers[]; prizes: DrawPrize[] }
     | { type: "recommend"; avoid?: AvoidInfo }
+    | { type: "cover" }
 
 export type WorkerResponse =
     | { type: "ready"; stats: EngineStats }
     | { type: "result"; recommendation: Recommendation; stats: EngineStats }
+    | { type: "cover"; cover: CoverRecommendation }
     | { type: "error"; message: string }
 
 let engine: RecommendationEngine | null = null
@@ -35,6 +44,12 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     if (request.type === "recommend") {
       if (!engine) throw new Error("학습이 끝나지 않았습니다.")
       post({ type: "result", recommendation: engine.recommend(request.avoid), stats: engine.stats })
+      return
+    }
+
+    if (request.type === "cover") {
+      if (!engine) throw new Error("학습이 끝나지 않았습니다.")
+      post({ type: "cover", cover: engine.recommendCover() })
     }
   } catch (error) {
     post({ type: "error", message: error instanceof Error ? error.message : "알 수 없는 오류" })

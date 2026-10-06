@@ -1,14 +1,15 @@
 "use client"
 
-import { MousePointerClick, RotateCcw, SearchCheck, Sparkles, type LucideIcon } from "lucide-react"
+import { MousePointerClick, RotateCcw, SearchCheck, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
+import CoverCard from "@/components/analysis/cover-card"
 import MultipleNumberAnalysis from "@/components/analysis/multiple-number-analysis"
 import RecommendationCard from "@/components/analysis/recommendation-card"
 import { Surface } from "@/components/common/panel"
 import { useTranslation } from "@/components/i18n/locale-provider"
 import { Button } from "@/components/ui/button"
 import type { MultipleNumber } from "@/lib/lotto/analytics"
-import type { EngineStats, Recommendation } from "@/lib/lotto/engine"
+import type { CoverRecommendation, EngineStats, Recommendation } from "@/lib/lotto/engine"
 
 /** 지금 분석 중인 번호가 어디서 왔는지 */
 export type AnalysisTarget = "user" | "ai"
@@ -19,9 +20,13 @@ interface AnalysisBodyProps {
   recommendation: Recommendation | null
   stats: EngineStats | null
   isGenerating: boolean
+  /** 3개 보장 묶음 */
+  cover: CoverRecommendation | null
+  isCoverGenerating: boolean
   /** 추천 버튼을 막을지. 학습에 쓸 당첨자 수가 아직 오지 않았으면 막는다. */
   isRecommendBlocked: boolean
   onRecommend: () => void
+  onCover: () => void
   onTargetChange: (target: AnalysisTarget) => void
 }
 
@@ -36,11 +41,17 @@ export default function AnalysisBody({
   recommendation,
   stats,
   isGenerating,
+  cover,
+  isCoverGenerating,
   isRecommendBlocked,
   onRecommend,
+  onCover,
   onTargetChange,
 }: AnalysisBodyProps) {
   const { t } = useTranslation()
+
+  // 워커는 요청을 하나씩 받으므로 어느 쪽이든 만드는 중이면 둘 다 막는다.
+  const isBusy = isGenerating || isCoverGenerating
 
   return (
       <div className="space-y-6">
@@ -59,7 +70,7 @@ export default function AnalysisBody({
             <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
               {recommendation &&
                   (target === "ai" ? (
-                      <ToggleButton icon={SearchCheck} onClick={() => onTargetChange("user")} disabled={isGenerating}>
+                      <ToggleButton icon={SearchCheck} onClick={() => onTargetChange("user")} disabled={isBusy}>
                         {t.analysis.analyzeNumbers}
                       </ToggleButton>
                   ) : (
@@ -68,11 +79,15 @@ export default function AnalysisBody({
                       </ToggleButton>
                   ))}
 
+              <ToggleButton icon={ShieldCheck} onClick={onCover} disabled={isBusy || isRecommendBlocked}>
+                {isCoverGenerating ? t.analysis.generating : t.analysis.cover.button}
+              </ToggleButton>
+
               {/* 학습은 첫 추천 때 한 번만 하므로, 당첨자 수가 도착하기 전에는 누를 수 없게 한다. */}
               <Button
                   data-sk-tone
                   onClick={onRecommend}
-                  disabled={isGenerating || isRecommendBlocked}
+                  disabled={isBusy || isRecommendBlocked}
                   className="flex-1 bg-blue-600 text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 sm:flex-none"
               >
                 <Sparkles className={`mr-2 h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
@@ -86,6 +101,8 @@ export default function AnalysisBody({
         <div className={target === "ai" ? "block" : "hidden"}>
           <RecommendationCard recommendation={recommendation} stats={stats} isGenerating={isGenerating} />
         </div>
+
+        <CoverCard cover={cover} isGenerating={isCoverGenerating} />
 
         <MultipleNumberAnalysis multiples={multiples} />
       </div>
