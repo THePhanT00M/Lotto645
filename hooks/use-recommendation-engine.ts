@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { buildEngine, type AvoidInfo, type CoverRecommendation, type EngineStats, type Recommendation } from "@/lib/lotto/engine"
+import { buildEngine, type AvoidInfo, type EngineStats, type Recommendation } from "@/lib/lotto/engine"
 import type { WorkerRequest, WorkerResponse } from "@/lib/lotto/engine.worker"
 import type { DrawPrize } from "@/lib/lotto/prizes"
 import type { WinningLottoNumbers } from "@/lib/lotto/types"
@@ -15,7 +15,7 @@ import type { WinningLottoNumbers } from "@/lib/lotto/types"
  */
 export function useRecommendationEngine(draws: readonly WinningLottoNumbers[], prizes: readonly DrawPrize[]) {
   const workerRef = useRef<Worker | null>(null)
-  const pendingRef = useRef<((message: WorkerResponse) => void) | null>(null)
+  const pendingRef = useRef<((result: { recommendation: Recommendation; stats: EngineStats }) => void) | null>(null)
   const rejectRef = useRef<((error: Error) => void) | null>(null)
 
   /** 워커를 못 쓸 때 쓰는 메인 스레드 엔진 */
@@ -47,8 +47,8 @@ export function useRecommendationEngine(draws: readonly WinningLottoNumbers[], p
           return
         }
 
-        if (message.type !== "error") {
-          pendingRef.current?.(message)
+        if (message.type === "result") {
+          pendingRef.current?.({ recommendation: message.recommendation, stats: message.stats })
           pendingRef.current = null
           rejectRef.current = null
           return
@@ -76,18 +76,15 @@ export function useRecommendationEngine(draws: readonly WinningLottoNumbers[], p
 
   const post = (worker: Worker, request: WorkerRequest) => worker.postMessage(request)
 
-  /** 워커를 못 쓰면 메인 스레드 엔진을, 쓸 수 있으면 학습을 한 번 보낸 뒤 요청을 넘긴다. */
-  const run = useCallback(
-      async (request: WorkerRequest): Promise<WorkerResponse> => {
+  const recommend = useCallback(
+      async (avoid?: AvoidInfo): Promise<{ recommendation: Recommendation; stats: EngineStats }> => {
         const worker = ensureWorker()
 
         if (!worker) {
           fallbackRef.current ??= buildEngine(draws, prizes)
           const engine = fallbackRef.current
           setIsTrained(true)
-          if (request.type === "cover") return { type: "cover", cover: engine.recommendCover() }
-          const avoid = request.type === "recommend" ? request.avoid : undefined
-          return { type: "result", recommendation: engine.recommend(avoid), stats: engine.stats }
+          return { recommendation: engine.recommend(avoid), stats: engine.stats }
         }
 
         if (!trainSentRef.current) {
@@ -98,26 +95,11 @@ export function useRecommendationEngine(draws: readonly WinningLottoNumbers[], p
         return new Promise((resolve, reject) => {
           pendingRef.current = resolve
           rejectRef.current = reject
-          post(worker, request)
+          post(worker, { type: "recommend", avoid })
         })
       },
       [draws, prizes, ensureWorker],
   )
 
-  const recommend = useCallback(
-      async (avoid?: AvoidInfo): Promise<{ recommendation: Recommendation; stats: EngineStats }> => {
-        const message = await run({ type: "recommend", avoid })
-        if (message.type !== "result") throw new Error("추천 응답이 아닙니다.")
-        return { recommendation: message.recommendation, stats: message.stats }
-      },
-      [run],
-  )
-
-  const recommendCover = useCallback(async (): Promise<CoverRecommendation> => {
-    const message = await run({ type: "cover" })
-    if (message.type !== "cover") throw new Error("묶음 응답이 아닙니다.")
-    return message.cover
-  }, [run])
-
-  return { recommend, recommendCover, isTrained }
+  return { recommend, isTrained }
 }

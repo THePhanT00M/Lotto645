@@ -9,8 +9,8 @@ import { useTranslation } from "@/components/i18n/locale-provider"
 import { Panel } from "@/components/common/panel"
 import { SectionHeading } from "@/components/common/page-header"
 import { findMultiples } from "@/lib/lotto/analytics"
-import { fetchAvoidInfo, recordCover, recordPick } from "@/lib/lotto/pick-log"
-import type { CoverRecommendation, EngineStats, Recommendation } from "@/lib/lotto/engine"
+import { fetchAvoidInfo, recordPick } from "@/lib/lotto/pick-log"
+import type { EngineStats, Recommendation } from "@/lib/lotto/engine"
 import { useDrawPrizes } from "@/hooks/use-draw-prizes"
 import { useRecommendationEngine } from "@/hooks/use-recommendation-engine"
 import { useWinningDraws } from "@/hooks/use-winning-draws"
@@ -35,8 +35,6 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
   const [stats, setStats] = useState<EngineStats | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [cover, setCover] = useState<CoverRecommendation | null>(null)
-  const [isCoverGenerating, setIsCoverGenerating] = useState(false)
 
   // 학습은 워커에서 한 번만 하고, 이후 추천은 그 엔진을 다시 쓴다.
   const engine = useRecommendationEngine(draws, prizes)
@@ -77,21 +75,6 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
     }
   }
 
-  const handleCover = async () => {
-    setIsCoverGenerating(true)
-    await new Promise((resolve) => setTimeout(resolve, GENERATE_DELAY_MS))
-
-    try {
-      const result = await engine.recommendCover()
-      setCover(result)
-      void recordCover(result)
-    } catch (error) {
-      console.error("3개 보장 묶음을 만들지 못했습니다:", error)
-    } finally {
-      setIsCoverGenerating(false)
-    }
-  }
-
   return (
       <Panel className="space-y-4">
         <SectionHeading icon={Info} title={t.analysis.title} />
@@ -105,11 +88,8 @@ export default function AnalysisPanel({ numbers }: AnalysisPanelProps) {
                 recommendation={recommendation}
                 stats={stats}
                 isGenerating={isGenerating}
-                cover={cover}
-                isCoverGenerating={isCoverGenerating}
                 isRecommendBlocked={isPrizesLoading}
                 onRecommend={() => void handleRecommend()}
-                onCover={() => void handleCover()}
                 onTargetChange={setTarget}
             />
         )}

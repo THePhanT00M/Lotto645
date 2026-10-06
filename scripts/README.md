@@ -7,7 +7,6 @@
 pnpm engine:backtest      # 과거 회차로 적중률을 무작위와 견준다
 pnpm engine:distribution  # 추천·decoy의 번호 쏠림을 카이제곱으로 잰다
 pnpm engine:tune          # 학습 횟수별 정확도·Brier·시간을 비교한다
-pnpm cover:verify         # 3개 보장 묶음 181장을 814만 가지 당첨 번호 전부와 대조한다
 ```
 
 Supabase 접속 정보가 필요하므로 `.env`가 있어야 한다.
@@ -25,6 +24,3 @@ Supabase 접속 정보가 필요하므로 `.env`가 있어야 한다.
 
 **engine:tune** — 학습 횟수를 늘릴수록 정확도가 떨어지고 Brier가 나빠지면 과적합이다.
 설정을 바꾸기 전에 이 표를 먼저 확인한다.
-
-**cover:verify** — 무작위 번호 배치로 181장을 만들어 모든 당첨 번호와 대조한다. `.env` 없이도 돈다.
-"3개 미만 회차 0건"이 실패로 바뀌면 `lib/lotto/cover.ts` 의 구조가 깨진 것이다.

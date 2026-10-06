@@ -3,8 +3,6 @@
 import { useMemo } from "react"
 import AiLabSkeleton from "@/components/admin/ai-lab-skeleton"
 import AiLabView from "@/components/admin/ai-lab-view"
-import { useCoverBundles } from "@/hooks/use-cover-bundles"
-import { useDrawPrizes } from "@/hooks/use-draw-prizes"
 import { toCsv, usePickInsights } from "@/hooks/use-pick-insights"
 import { useWinningDraws } from "@/hooks/use-winning-draws"
 import { trackSignals } from "@/lib/lotto/prospective"
@@ -15,13 +13,11 @@ import { trackSignals } from "@/lib/lotto/prospective"
  * 추천할 때마다 남긴 번호·기하 특징·모델 정보를 모아 보여준다.
  * 회차가 발표되면 채점 결과가 채워지므로, 실제 성적을 무작위 기대값과
  * 견주거나 기록을 내려받아 다시 학습시키는 데 쓴다. 사전 등록한 적중 신호도
- * 당첨 이력으로 그 자리에서 채점해 함께 보여 주고, 3개 보장 묶음 성적도 묶음 단위로 따로 모은다.
+ * 당첨 이력으로 그 자리에서 채점해 함께 보여 준다.
  */
 export default function AiLabPage() {
   const { records, summary, isLoading, error, reload } = usePickInsights()
   const { draws, isLoading: isDrawsLoading } = useWinningDraws()
-  const { prizes, isLoading: isPrizesLoading } = useDrawPrizes()
-  const cover = useCoverBundles(prizes)
 
   const signals = useMemo(() => (draws.length > 0 ? trackSignals(draws) : []), [draws])
 
@@ -36,22 +32,15 @@ export default function AiLabPage() {
     URL.revokeObjectURL(url)
   }
 
-  const reloadAll = () => {
-    void reload()
-    void cover.reload()
-  }
-
-  if (isLoading || isDrawsLoading || isPrizesLoading || cover.isLoading) return <AiLabSkeleton />
+  if (isLoading || isDrawsLoading) return <AiLabSkeleton />
 
   return (
       <AiLabView
           records={records}
           summary={summary}
           signals={signals}
-          cover={cover.summary}
           error={error}
-          coverError={cover.error}
-          onReload={reloadAll}
+          onReload={reload}
           onDownload={download}
       />
   )

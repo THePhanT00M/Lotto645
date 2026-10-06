@@ -1,6 +1,5 @@
 import { combinationKey } from "./combinations"
 import { ALL_NUMBERS, PICK_COUNT } from "./constants"
-import { COVER_LAYOUT, labelCover, TICKETS_BY_SLOT } from "./cover"
 import { extractFeatures, featureVectorOf, type PatternFeatures } from "./features"
 import { meanVector, standardDeviation, standardize } from "./matrix"
 import { buildOverlapIndex } from "./overlap"
@@ -47,9 +46,6 @@ const VALIDATION_RATIO = 0.2
 /** 인기 모델을 세우는 최소 회차 수. 이보다 적으면 인기 없이 과거 회차 회피만 한다. */
 const MIN_TRAIN_DRAWS = 200
 
-/** 3개 보장 묶음의 번호 배치를 고르는 시간(ms). 자리 맞바꾸기를 이 안에서 되풀이한다. */
-const COVER_SEARCH_MS = 500
-
 /** 조합 하나에 대한 평가 */
 export interface Recommendation {
   numbers: number[]
@@ -64,17 +60,6 @@ export interface Recommendation {
   closestPastDraw: { drawNo: number; date: string; numbers: number[]; overlap: number } | null
   /** 이번 회차에 이미 내보내 후보에서 뺀 조합 수 */
   avoidedCount: number
-}
-
-/** 3개 보장 묶음 181장 */
-export interface CoverRecommendation {
-  /** 자리(0~44)마다 붙인 번호. 서버는 이것만 받아 181장을 다시 만든다. */
-  labels: number[]
-  tickets: number[][]
-  /** 장마다 예측 인기 백분위의 평균 (0~1). 당첨자 수가 없으면 null. */
-  meanPercentile: number | null
-  /** 비인기 구간에 든 장 수. 당첨자 수가 없으면 null. */
-  quietTickets: number | null
 }
 
 /** 학습에 쓰지 않은 최근 회차로 잰 인기 모델의 성적 */
@@ -123,8 +108,6 @@ export interface RecommendationEngine {
   recommend: (avoid?: AvoidInfo) => Recommendation
   /** 임의의 조합을 같은 기준으로 평가한다. */
   evaluate: (numbers: readonly number[]) => Recommendation
-  /** 어떤 당첨 번호에도 한 장은 3개 이상 맞는 181장을, 덜 몰리는 번호 배치로 만든다. */
-  recommendCover: () => CoverRecommendation
 }
 
 interface PairedDraw {
@@ -231,40 +214,6 @@ export function buildEngine(
     return describe(best, avoid)
   }
 
-  const recommendCover = (): CoverRecommendation => {
-    // 1. 무작위 배치에서 출발. 모두가 같은 묶음을 받으면 그것대로 몰리므로 매번 다르게 시작한다.
-    const labels = pickUnique(ALL_NUMBERS, ALL_NUMBERS.length)
-    if (!crowd) return { labels, tickets: labelCover(labels), meanPercentile: null, quietTickets: null }
-
-    const predictTicket = (index: number) => crowd.model.predict(COVER_LAYOUT[index].map((slot) => labels[slot]))
-    const scores = COVER_LAYOUT.map((_, index) => predictTicket(index))
-
-    // 2. 두 자리의 번호를 맞바꿔, 그 자리가 든 장들의 예측 인기 합이 줄면 남긴다.
-    const deadline = performance.now() + COVER_SEARCH_MS
-    while (performance.now() < deadline) {
-      const a = Math.floor(Math.random() * labels.length)
-      const b = Math.floor(Math.random() * labels.length)
-      if (a === b) continue
-
-      const touched = [...new Set([...TICKETS_BY_SLOT[a], ...TICKETS_BY_SLOT[b]])]
-      const before = touched.reduce((sum, index) => sum + scores[index], 0)
-      ;[labels[a], labels[b]] = [labels[b], labels[a]]
-      const after = touched.map(predictTicket)
-
-      if (after.reduce((sum, value) => sum + value, 0) < before) touched.forEach((index, i) => (scores[index] = after[i]))
-      else [labels[a], labels[b]] = [labels[b], labels[a]]
-    }
-
-    // 3. 장마다 백분위로 바꿔 요약
-    const percentiles = scores.map((value) => crowd.baseline.percentile(value))
-    return {
-      labels,
-      tickets: labelCover(labels).sort(compareTickets),
-      meanPercentile: percentiles.reduce((sum, value) => sum + value, 0) / percentiles.length,
-      quietTickets: percentiles.filter((value) => value <= MAX_PERCENTILE).length,
-    }
-  }
-
   return {
     stats: {
       drawCount: usable.length,
@@ -277,7 +226,6 @@ export function buildEngine(
     },
     recommend,
     evaluate: (numbers) => describe([...numbers].sort((a, b) => a - b)),
-    recommendCover,
   }
 }
 
@@ -358,12 +306,6 @@ const pearson = (a: readonly number[], b: readonly number[]): number => {
 
   const denominator = Math.sqrt(varianceA * varianceB)
   return denominator === 0 ? 0 : numerator / denominator
-}
-
-/** 번호 오름차순으로 장을 늘어놓는다. */
-const compareTickets = (a: readonly number[], b: readonly number[]): number => {
-  const index = a.findIndex((value, i) => value !== b[i])
-  return index === -1 ? 0 : a[index] - b[index]
 }
 
 const randomCombination = (): number[] => pickUnique(ALL_NUMBERS, PICK_COUNT).sort((a, b) => a - b)
