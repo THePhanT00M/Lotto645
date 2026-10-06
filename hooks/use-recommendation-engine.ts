@@ -6,6 +6,12 @@ import type { WorkerRequest, WorkerResponse } from "@/lib/lotto/engine.worker"
 import type { DrawPrize } from "@/lib/lotto/prizes"
 import type { WinningLottoNumbers } from "@/lib/lotto/types"
 
+/** 한 번 추천한 결과. 여러 장이면 서로 번호가 겹치지 않는다. */
+interface EngineResult {
+  recommendations: Recommendation[]
+  stats: EngineStats
+}
+
 /**
  * 추천 엔진을 워커에서 돌린다.
  *
@@ -15,7 +21,7 @@ import type { WinningLottoNumbers } from "@/lib/lotto/types"
  */
 export function useRecommendationEngine(draws: readonly WinningLottoNumbers[], prizes: readonly DrawPrize[]) {
   const workerRef = useRef<Worker | null>(null)
-  const pendingRef = useRef<((result: { recommendation: Recommendation; stats: EngineStats }) => void) | null>(null)
+  const pendingRef = useRef<((result: EngineResult) => void) | null>(null)
   const rejectRef = useRef<((error: Error) => void) | null>(null)
 
   /** 워커를 못 쓸 때 쓰는 메인 스레드 엔진 */
@@ -48,7 +54,7 @@ export function useRecommendationEngine(draws: readonly WinningLottoNumbers[], p
         }
 
         if (message.type === "result") {
-          pendingRef.current?.({ recommendation: message.recommendation, stats: message.stats })
+          pendingRef.current?.({ recommendations: message.recommendations, stats: message.stats })
           pendingRef.current = null
           rejectRef.current = null
           return
@@ -77,14 +83,14 @@ export function useRecommendationEngine(draws: readonly WinningLottoNumbers[], p
   const post = (worker: Worker, request: WorkerRequest) => worker.postMessage(request)
 
   const recommend = useCallback(
-      async (avoid?: AvoidInfo): Promise<{ recommendation: Recommendation; stats: EngineStats }> => {
+      async (count: number, avoid?: AvoidInfo): Promise<EngineResult> => {
         const worker = ensureWorker()
 
         if (!worker) {
           fallbackRef.current ??= buildEngine(draws, prizes)
           const engine = fallbackRef.current
           setIsTrained(true)
-          return { recommendation: engine.recommend(avoid), stats: engine.stats }
+          return { recommendations: engine.recommendSet(count, avoid), stats: engine.stats }
         }
 
         if (!trainSentRef.current) {
@@ -95,7 +101,7 @@ export function useRecommendationEngine(draws: readonly WinningLottoNumbers[], p
         return new Promise((resolve, reject) => {
           pendingRef.current = resolve
           rejectRef.current = reject
-          post(worker, { type: "recommend", avoid })
+          post(worker, { type: "recommend", avoid, count })
         })
       },
       [draws, prizes, ensureWorker],

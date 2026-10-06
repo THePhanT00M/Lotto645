@@ -7,6 +7,8 @@ import RecommendationCard from "@/components/analysis/recommendation-card"
 import { Surface } from "@/components/common/panel"
 import { useTranslation } from "@/components/i18n/locale-provider"
 import { Button } from "@/components/ui/button"
+import { MAX_SET_SIZE } from "@/lib/lotto/engine"
+import { cn } from "@/lib/utils"
 import type { MultipleNumber } from "@/lib/lotto/analytics"
 import type { EngineStats, Recommendation } from "@/lib/lotto/engine"
 
@@ -16,12 +18,21 @@ export type AnalysisTarget = "user" | "ai"
 interface AnalysisBodyProps {
   multiples: MultipleNumber[]
   target: AnalysisTarget
-  recommendation: Recommendation | null
+  /** 이번에 받은 추천. 여러 장이면 서로 번호가 겹치지 않는다. */
+  recommendations: readonly Recommendation[]
+  /** 자세히 보고 있는 장 */
+  selected: number
+  /** 다음 추천에서 받을 장수 */
+  setSize: number
+  /** 이번 회차에 이미 나간 조합 수 (생성 중 자리표시용) */
+  avoidedCount: number
   stats: EngineStats | null
   isGenerating: boolean
   /** 추천 버튼을 막을지. 학습에 쓸 당첨자 수가 아직 오지 않았으면 막는다. */
   isRecommendBlocked: boolean
   onRecommend: () => void
+  onSelect: (index: number) => void
+  onSetSizeChange: (size: number) => void
   onTargetChange: (target: AnalysisTarget) => void
 }
 
@@ -33,11 +44,16 @@ interface AnalysisBodyProps {
 export default function AnalysisBody({
   multiples,
   target,
-  recommendation,
+  recommendations,
+  selected,
+  setSize,
+  avoidedCount,
   stats,
   isGenerating,
   isRecommendBlocked,
   onRecommend,
+  onSelect,
+  onSetSizeChange,
   onTargetChange,
 }: AnalysisBodyProps) {
   const { t } = useTranslation()
@@ -57,7 +73,9 @@ export default function AnalysisBody({
             </div>
 
             <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
-              {recommendation &&
+              <SetSizePicker value={setSize} onChange={onSetSizeChange} disabled={isGenerating} />
+
+              {recommendations.length > 0 &&
                   (target === "ai" ? (
                       <ToggleButton icon={SearchCheck} onClick={() => onTargetChange("user")} disabled={isGenerating}>
                         {t.analysis.analyzeNumbers}
@@ -84,10 +102,46 @@ export default function AnalysisBody({
 
         {/* 추첨 번호 분석으로 전환해도 추천 결과는 유지되도록 언마운트하지 않는다. */}
         <div className={target === "ai" ? "block" : "hidden"}>
-          <RecommendationCard recommendation={recommendation} stats={stats} isGenerating={isGenerating} />
+          <RecommendationCard
+              recommendations={recommendations}
+              selected={selected}
+              setSize={setSize}
+              avoidedCount={avoidedCount}
+              stats={stats}
+              isGenerating={isGenerating}
+              onSelect={onSelect}
+          />
         </div>
 
         <MultipleNumberAnalysis multiples={multiples} />
+      </div>
+  )
+}
+
+/** 한 번에 받을 장수. 여러 장이면 서로 번호가 겹치지 않게 짠다. */
+function SetSizePicker({ value, onChange, disabled }: { value: number; onChange: (size: number) => void; disabled: boolean }) {
+  const { t } = useTranslation()
+  const sizes = Array.from({ length: MAX_SET_SIZE }, (_, index) => index + 1)
+
+  return (
+      <div role="radiogroup" aria-label={t.analysis.setSize} className="border-line bg-surface flex rounded-md border p-0.5">
+        {sizes.map((size) => (
+            <button
+                key={size}
+                type="button"
+                role="radio"
+                aria-checked={value === size}
+                disabled={disabled}
+                onClick={() => onChange(size)}
+                className={cn(
+                    "flex-1 rounded px-2.5 py-1 text-sm font-medium transition-colors sm:flex-none",
+                    value === size ? "bg-blue-600 text-white" : "text-ink-muted hover:text-ink",
+                )}
+                data-sk-tone={value === size || undefined}
+            >
+              <sk-t>{t.analysis.setSizeOption(size)}</sk-t>
+            </button>
+        ))}
       </div>
   )
 }

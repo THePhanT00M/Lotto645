@@ -1,5 +1,5 @@
 import { combinationKey } from "./combinations"
-import { ALL_NUMBERS, PICK_COUNT } from "./constants"
+import { ALL_NUMBERS, FIRST_PRIZE_ODDS, PICK_COUNT } from "./constants"
 import { extractFeatures, featureVectorOf, type PatternFeatures } from "./features"
 import { meanVector, standardDeviation, standardize } from "./matrix"
 import { buildOverlapIndex } from "./overlap"
@@ -45,6 +45,18 @@ const VALIDATION_RATIO = 0.2
 
 /** 인기 모델을 세우는 최소 회차 수. 이보다 적으면 인기 없이 과거 회차 회피만 한다. */
 const MIN_TRAIN_DRAWS = 200
+
+/** 한 번에 추천하는 최대 장수. 장끼리 번호를 나누지 않으려면 6장 × 6개가 45개 안에 들어야 한다. */
+export const MAX_SET_SIZE = 5
+
+/**
+ * 서로 번호가 겹치지 않는 N장에서 한 장이라도 3개 이상 맞을 확률 (인덱스 = 장수).
+ * 814만 가지 당첨 번호 전수로 셌고, 겹치지 않으면 어떤 번호든 값이 같다.
+ */
+export const SPREAD_HIT_RATE = [0, 194_130, 387_860, 581_190, 774_120, 966_650].map((count) => count / FIRST_PRIZE_ODDS)
+
+/** 장끼리 상관없이 고른 N장의 같은 확률. 1 − (1 − p)^N 이다. */
+export const independentHitRate = (count: number): number => 1 - (1 - SPREAD_HIT_RATE[1]) ** count
 
 /** 조합 하나에 대한 평가 */
 export interface Recommendation {
@@ -106,6 +118,8 @@ export interface RecommendationEngine {
   stats: EngineStats
   /** 조합 하나를 새로 추천한다. 이미 내보낸 조합이 있으면 함께 넘긴다. */
   recommend: (avoid?: AvoidInfo) => Recommendation
+  /** 서로 번호가 겹치지 않는 조합 여러 장을 추천한다. */
+  recommendSet: (count: number, avoid?: AvoidInfo) => Recommendation[]
   /** 임의의 조합을 같은 기준으로 평가한다. */
   evaluate: (numbers: readonly number[]) => Recommendation
 }
@@ -184,7 +198,8 @@ export function buildEngine(
     }
   }
 
-  const recommend = (avoid?: AvoidInfo): Recommendation => {
+  /** 고를 수 있는 번호(pool) 안에서 한 장을 고른다. */
+  const pickFrom = (pool: readonly number[], avoid?: AvoidInfo): Recommendation => {
     // 과거 당첨 조합에 더해, 이번 회차에 이미 내보낸 조합도 건너뛴다.
     const seen = avoid ? new Set([...pastCombinations, ...avoid.combinations]) : pastCombinations
 
@@ -192,7 +207,7 @@ export function buildEngine(
     let firstAllowed: number[] | null = null
 
     for (let tries = 0; tries < MAX_TRIES && candidates.length < CANDIDATE_COUNT; tries++) {
-      const numbers = randomCombination()
+      const numbers = randomCombination(pool)
 
       // 이미 나온 조합은 물론, 과거 회차를 거의 그대로 베낀 조합도 넘긴다.
       if (seen.has(combinationKey(numbers))) continue
@@ -203,15 +218,32 @@ export function buildEngine(
       candidates.push(numbers)
     }
 
-    const pool = candidates.length > 0 ? candidates : [firstAllowed ?? randomCombination()]
+    const shortlist = candidates.length > 0 ? candidates : [firstAllowed ?? randomCombination(pool)]
 
     // 이 앱 사용자끼리 같은 번호로 몰리면 그것대로 나눠 갖는 사람이 는다.
     // 후보 중 이번 회차에 이 앱에서 덜 나간 번호로 된 조합을 고른다.
-    const best = pool.reduce((picked, numbers) =>
+    const best = shortlist.reduce((picked, numbers) =>
         appCrowdOf(numbers, avoid) < appCrowdOf(picked, avoid) ? numbers : picked,
     )
 
     return describe(best, avoid)
+  }
+
+  const recommend = (avoid?: AvoidInfo): Recommendation => pickFrom(ALL_NUMBERS, avoid)
+
+  /**
+   * 앞 장에 쓴 번호를 빼고 다음 장을 고른다.
+   * 장끼리 3개 묶음을 나누지 않아, 같은 장수로 한 장이라도 3개 이상 맞을 확률이 가장 높아진다.
+   */
+  const recommendSet = (count: number, avoid?: AvoidInfo): Recommendation[] => {
+    const size = Math.min(MAX_SET_SIZE, Math.max(1, Math.floor(count)))
+    const used = new Set<number>()
+
+    return Array.from({ length: size }, () => {
+      const picked = pickFrom(ALL_NUMBERS.filter((number) => !used.has(number)), avoid)
+      picked.numbers.forEach((number) => used.add(number))
+      return picked
+    })
   }
 
   return {
@@ -225,6 +257,7 @@ export function buildEngine(
       trainMs,
     },
     recommend,
+    recommendSet,
     evaluate: (numbers) => describe([...numbers].sort((a, b) => a - b)),
   }
 }
@@ -308,7 +341,8 @@ const pearson = (a: readonly number[], b: readonly number[]): number => {
   return denominator === 0 ? 0 : numerator / denominator
 }
 
-const randomCombination = (): number[] => pickUnique(ALL_NUMBERS, PICK_COUNT).sort((a, b) => a - b)
+const randomCombination = (pool: readonly number[] = ALL_NUMBERS): number[] =>
+    pickUnique(pool, PICK_COUNT).sort((a, b) => a - b)
 
 /** 특징 공간에서 가장 가까운 과거 회차를 찾는다. */
 const findNearestDraw = (

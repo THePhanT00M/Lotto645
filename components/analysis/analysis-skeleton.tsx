@@ -20,11 +20,16 @@ export function AnalysisSkeleton({ numbers }: { numbers: number[] }) {
           <AnalysisBody
               multiples={findMultiples(numbers, [])}
               target="user"
-              recommendation={null}
+              recommendations={[]}
+              selected={0}
+              setSize={1}
+              avoidedCount={0}
               stats={null}
               isGenerating={false}
               isRecommendBlocked
               onRecommend={noop}
+              onSelect={noop}
+              onSetSizeChange={noop}
               onTargetChange={noop}
           />
         </div>
