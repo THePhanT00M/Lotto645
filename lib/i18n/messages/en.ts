@@ -414,13 +414,13 @@ const en: Messages = {
 
   analysis: {
     setSize: "Number of tickets",
-    setSizeOption: (count: number) => `${count}`,
-    setSizeUnit: "Games",
+    setSizeOption: (count: number) => `${count} ${count === 1 ? "game" : "games"}`,
+    setSizeLess: "Fewer games",
+    setSizeMore: "More games",
     noticeReference: (draws: number) => `This analysis draws on ${draws} real past results. Please treat the statistics as reference only.`,
     noticeRandom: "Every draw is random, and past statistics have no bearing on the odds of a future one.",
     analyzeHint: "Analyse the numbers you drew, or ask the AI for a fresh recommendation.",
     analyzeNumbers: "Analyse these numbers",
-    backToAi: "Back to AI picks",
     noticeBasis: (draws: number) => `This analysis is based on ${draws} real past draws. Please treat the statistics as reference only.`,
     comboHint: "Every combination your numbers can make, and how often each has come up before.",
     comboHit: (count: number) => `${count} combinations have won before`,

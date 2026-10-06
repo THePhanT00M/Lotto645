@@ -132,7 +132,7 @@ function RecommendationBody({ recommendations, selected, stats, onSelect }: Reco
               <Waypoints className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <sk-t>{copy.shape}</sk-t>
             </h4>
-            <PaperPattern numbers={numbers} compare={nearestDraw?.numbers} className="mx-auto w-full max-w-72" />
+            <PaperPattern numbers={numbers} compare={nearestDraw?.numbers} className="w-full" />
             {nearestDraw && (
                 <p className="text-ink-muted mt-auto pt-2 text-center text-xs">
                   <sk-t>{copy.nearest(nearestDraw.drawNo, nearestDraw.date)}</sk-t>
